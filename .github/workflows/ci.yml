@@ -1,0 +1,186 @@
+# .github/workflows/ci.yml
+# CI 파이프라인 — 린트 → 타입 체크 → 단위 테스트 → 빌드 → E2E 순서로 실행.
+#
+# 잡 순서를 분리한 이유:
+#   앞 단계에서 빠르게 실패하면 후속 비용(Docker 기동 등)을 아낄 수 있다.
+#   E2E는 가장 느리므로 빌드 성공 후에만 실행한다.
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PNPM_STORE: ~/.pnpm-store
+
+jobs:
+  # ──────────────────────────────────────────────
+  # 1. lint — ESLint 정적 분석
+  # ──────────────────────────────────────────────
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: pnpm store 캐시
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+
+  # ──────────────────────────────────────────────
+  # 2. typecheck — tsc 타입 검사 (emit 없음)
+  # ──────────────────────────────────────────────
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: pnpm store 캐시
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  # ──────────────────────────────────────────────
+  # 3. unit — Vitest 단위·컴포넌트 테스트
+  # ──────────────────────────────────────────────
+  unit:
+    name: unit
+    runs-on: ubuntu-latest
+    needs: typecheck
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: pnpm store 캐시
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test --run
+
+      - name: 커버리지 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  # ──────────────────────────────────────────────
+  # 4. build — Next.js 프로덕션 빌드
+  # ──────────────────────────────────────────────
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: pnpm store 캐시
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_STORE }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
+
+      - name: Next.js 빌드 캐시
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}-
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: 빌드 결과물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+          retention-days: 1
+
+  # ──────────────────────────────────────────────
+  # 5. e2e — Playwright (Docker Compose로 실행)
+  #
+  # Docker 안에서 실행하는 이유:
+  #   OS별 폰트·렌더링 차이를 제거해 스크린샷 비교를 결정론적으로 유지한다.
+  #   linux/playwright 이미지가 고정된 브라우저 바이너리를 제공한다.
+  # ──────────────────────────────────────────────
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 빌드 결과물 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: .next/
+
+      - name: Docker Compose로 E2E 실행
+        run: docker compose -f docker-compose.test.yml up --exit-code-from playwright --abort-on-container-exit
+
+      - name: Playwright 리포트 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
