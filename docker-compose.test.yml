@@ -1,0 +1,36 @@
+# CI용 compose. 프로덕션 빌드된 web 위에서 Playwright E2E를 수행한다.
+# 로컬에서는 `docker compose -f docker-compose.test.yml up --exit-code-from playwright` 로 실행.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: runner
+    container_name: my-music-app-web-test
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  playwright:
+    image: mcr.microsoft.com/playwright:v1.49.0-jammy
+    container_name: my-music-app-playwright
+    depends_on:
+      web:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      CI: "true"
+      BASE_URL: http://web:3000
+    command: >
+      sh -c "corepack enable &&
+             pnpm install --frozen-lockfile &&
+             pnpm exec playwright test"

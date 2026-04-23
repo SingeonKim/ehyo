@@ -1,0 +1,21 @@
+# 개발용 compose. `docker compose up`로 핫 리로드되는 Next.js dev 서버 기동.
+# Phase 5부터 api, postgres, minio 서비스 추가 예정.
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+      target: dev
+    container_name: my-music-app-web
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"  # WSL/Docker에서 파일 변경 감지 안 되는 경우가 있어 폴링 강제
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules   # anonymous volume — 호스트 node_modules와 격리
+      - /app/.next
+    stdin_open: true
+    tty: true
