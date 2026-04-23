@@ -62,12 +62,14 @@ export const DEGREE_LABELS: readonly string[] = [
 
 /**
  * 플랫 이명동음을 사용하는 Root인가.
- * 재즈·팝 컨벤션에 따라 플랫 계열 메이저 키(F, Bb, Eb, Ab, Db, Gb)의 Root에서
- * 스케일을 표기할 때 플랫으로 나열하는 편이 일관적이다.
- * 참고: Db=1, Eb=3, Gb=6, Ab=8, Bb=10, F=5 (피치 클래스).
+ * 재즈·팝 컨벤션에 따라 플랫 계열 메이저 키에서 스케일을 플랫으로 나열한다.
+ *
+ * 포함: F=5 (1♭), Bb=10 (2♭), Eb=3 (3♭), Ab=8 (4♭), Db=1 (5♭)
+ * 제외: Gb=6 — F#와 동일 피치 클래스. 기타·재즈 컨벤션상 F#(샾 계열)로 취급해
+ *   사용자가 혼동을 덜 겪게 한다. 7♭ vs 5# 대비 6♭ vs 6#에서는 #쪽이 더 친숙.
  */
 export function isFlatKey(root: PitchClass): boolean {
-  return root === 5 || root === 10 || root === 3 || root === 8 || root === 1 || root === 6;
+  return root === 5 || root === 10 || root === 3 || root === 8 || root === 1;
 }
 
 /**

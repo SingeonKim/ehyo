@@ -33,15 +33,19 @@ describe('노트 이름 상수', () => {
 });
 
 describe('isFlatKey', () => {
-  it('플랫 계열 Root(F=5, Bb=10, Eb=3, Ab=8, Db=1, Gb=6)는 true', () => {
-    [5, 10, 3, 8, 1, 6].forEach((pc) => {
+  it('플랫 계열 Root(F=5, Bb=10, Eb=3, Ab=8, Db=1)는 true', () => {
+    [5, 10, 3, 8, 1].forEach((pc) => {
       expect(isFlatKey(pc as PitchClass)).toBe(true);
     });
   });
 
-  it('샾 계열 Root는 false', () => {
-    // C=0, G=7, D=2, A=9, E=4, B=11, F#=6은 플랫이지만 그 외 샾 키는 false
-    [0, 7, 2, 9, 4, 11].forEach((pc) => {
+  it('Gb/F# (PC 6)은 샾 계열로 취급 → false', () => {
+    // 이명동음. 기타 컨벤션상 F#를 선호.
+    expect(isFlatKey(6 as PitchClass)).toBe(false);
+  });
+
+  it('자연 키(C, G, D, A, E, B)와 F#는 모두 false', () => {
+    [0, 7, 2, 9, 4, 11, 6].forEach((pc) => {
       expect(isFlatKey(pc as PitchClass)).toBe(false);
     });
   });
