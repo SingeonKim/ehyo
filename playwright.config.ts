@@ -44,8 +44,10 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
+      // 로컬·CI 모두 Playwright 번들 chromium-headless-shell 사용.
+      // 시스템 Chrome 설치(sudo 필요)를 요구하지 않는다.
       use: {
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
         viewport: { width: 1280, height: 720 },
       },
     },
