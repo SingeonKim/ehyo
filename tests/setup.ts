@@ -6,6 +6,11 @@
 // toBeInTheDocument(), toHaveValue() 등의 matcher가 여기서 등록된다.
 import '@testing-library/jest-dom';
 
+// vitest는 기본적으로 globals를 주입하지 않으므로 명시적 import가 필요하다.
+// (vitest.config의 `test.globals: true`를 켜면 생략 가능하나, 의존성을 드러내는
+// 편이 테스트 파일 독자에게 덜 놀랍다.)
+import { beforeEach } from 'vitest';
+
 // ──────────────────────────────────────────────
 // matchMedia polyfill
 // ──────────────────────────────────────────────
