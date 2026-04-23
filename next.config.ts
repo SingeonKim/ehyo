@@ -9,9 +9,8 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   reactStrictMode: false,
-  experimental: {
-    typedRoutes: true,
-  },
+  // Next.js 15에서 experimental → top-level로 이동됨
+  typedRoutes: true,
 };
 
 export default nextConfig;
