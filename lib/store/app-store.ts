@@ -9,6 +9,7 @@ import type {
   PitchClass,
   ScaleKey,
 } from '@/lib/theory/types';
+import { IMPORTANT_DEGREES } from '@/lib/theory/scales';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -212,7 +213,12 @@ export const useAppStore = create<AppState>()(
 
       toggleImportantDegree: (scale, degree) =>
         set((s) => {
-          const current = s.fretboard.importantDegreesByScale[scale] ?? [];
+          // 오버라이드가 없는 최초 상태에서는 기본값(IMPORTANT_DEGREES)을 시작점으로
+          // 삼아야 UX가 자연스럽다. 예: Major의 기본 강조는 [0,5,7]. 유저가 5도를
+          // 클릭하면 "기본에서 5도를 뺀 [0,7]"이 override로 저장되어야 한다. 이전에는
+          // 빈 배열에서 시작해 5도를 추가하는 역동작이 돼 있었다.
+          const existing = s.fretboard.importantDegreesByScale[scale];
+          const current = existing ?? [...IMPORTANT_DEGREES[scale]];
           const idx = current.indexOf(degree);
           if (idx >= 0) {
             s.fretboard.importantDegreesByScale[scale] = current.filter((d) => d !== degree);
