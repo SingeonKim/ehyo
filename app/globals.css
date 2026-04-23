@@ -1,0 +1,92 @@
+/*
+ * Tailwind CSS v4 — CSS-first 설정.
+ * @theme 블록이 tailwind.config.js 역할을 한다.
+ * 모든 디자인 토큰은 여기에 정의하고, 컴포넌트에서는 토큰 클래스(`bg-bg-base`, `text-accent-brass` 등)로만 참조한다.
+ * hex 값을 컴포넌트에 하드코딩하지 말 것.
+ */
+@import "tailwindcss";
+
+/* Pretendard Variable — dynamic subsetting (jsdelivr).
+   Phase 1 이후 next/font/local로 이관 예정. 현재는 빠른 셋업과 최신 서브셋 혜택을 위해 CDN 사용. */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+
+@theme {
+  /* ── Background ───────────────────────────────── */
+  --color-bg-base: #0E0B08;
+  --color-bg-elevated: #1A1612;
+  --color-bg-raised: #241D16;
+
+  /* ── Ink (foreground) ─────────────────────────── */
+  --color-ink-primary: #F4EDE0;
+  --color-ink-secondary: #A89B86;
+  --color-ink-muted: #6E6558;
+
+  /* ── Accents ──────────────────────────────────── */
+  --color-accent-brass: #C9A961;
+  --color-accent-copper: #B87333;
+  --color-accent-signal: #E8554E;   /* Beat 1 accent, recording */
+
+  /* ── Fretboard note 3-tier ───────────────────── */
+  --color-scale-root: #E8554E;       /* Root — 가장 강함 */
+  --color-scale-important: #E8A14E;  /* 중요 노트 (IMPORTANT_DEGREES) */
+  --color-scale-tone: #C9A961;       /* 일반 스케일 노트 */
+  --color-scale-chord: #5EB0E5;      /* 현재 코드 톤 (Phase 5 ring 레이어) */
+
+  /* ── State ────────────────────────────────────── */
+  --color-state-ok: #8BBF73;
+  --color-state-warn: #E8A14E;
+  --color-state-err: #E8554E;
+
+  /* ── Fonts ────────────────────────────────────── */
+  --font-display: "Pretendard Variable", -apple-system, sans-serif;
+  --font-body: "Pretendard Variable", -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ── Sizing ───────────────────────────────────── */
+  --text-hero: 9rem;       /* 144px — BPM 히어로 */
+  --text-display: 4rem;    /* 64px */
+
+  /* ── Easing ───────────────────────────────────── */
+  --ease-pendulum: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --ease-signal: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ── Base resets ───────────────────────────────── */
+html {
+  /* 수치 tabular 정렬 기본값 — BPM·도수 표기에서 숫자 흔들림 방지 */
+  font-feature-settings: "tnum" 1, "cv02" 1, "cv11" 1;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-bg-base);
+  color: var(--color-ink-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 포커스 링 — outline 제거 금지, 명확한 대체 */
+:focus-visible {
+  outline: 2px solid var(--color-accent-brass);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* 사용자가 모션 축소 요청 시 — 진자 애니메이션 등 장식적 모션 억제 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 모노스페이스 수치에 tabular-nums 강제 */
+.font-mono,
+[class*="font-mono"] {
+  font-variant-numeric: tabular-nums;
+}
