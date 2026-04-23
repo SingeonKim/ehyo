@@ -38,3 +38,6 @@ pnpm-debug.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code 로컬 캐시 (agents/는 커밋 대상이므로 tsc-cache 등 개별 지정)
+.claude/tsc-cache/
