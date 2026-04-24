@@ -46,8 +46,10 @@
   --color-state-err: #E8554E;
 
   /* ── Fonts ────────────────────────────────────── */
-  --font-display: "Pretendard Variable", -apple-system, sans-serif;
-  --font-body: "Pretendard Variable", -apple-system, sans-serif;
+  /* sans-serif 단독 폴백 금지 — Pretendard 로드 실패 시 macOS는 -apple-system,
+     Windows는 ui-sans-serif 경로로 폴백. 최후 수단 폴백은 제거. */
+  --font-display: "Pretendard Variable", -apple-system, ui-sans-serif;
+  --font-body: "Pretendard Variable", -apple-system, ui-sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* ── Sizing ───────────────────────────────────── */

@@ -23,12 +23,14 @@ import { Pendulum } from './Pendulum';
  *   4. 키보드 단축키 (Space, ↑/↓, Shift+↑/↓, T)
  */
 
+/* 음표 유니코드 기호(♩♫)는 이모지 UI 요소에 해당 — 금지 목록.
+   약어 텍스트 레이블로 대체. 악기 패널의 실크스크린 레이블 감각. */
 const SUBDIVISIONS = [
-  { value: 'quarter', label: '♩' },
-  { value: 'eighth', label: '♫' },
+  { value: 'quarter', label: '1/4' },
+  { value: 'eighth', label: '1/8' },
   { value: 'triplet', label: '3' },
-  { value: 'sixteenth', label: '16' },
-  { value: 'swing', label: 'swing' },
+  { value: 'sixteenth', label: '1/16' },
+  { value: 'swing', label: 'Swg' },
 ] as const;
 
 const SOUND_TYPES = [
@@ -157,7 +159,8 @@ export function MetronomeClient() {
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-ink-muted">
             Beats per minute
           </p>
-          <p className="font-display text-[8rem] font-black leading-none tabular-nums text-ink-primary md:text-[10rem]">
+          {/* BPM 히어로: --text-hero 토큰 사용, -0.04em 자간 규정 준수 */}
+          <p className="font-display text-hero font-black leading-none tracking-[-0.04em] tabular-nums text-ink-primary">
             {m.bpm}
           </p>
         </div>
