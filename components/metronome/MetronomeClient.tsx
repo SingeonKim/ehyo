@@ -1,13 +1,13 @@
 'use client';
 
 import { clsx } from 'clsx';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
-import { getAudioContext, resumeAudioContext } from '@/lib/audio/context';
-import { createMetronomeScheduler } from '@/lib/audio/metronome-scheduler';
-import type { MetronomeScheduler, SchedulerConfig, SchedulerEvent } from '@/lib/audio/types';
+import { getAudioContext } from '@/lib/audio/context';
+import { subscribeToBeats, toggleMetronome } from '@/lib/audio/metronome-singleton';
+import type { SchedulerEvent } from '@/lib/audio/types';
 
 import { BeatLED } from './BeatLED';
 import { Pendulum } from './Pendulum';
@@ -16,11 +16,12 @@ import { Pendulum } from './Pendulum';
  * 메트로놈 클라이언트.
  *
  * 주요 책임:
- *   1. 스케줄러 인스턴스 lifecycle 관리 (최초 Play 제스처에서 생성)
- *   2. 스토어 상태 ↔ SchedulerConfig 동기화
- *   3. UI 구독 (현재 beat highlight) — 스케줄된 이벤트를 AudioContext 시각 기준
- *      정확히 그 순간에 디스플레이에 반영
- *   4. 키보드 단축키 (Space, ↑/↓, Shift+↑/↓, T)
+ *   1. 싱글턴 스케줄러를 구독해 beat LED 동기화
+ *   2. 컨트롤 (BPM/TS/Subdiv/Sound/Volume/Accent/Tap) 렌더
+ *   3. 키보드 단축키 (Space, ↑/↓, Shift+↑/↓, T)
+ *
+ * 스케줄러 lifecycle은 lib/audio/metronome-singleton.ts가 책임 — 라우트
+ * 이동(unmount)에도 오디오 계속 재생.
  */
 
 /* 음표 유니코드 기호(♩♫)는 이모지 UI 요소에 해당 — 금지 목록.
@@ -52,78 +53,42 @@ export function MetronomeClient() {
   const toggleAccentBeatOne = useAppStore((s) => s.toggleAccentBeatOne);
   const setSoundType = useAppStore((s) => s.setSoundType);
   const setVolume = useAppStore((s) => s.setVolume);
-  const startMetronome = useAppStore((s) => s.startMetronome);
-  const stopMetronome = useAppStore((s) => s.stopMetronome);
   const tap = useAppStore((s) => s.tap);
 
-  const schedulerRef = useRef<MetronomeScheduler | null>(null);
   const [currentBeat, setCurrentBeat] = useState(0);
-  const [audioReady, setAudioReady] = useState(false);
 
-  // SchedulerConfig는 항상 최신 스토어 상태 참조 — Ref로 클로저 stale 방지
-  const configRef = useRef<SchedulerConfig>(toConfig(m));
+  // 싱글턴 스케줄러의 이벤트 구독 — 마운트 중에만 beat LED 동기화.
+  // unmount 시 구독 해제되지만 스케줄러 자체는 계속 실행.
   useEffect(() => {
-    configRef.current = toConfig(m);
-  }, [m]);
-
-  // 이벤트 구독 — UI beat LED sync
-  // 스케줄러는 이벤트를 오디오 예약 시점(= lookahead 만큼 앞서)에 발행하므로
-  // setTimeout으로 AudioContext 시각과 DOM을 맞춰 딜레이 후 업데이트.
-  const handleEvent = useCallback((e: SchedulerEvent) => {
-    if (e.type === 'sub') return; // 서브디비전은 LED 반영 안 함
     if (typeof window === 'undefined') return;
-    const ctx = getAudioContext();
-    const delayMs = Math.max(0, (e.time - ctx.currentTime) * 1000);
-    window.setTimeout(() => setCurrentBeat(e.beat), delayMs);
+    const unsub = subscribeToBeats((e: SchedulerEvent) => {
+      if (e.type === 'sub') return;
+      const ctx = getAudioContext();
+      const delayMs = Math.max(0, (e.time - ctx.currentTime) * 1000);
+      window.setTimeout(() => setCurrentBeat(e.beat), delayMs);
+    });
+    return unsub;
   }, []);
 
-  // Play 토글
-  const togglePlay = useCallback(async () => {
-    // 첫 호출 시 AudioContext + Scheduler 생성
-    if (!schedulerRef.current) {
-      const ctx = getAudioContext();
-      const resumed = await resumeAudioContext();
-      if (!resumed) {
-        return; // 유저에게 안내 UI 필요 — 추후 배너 추가
-      }
-      setAudioReady(true);
-
-      const worker = new Worker(new URL('../../lib/audio/scheduler-worker.ts', import.meta.url));
-      schedulerRef.current = createMetronomeScheduler({
-        audioContext: ctx,
-        getConfig: () => configRef.current,
-        createWorker: () => worker,
-      });
-      schedulerRef.current.subscribe(handleEvent);
-    }
-
-    if (m.isPlaying) {
-      schedulerRef.current.stop();
-      stopMetronome();
-      setCurrentBeat(0);
-    } else {
-      await schedulerRef.current.start();
-      startMetronome();
-    }
-  }, [m.isPlaying, startMetronome, stopMetronome, handleEvent]);
-
-  // 언마운트 시 정리
+  // isPlaying이 false이면 LED 끄기 (다른 페이지/Dock에서 정지했을 수 있음)
   useEffect(() => {
-    return () => {
-      schedulerRef.current?.stop();
-    };
+    if (!m.isPlaying) setCurrentBeat(0);
+  }, [m.isPlaying]);
+
+  // Play 토글 — 싱글턴이 스토어·스케줄러 동기화까지 처리
+  const handleToggle = useCallback(async () => {
+    await toggleMetronome();
   }, []);
 
   // 키보드 단축키
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      // 입력 필드에서는 동작 안 함
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
 
       if (e.code === 'Space') {
         e.preventDefault();
-        void togglePlay();
+        void handleToggle();
       } else if (e.code === 'ArrowUp') {
         e.preventDefault();
         setBpm(m.bpm + (e.shiftKey ? 10 : 1));
@@ -137,7 +102,7 @@ export function MetronomeClient() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [m.bpm, setBpm, tap, togglePlay]);
+  }, [m.bpm, setBpm, tap, handleToggle]);
 
   if (!hydrated) {
     return (
@@ -173,7 +138,7 @@ export function MetronomeClient() {
           />
           <button
             type="button"
-            onClick={() => void togglePlay()}
+            onClick={() => void handleToggle()}
             className={clsx(
               'border-2 px-8 py-3 font-mono text-sm uppercase tracking-widest transition-colors duration-75',
               m.isPlaying
@@ -184,11 +149,6 @@ export function MetronomeClient() {
           >
             {m.isPlaying ? 'Stop' : 'Play'}
           </button>
-          {!audioReady && (
-            <p className="max-w-[14rem] text-right font-mono text-[0.65rem] text-ink-muted">
-              재생 버튼으로 오디오 활성화
-            </p>
-          )}
         </div>
       </section>
 
@@ -464,15 +424,3 @@ function AccentToggle({ value, onToggle }: { value: boolean; onToggle: () => voi
   );
 }
 
-// ─── Util ──────────────────────────────────────
-
-function toConfig(m: ReturnType<typeof useAppStore.getState>['metronome']): SchedulerConfig {
-  return {
-    bpm: m.bpm,
-    timeSignature: m.timeSignature,
-    subdivision: m.subdivision,
-    soundType: m.soundType,
-    accentBeatOne: m.accentBeatOne,
-    volume: m.volume,
-  };
-}
