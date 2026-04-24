@@ -50,6 +50,11 @@ test.describe('/fretboard — 지판 스케일 가이드', () => {
   test('라벨 모드 Hide → 텍스트 사라짐', async ({ page }) => {
     await page.goto('/fretboard');
 
+    // SVG 렌더링 완료 대기 — webkit이 chromium보다 느려 count 전에 대기 필요
+    await page.getByRole('img', { name: /Guitar fretboard/i }).waitFor();
+    // 최소 한 개 이상의 svg text가 존재할 때까지 대기 (hydration + 폰트 로드)
+    await expect(page.locator('svg text').first()).toBeVisible({ timeout: 5000 });
+
     // 기본은 Name — 텍스트(노트 이름)가 존재
     const textCountBefore = await page.locator('svg text').count();
     expect(textCountBefore).toBeGreaterThan(0);
@@ -57,8 +62,9 @@ test.describe('/fretboard — 지판 스케일 가이드', () => {
     // Hide 모드로
     await page.getByRole('radio', { name: 'Hide' }).click();
 
-    // 프렛 번호는 남지만 노트 라벨은 사라짐 → 텍스트 수가 줄어들어야 함
-    const textCountAfter = await page.locator('svg text').count();
-    expect(textCountAfter).toBeLessThan(textCountBefore);
+    // 프렛 번호·오픈 스트링 이름은 남지만 in-scale 노트 라벨은 사라짐 → 총 텍스트 수 감소
+    await expect
+      .poll(async () => await page.locator('svg text').count(), { timeout: 3000 })
+      .toBeLessThan(textCountBefore);
   });
 });
