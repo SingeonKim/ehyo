@@ -193,25 +193,31 @@ export function midiToFrequency(midi: number): number;
 
 ### 5.1 새 필드
 
+기존 스토어가 `metronome / fretboard / ui` 3개 top-level 슬라이스를 쓰므로 4번째 슬라이스 `backing`을 추가:
+
 ```typescript
-interface BackingSlice {
+export interface BackingState {
+  // 영속
   backingKey: PitchClass;                    // 선택 Key (default 0 = C)
+
+  // 런타임 (persist 제외)
   backingPlayingSlug: string | null;         // 재생 중인 template.slug
   backingCurrentChord: { symbol: string; barIndex: number } | null;
-
-  setBackingKey(k: PitchClass): void;
-
-  // 아래 2개는 engine subscriber 전용 — UI 컴포넌트에서 호출 금지
-  _setBackingPlaying(slug: string | null): void;
-  _setBackingCurrentChord(c: { symbol: string; barIndex: number } | null): void;
 }
+
+// AppState에 필드 + 액션 추가:
+//   backing: BackingState;
+//   setBackingKey(k: PitchClass): void;
+//   _setBackingPlaying(slug: string | null): void;        // engine subscriber only
+//   _setBackingCurrentChord(c: { symbol: string; barIndex: number } | null): void;
 ```
 
 ### 5.2 Persist 규칙
 
 - `backingKey`는 persist **포함** (유저 선택 유지)
 - `backingPlayingSlug` / `backingCurrentChord`는 **런타임 상태** → `partialize`로 제외
-- 스키마 `version: 2`로 올림. `migrate(persistedState, version)`에서 `version < 2`면 `backingKey = 0` 기본값 주입
+- 스키마 version을 `5 → 6`으로 올림. `migrate` 체인에 `version < 6` 블록을 추가해서 기존 데이터에 `backing: { backingKey: 0 }` 슬라이스 주입
+- `merge` deep-merge 확장: 기존 `metronome / fretboard / ui` 3-way merge 패턴과 동일하게 `backing` 슬라이스 병합 추가
 
 ### 5.3 Engine ↔ Store 브릿지
 
