@@ -206,3 +206,41 @@ export function __disposeBackingEngineForTests(): void {
     _engine = null;
   }
 }
+
+// ──────────────────────────────────────────────
+// Store 브릿지 — 엔진 상태를 Zustand로 전파.
+// 컴포넌트는 store만 구독, 엔진은 직접 건드리지 않는 원칙.
+//
+// 주의: import가 순환하지 않도록 store를 lazy require. SSR·테스트
+//      파일에서 store가 hydrate되기 전에 구독이 걸리는 상황을 막기 위해
+//      한 번만 wiring.
+// ──────────────────────────────────────────────
+
+let _bridgeWired = false;
+
+/** 테스트에서 브릿지를 재장착할 때만 사용. */
+export function __resetStoreBridgeForTests(): void {
+  _bridgeWired = false;
+}
+
+if (typeof window !== 'undefined') {
+  // SSR 시 실행되지 않도록 가드. 클라이언트에서 모듈 최초 로드 시 1회 wiring.
+  void import('@/lib/store/app-store').then(({ useAppStore }) => {
+    if (_bridgeWired) return;
+    _bridgeWired = true;
+    const engine = getBackingEngine();
+    engine.subscribe((s) => {
+      const store = useAppStore.getState();
+      if (s.status === 'playing') {
+        store._setBackingPlaying(s.template.slug);
+        store._setBackingCurrentChord({
+          symbol: s.chordSymbol,
+          barIndex: s.barIndex,
+        });
+      } else {
+        store._setBackingPlaying(null);
+        store._setBackingCurrentChord(null);
+      }
+    });
+  });
+}

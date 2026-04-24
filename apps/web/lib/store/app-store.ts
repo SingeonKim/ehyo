@@ -68,11 +68,22 @@ export interface UiState {
   theme: 'dark' | 'light';
 }
 
+// ─── 배킹 트랙 ─────────────────────────────────────────────
+export interface BackingSliceState {
+  /** 영속. 사용자가 선택한 재생 Key (0=C ~ 11=B). */
+  backingKey: PitchClass;
+  /** 런타임. 재생 중인 template.slug 또는 null. */
+  backingPlayingSlug: string | null;
+  /** 런타임. 엔진이 퍼블리시하는 현재 코드. */
+  backingCurrentChord: { symbol: string; barIndex: number } | null;
+}
+
 // ─── 루트 state + 액션 ────────────────────────────────────
 export interface AppState {
   metronome: MetronomeState;
   fretboard: FretboardState;
   ui: UiState;
+  backing: BackingSliceState;
 
   // 메트로놈 액션 (Phase 1에서 확장)
   setBpm: (bpm: number) => void;
@@ -99,6 +110,15 @@ export interface AppState {
 
   /** 현재 스케일의 override를 제거해 SCALE_HIGHLIGHTS 기본값으로 되돌린다. */
   resetHighlights: (scale: ScaleKey) => void;
+
+  // 배킹 액션
+  setBackingKey: (k: PitchClass) => void;
+  /** engine subscriber 전용 — UI에서 호출 금지. */
+  _setBackingPlaying: (slug: string | null) => void;
+  /** engine subscriber 전용 — UI에서 호출 금지. */
+  _setBackingCurrentChord: (
+    c: { symbol: string; barIndex: number } | null,
+  ) => void;
 }
 
 /** 색 사이클 순서: none(undefined) → orange → green → blue → none. */
@@ -142,6 +162,12 @@ const DEFAULT_UI: UiState = {
   theme: 'dark',
 };
 
+const DEFAULT_BACKING: BackingSliceState = {
+  backingKey: 0, // C
+  backingPlayingSlug: null,
+  backingCurrentChord: null,
+};
+
 // BPM 클램프 유틸 — planning 1.3 M1 요건: 20~300
 const clampBpm = (n: number): number => Math.round(Math.max(20, Math.min(300, n)));
 const TAP_WINDOW_MS = 2000;  // 2초 공백 시 tap 초기화
@@ -154,6 +180,7 @@ export const useAppStore = create<AppState>()(
       metronome: DEFAULT_METRONOME,
       fretboard: DEFAULT_FRETBOARD,
       ui: DEFAULT_UI,
+      backing: DEFAULT_BACKING,
 
       setBpm: (bpm) =>
         set((s) => {
@@ -270,16 +297,32 @@ export const useAppStore = create<AppState>()(
           // 기본값을 반환한다. 앞으로 기본값이 바뀌어도 리셋한 스케일은 항상 최신.
           delete s.fretboard.highlightsByScale[scale];
         }),
+
+      setBackingKey: (k) =>
+        set((s) => {
+          s.backing.backingKey = k;
+        }),
+
+      _setBackingPlaying: (slug) =>
+        set((s) => {
+          s.backing.backingPlayingSlug = slug;
+        }),
+
+      _setBackingCurrentChord: (c) =>
+        set((s) => {
+          s.backing.backingCurrentChord = c;
+        }),
     })),
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 5,
+      version: 6,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
       // v4 → v5: volume 기본값 0.8 → 0.5. 유저가 슬라이더로 바꾸지 않았던 경우
       //         (정확히 0.8인 경우)만 조정. 커스터마이징된 값은 보존.
+      // v5 → v6: backing 슬라이스 추가.
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== 'object') return persistedState as AppState;
         const s = persistedState as Record<string, unknown>;
@@ -301,6 +344,18 @@ export const useAppStore = create<AppState>()(
           }
           s.metronome = met;
         }
+        // v5 → v6: backing 슬라이스 추가. 기존 유저 데이터에는 backing 키가
+        // 없으므로 기본값 주입. 런타임 필드는 rehydrate 직후 엔진이 null로
+        // 재설정하므로 여기서는 backingKey만 챙긴다.
+        if (version < 6) {
+          const backing = (s.backing as Record<string, unknown>) ?? {};
+          if (typeof backing.backingKey !== 'number') {
+            backing.backingKey = 0;
+          }
+          backing.backingPlayingSlug = null;
+          backing.backingCurrentChord = null;
+          s.backing = backing;
+        }
         return persistedState as AppState;
       },
       // 런타임 전용 상태는 저장 제외
@@ -316,6 +371,9 @@ export const useAppStore = create<AppState>()(
         },
         fretboard: state.fretboard,
         ui: state.ui,
+        backing: {
+          backingKey: state.backing.backingKey,
+        },
       }),
       // Zustand 기본 merge는 top-level shallow. metronome 같은 nested object가
       // partialize로 일부 필드만 저장되면 rehydrate 시 기본값의 나머지 필드가
@@ -330,6 +388,7 @@ export const useAppStore = create<AppState>()(
           metronome: { ...currentState.metronome, ...(p.metronome ?? {}) },
           fretboard: { ...currentState.fretboard, ...(p.fretboard ?? {}) },
           ui: { ...currentState.ui, ...(p.ui ?? {}) },
+          backing: { ...currentState.backing, ...(p.backing ?? {}) },
         };
       },
     },
