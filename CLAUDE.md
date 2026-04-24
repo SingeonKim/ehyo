@@ -337,9 +337,16 @@ ss -tlnp | grep :3000
 제거·변환. v1 → v2 예시는 현재 코드 참조.
 
 ### 브라우저 변경이 반영 안 됨
-1. 브라우저가 엉뚱한 포트(3001 아닌 3000 등)를 보고 있는지 확인
-2. Ctrl+Shift+R 하드 리프레시
-3. 위 `.next` 클린 절차
+1. **Dev 서버 로그에 "Compiling" 이벤트가 있는지 확인.** WSL + `/mnt/c/`에서
+   inotify 파일 워칭이 꺠지는 경우가 흔함. 로그에 GET만 있고 컴파일이 없으면
+   서버가 디스크 변경을 못 본 상태 → 재시작 필요.
+2. package.json dev 스크립트에 `WATCHPACK_POLLING=true` 걸려 있는지 확인
+   (이 프로젝트는 기본 적용). 없으면 `WATCHPACK_POLLING=true pnpm dev`.
+3. 브라우저가 엉뚱한 포트(3001 vs 3000)를 보고 있는지 확인
+4. Ctrl+Shift+R 하드 리프레시
+5. `.next` 클린 + 재시작
+6. localStorage 스키마 버전 문제라면 DevTools Console에서
+   `localStorage.removeItem('my-music-app:v1'); location.reload()`
 
 ### Playwright 로컬 실행이 libnspr4 에러
 WSL에 시스템 chromium 의존 라이브러리 없음. `docker compose -f
