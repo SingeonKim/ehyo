@@ -34,7 +34,7 @@ services:
       CI: "true"
       BASE_URL: http://web:3000
     command: >
-      sh -c "corepack enable &&
+      sh -c "npm install -g pnpm@9.12.3 &&
              pnpm install --frozen-lockfile &&
              cd apps/web &&
              pnpm exec playwright test"
