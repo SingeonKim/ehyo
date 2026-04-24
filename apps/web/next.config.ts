@@ -1,15 +1,17 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 
 /**
  * Next.js 15 설정.
- * - output: 'standalone' → Docker 이미지 슬림화 (multi-stage builder의 .next/standalone 복사 패턴)
- * - reactStrictMode: 의도적 off. AudioContext 싱글턴이 StrictMode의 이중 mount와 충돌해 2개 생성되는 문제 방지.
- *   Phase 1에서 context.ts의 싱글턴 가드 검증 후 재검토.
+ * - output: 'standalone' → Docker 이미지 슬림화
+ * - outputFileTracingRoot: 모노레포 루트(../..)를 tracing 기준으로. 지정 없으면
+ *   apps/web 하위에서만 tracing해 workspace 상호 의존성 누락 가능성.
+ * - reactStrictMode off — AudioContext 싱글턴 이중 mount 방지 (Phase 1 결정)
  */
 const nextConfig: NextConfig = {
   output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname, '../..'),
   reactStrictMode: false,
-  // Next.js 15에서 experimental → top-level로 이동됨
   typedRoutes: true,
 };
 

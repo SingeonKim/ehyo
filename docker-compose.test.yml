@@ -33,4 +33,5 @@ services:
     command: >
       sh -c "corepack enable &&
              pnpm install --frozen-lockfile &&
+             cd apps/web &&
              pnpm exec playwright test"
