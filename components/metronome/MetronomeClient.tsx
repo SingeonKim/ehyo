@@ -85,17 +85,18 @@ export function MetronomeClient() {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
-      // /jam 등 공유 뷰에서 다른 버튼에 포커스가 있을 때 Space는 해당 버튼 click으로
-      // 브라우저가 처리하게 둬야 한다. BUTTON·A·SELECT에 포커스가 있으면 Space/Arrow 통과.
+
+      // Space만 버튼 click과 충돌 — 포커스된 인터랙티브 요소가 있으면
+      // 브라우저가 처리하도록 통과. ↑↓·T는 버튼에 의미 없는 키라 안전하게 intercept.
       const isFocusedInteractive =
         target &&
         (target.tagName === 'BUTTON' ||
           target.tagName === 'A' ||
           target.tagName === 'SELECT' ||
-          (target as HTMLElement).getAttribute('role') === 'radio');
-      if (isFocusedInteractive) return;
+          target.getAttribute('role') === 'radio');
 
       if (e.code === 'Space') {
+        if (isFocusedInteractive) return;
         e.preventDefault();
         void handleToggle();
       } else if (e.code === 'ArrowUp') {
