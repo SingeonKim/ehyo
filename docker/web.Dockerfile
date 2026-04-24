@@ -11,7 +11,8 @@
 
 FROM node:20-alpine AS deps
 WORKDIR /app
-RUN corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 # 루트 lock·workspace 선언·.npmrc만 먼저 복사 (의존성 변경 시 캐시 효율)
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY apps/web/package.json ./apps/web/
@@ -20,7 +21,8 @@ RUN pnpm install --frozen-lockfile || pnpm install --no-frozen-lockfile
 # ─── dev target ─────────────────────────────────────────
 FROM node:20-alpine AS dev
 WORKDIR /app
-RUN corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 ENV NODE_ENV=development
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
@@ -32,7 +34,8 @@ CMD ["pnpm", "dev"]
 # ─── builder ───────────────────────────────────────────
 FROM node:20-alpine AS builder
 WORKDIR /app
-RUN corepack enable
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable && corepack prepare pnpm@9.12.3 --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
