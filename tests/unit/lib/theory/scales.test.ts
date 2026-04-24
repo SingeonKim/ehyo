@@ -110,9 +110,34 @@ describe('음악 이론 정확성 (대표 스케일)', () => {
     expect(SCALE_HIGHLIGHTS.major_blues[3]).toBe('blue');
   });
 
-  it('Major의 3도·5도는 orange (코드 톤)', () => {
-    expect(SCALE_HIGHLIGHTS.major[4]).toBe('orange');
-    expect(SCALE_HIGHLIGHTS.major[7]).toBe('orange');
+  it('Major의 4도·5도는 orange (I-IV-V 뼈대)', () => {
+    expect(SCALE_HIGHLIGHTS.major[5]).toBe('orange'); // 4도
+    expect(SCALE_HIGHLIGHTS.major[7]).toBe('orange'); // 5도
+    // 3도(semi 4)는 스케일의 질만 정의 → regular
+    expect(SCALE_HIGHLIGHTS.major[4]).toBeUndefined();
+  });
+
+  it('Minor Pentatonic 4·5도 orange, 3·5도 혼동 방지', () => {
+    expect(SCALE_HIGHLIGHTS.minor_pentatonic[5]).toBe('orange'); // 4도
+    expect(SCALE_HIGHLIGHTS.minor_pentatonic[7]).toBe('orange'); // 5도
+    expect(SCALE_HIGHLIGHTS.minor_pentatonic[3]).toBeUndefined(); // b3 regular
+  });
+
+  it('Major Pentatonic은 4도 없음 → 5도만 orange', () => {
+    expect(SCALE_HIGHLIGHTS.major_pentatonic[7]).toBe('orange');
+    expect(SCALE_HIGHLIGHTS.major_pentatonic[5]).toBeUndefined();
+  });
+
+  it('Lydian은 perfect 4도 대신 #4 → 5도만 orange, #4 green', () => {
+    expect(SCALE_HIGHLIGHTS.lydian[7]).toBe('orange');
+    expect(SCALE_HIGHLIGHTS.lydian[5]).toBeUndefined(); // lydian에 4도(semi 5) 없음
+    expect(SCALE_HIGHLIGHTS.lydian[6]).toBe('green'); // #4
+  });
+
+  it('Locrian은 perfect 5도 없음 → 4도만 orange, b5 green', () => {
+    expect(SCALE_HIGHLIGHTS.locrian[5]).toBe('orange'); // 4도
+    expect(SCALE_HIGHLIGHTS.locrian[7]).toBeUndefined(); // locrian에 5도(semi 7) 없음
+    expect(SCALE_HIGHLIGHTS.locrian[6]).toBe('green'); // b5 특성음
   });
 
   it('Whole Tone은 정확히 6개 음, 전부 온음 간격', () => {

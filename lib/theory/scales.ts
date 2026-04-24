@@ -44,7 +44,10 @@ export const SCALES: Record<ScaleKey, readonly number[]> = {
  * 스케일별 기본 강조 색상 매핑 — 음계의 비-루트 음을 색으로 의미화.
  *
  * 색상 의미 (음악 이론 도메인):
- *   orange → 코드 톤 (3·5·7도 — 화성 구성음)
+ *   orange → **I-IV-V의 IV·V** (서브도미넌트·도미넌트). 코드 진행의 구조적 뼈대.
+ *            3도(장/단)는 스케일의 질을 정의하지만 화성 네비게이션에서는 4·5도가
+ *            더 핵심이라 orange는 4·5도에 할당. 스케일에 4도가 없으면(예: major
+ *            pentatonic, major blues, lydian) 5도만, 5도가 없으면(locrian) 4도만.
  *   green  → 모드 특성음 (parallel 스케일 대비 모드의 정체성을 만드는 음)
  *   blue   → 블루노트 (블루스 전용; Major Blues의 b3, Minor Blues의 b5)
  *
@@ -52,30 +55,32 @@ export const SCALES: Record<ScaleKey, readonly number[]> = {
  * 별도 처리된다. 여기에 0을 넣는 것은 invariant 위반 (테스트로 검증).
  *
  * 값이 없는 semitone은 'regular' tier(outline only)로 렌더된다.
+ *
+ * 반음 레퍼런스: 4도=5반음, 5도=7반음, #4/b5=6반음, b3=3반음, b7=10반음.
  */
 export const SCALE_HIGHLIGHTS: Record<ScaleKey, Readonly<Partial<Record<number, ImportantColor>>>> = {
-  // ── Standard — 토닉·도미넌트 ─────────────
-  major: { 4: 'orange', 7: 'orange' }, // maj3, perfect5
-  natural_minor: { 3: 'orange', 7: 'orange' }, // min3, perfect5
+  // ── Standard — I-IV-V 뼈대 ───────────────
+  major: { 5: 'orange', 7: 'orange' }, // 4도, 5도
+  natural_minor: { 5: 'orange', 7: 'orange' }, // 4도(iv), 5도(v)
 
   // ── Pentatonic ───────────────────────────
-  major_pentatonic: { 4: 'orange', 7: 'orange' },
-  minor_pentatonic: { 3: 'orange', 7: 'orange' },
-  major_blues: { 4: 'orange', 7: 'orange', 3: 'blue' }, // b3 = Major Blues의 블루노트
-  minor_blues: { 3: 'orange', 7: 'orange', 6: 'blue' }, // b5 = Minor Blues의 블루노트
+  major_pentatonic: { 7: 'orange' }, // 4도 없음 → 5도만
+  minor_pentatonic: { 5: 'orange', 7: 'orange' }, // 4·5도 모두 보유
+  major_blues: { 7: 'orange', 3: 'blue' }, // 4도 없음; b3 = 블루노트
+  minor_blues: { 5: 'orange', 7: 'orange', 6: 'blue' }, // 4·5도 + b5(블루노트)
 
-  // ── Modes — 각 모드의 정체성 음을 green ──
-  dorian: { 3: 'orange', 7: 'orange', 9: 'green' }, // nat6 = 도리안 특성 (vs natural minor)
-  lydian: { 4: 'orange', 7: 'orange', 6: 'green' }, // #4 = 리디안 특성
-  mixolydian: { 4: 'orange', 7: 'orange', 10: 'green' }, // b7 = 믹솔 특성 (vs major)
-  phrygian: { 3: 'orange', 7: 'orange', 1: 'green' }, // b2 = 프리 특성 (vs natural minor)
-  locrian: { 3: 'orange', 6: 'green' }, // b5 = 로크 특성 (perfect 5도 없음)
+  // ── Modes — IV·V 뼈대 + 모드 특성음(green) ──
+  dorian: { 5: 'orange', 7: 'orange', 9: 'green' }, // nat6 = 도리안 특성
+  lydian: { 7: 'orange', 6: 'green' }, // 리디안은 4도 대신 #4 → 5도만 orange, #4 green
+  mixolydian: { 5: 'orange', 7: 'orange', 10: 'green' }, // b7 = 믹솔 특성
+  phrygian: { 5: 'orange', 7: 'orange', 1: 'green' }, // b2 = 프리지안 특성
+  locrian: { 5: 'orange', 6: 'green' }, // perfect 5도 없음(b5뿐) → 4도만 orange, b5 green
 
   // ── Minor variants ───────────────────────
-  harmonic_minor: { 3: 'orange', 7: 'orange', 11: 'green' }, // nat7 = 하모닉 특성
-  melodic_minor: { 3: 'orange', 7: 'orange', 11: 'green' }, // nat7 = 멜로딕(상행) 특성
+  harmonic_minor: { 5: 'orange', 7: 'orange', 11: 'green' }, // nat7 = 하모닉 특성
+  melodic_minor: { 5: 'orange', 7: 'orange', 11: 'green' }, // nat7 = 멜로딕(상행) 특성
 
-  // ── 대칭 스케일 — 루트 중심성 약해 기본값 없음 ──
+  // ── 대칭 스케일 — 중심성 약해 기본값 없음 ──
   whole_tone: {},
   diminished_hw: {},
   diminished_wh: {},

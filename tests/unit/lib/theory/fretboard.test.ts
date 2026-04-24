@@ -107,18 +107,31 @@ describe('getFretboardNotes — tier 결정', () => {
     });
   });
 
-  it('C major에서 E(3도, semi 4)와 G(5도, semi 7)는 orange tier', () => {
+  it('C major에서 F(4도, semi 5)와 G(5도, semi 7)는 orange tier (I-IV-V 뼈대)', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets: 22,
       root: 0 as PitchClass,
       scale: 'major',
-      highlights: SCALE_HIGHLIGHTS.major, // { 4: 'orange', 7: 'orange' }
+      highlights: SCALE_HIGHLIGHTS.major, // { 5: 'orange', 7: 'orange' }
+    });
+    const fourths = marks.filter((m) => m.semitonesFromRoot === 5);
+    const fifths = marks.filter((m) => m.semitonesFromRoot === 7);
+    fourths.forEach((m) => expect(m.tier).toBe('orange'));
+    fifths.forEach((m) => expect(m.tier).toBe('orange'));
+  });
+
+  it('C major의 3도(E, semi 4)는 regular — orange가 아님', () => {
+    const marks = getFretboardNotes({
+      tuning: STANDARD_TUNING,
+      frets: 22,
+      root: 0 as PitchClass,
+      scale: 'major',
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     const thirds = marks.filter((m) => m.semitonesFromRoot === 4);
-    const fifths = marks.filter((m) => m.semitonesFromRoot === 7);
-    thirds.forEach((m) => expect(m.tier).toBe('orange'));
-    fifths.forEach((m) => expect(m.tier).toBe('orange'));
+    expect(thirds.length).toBeGreaterThan(0);
+    thirds.forEach((m) => expect(m.tier).toBe('regular'));
   });
 
   it('highlights 맵 외의 스케일 음은 regular', () => {
@@ -129,8 +142,8 @@ describe('getFretboardNotes — tier 결정', () => {
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
     });
-    // Major의 highlights는 {4, 7} → 2, 5, 9, 11은 regular
-    const regulars = marks.filter((m) => [2, 5, 9, 11].includes(m.semitonesFromRoot));
+    // Major의 highlights는 {5, 7} → 2(2도), 4(3도), 9(6도), 11(7도)은 regular
+    const regulars = marks.filter((m) => [2, 4, 9, 11].includes(m.semitonesFromRoot));
     expect(regulars.length).toBeGreaterThan(0);
     regulars.forEach((m) => expect(m.tier).toBe('regular'));
   });

@@ -87,22 +87,21 @@ describe('FretboardClient', () => {
     expect(textsAfter).toBeLessThan(textsBefore);
   });
 
-  it('강조 색 사이클 — Major의 orange 5도를 클릭하면 green으로 전환', async () => {
+  it('강조 색 사이클 — Major의 orange 5도(semi 7)를 클릭하면 green으로 전환', async () => {
     const user = userEvent.setup();
     render(<FretboardClient />);
     await screen.findByRole('img', { name: /Guitar fretboard/i });
 
-    // Major 기본: { 4: orange, 7: orange }. "5" pill(semitone 7)은 aria-label에
-    // "Degree 5 — orange" 포함. 클릭 시 orange → green 사이클.
+    // Major 기본(I-IV-V): { 5: orange, 7: orange }. "Degree 5" pill은 semi 7.
+    // 클릭 시 orange → green 사이클.
     const fifthPill = screen.getByRole('button', { name: /Degree 5 — orange/ });
     await user.click(fifthPill);
 
-    // Zustand 스토어 변화 검증: semitone 7의 색이 'green'
     const override = useAppStore.getState().fretboard.highlightsByScale.major;
     expect(override).toBeDefined();
     expect(override?.[7]).toBe('green');
-    // 다른 기본 강조(4도=orange)는 유지
-    expect(override?.[4]).toBe('orange');
+    // 다른 기본 강조(4도 = semi 5)는 유지
+    expect(override?.[5]).toBe('orange');
   });
 
   it('손잡이 Left 선택 → store handedness=left', async () => {
