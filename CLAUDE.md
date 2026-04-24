@@ -173,9 +173,11 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 | `theory` | `lib/theory/**`, 스케일·도수·코드 |
 | `store` | `lib/store/**`, Zustand, 영속화 스키마 |
 | `ui` | 공통 컴포넌트, 토큰, globals.css, 폰트 |
+| `api` | `apps/api/**` (Phase 5+), FastAPI 라우터·서비스·Pydantic |
+| `db` | DB 스키마, SQLAlchemy 모델, Alembic 마이그레이션 |
 | `docker` | Dockerfile, docker-compose* |
 | `ci` | `.github/workflows/**` |
-| `test` | `tests/**`, vitest·playwright 설정 |
+| `test` | `tests/**`, vitest·playwright·pytest 설정 |
 | `docs` | `docs/**`, README, CLAUDE.md |
 | `agents` | `.claude/agents/**` |
 | `deps` | 의존성 업데이트 |
