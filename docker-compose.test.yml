@@ -22,7 +22,9 @@ services:
       start_period: 10s
 
   playwright:
-    image: mcr.microsoft.com/playwright:v1.49.0-jammy
+    # Playwright npm 패키지 버전(apps/web/package.json)과 맞춰야 브라우저 바이너리
+    # 경로 불일치로 "Executable doesn't exist at /ms-playwright/..." 에러 방지.
+    image: mcr.microsoft.com/playwright:v1.59.1-jammy
     container_name: my-music-app-playwright
     depends_on:
       web:
