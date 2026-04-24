@@ -7,46 +7,15 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "bash -c 'if [ -d .next/standalone ]; then echo \"Detected prod build artifacts in .next/, cleaning for dev...\"; rm -rf .next; fi' && WATCHPACK_POLLING=true CHOKIDAR_USEPOLLING=true next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "format": "prettier --write ."
-  },
-  "dependencies": {
-    "next": "^15.1.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zustand": "^5.0.1",
-    "immer": "^10.1.1",
-    "motion": "^11.11.17",
-    "lucide-react": "^0.460.0",
-    "clsx": "^2.1.1"
-  },
-  "devDependencies": {
-    "typescript": "^5.6.3",
-    "@types/node": "^22.9.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "tailwindcss": "^4.0.0",
-    "@tailwindcss/postcss": "^4.0.0",
-    "postcss": "^8.4.49",
-    "eslint": "^9.15.0",
-    "eslint-config-next": "^15.1.0",
-    "prettier": "^3.3.3",
-    "prettier-plugin-tailwindcss": "^0.6.8",
-    "vitest": "^2.1.5",
-    "@vitejs/plugin-react": "^4.3.3",
-    "@vitest/coverage-v8": "^2.1.5",
-    "@testing-library/react": "^16.0.1",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/user-event": "^14.5.2",
-    "jsdom": "^25.0.1",
-    "@playwright/test": "^1.49.0"
+    "dev": "pnpm --filter @my-music-app/web dev",
+    "build": "pnpm --filter @my-music-app/web build",
+    "start": "pnpm --filter @my-music-app/web start",
+    "lint": "pnpm --filter @my-music-app/web lint",
+    "typecheck": "pnpm --filter @my-music-app/web typecheck",
+    "test": "pnpm --filter @my-music-app/web test",
+    "test:watch": "pnpm --filter @my-music-app/web test:watch",
+    "test:coverage": "pnpm --filter @my-music-app/web test:coverage",
+    "test:e2e": "pnpm --filter @my-music-app/web test:e2e",
+    "format": "pnpm --filter @my-music-app/web format"
   }
 }

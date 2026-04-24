@@ -2,6 +2,8 @@
 // 모든 테스트 파일 실행 전에 공통으로 적용되는 전처리 모음.
 // vitest.config.ts의 setupFiles에서 참조된다.
 
+/// <reference types="@testing-library/jest-dom" />
+
 // jest-dom의 커스텀 matcher들을 vitest에서도 사용할 수 있게 확장한다.
 // `/vitest` 서브패스를 써야 vitest의 expect에 올바르게 확장된다.
 // 기본 진입점은 globals 전제라 vitest(globals: false)에서 ReferenceError 발생.
