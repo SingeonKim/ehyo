@@ -253,9 +253,22 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 1,
-      // 버전 업그레이드 시 여기에 마이그레이션. v0 → v1 경로는 아직 없음.
-      migrate: (persistedState, _version) => persistedState as AppState,
+      version: 2,
+      // v1 → v2: fretboard.importantDegreesByScale (number[])가
+      // highlightsByScale (Record<number, ImportantColor>)로 교체됨. 기존 유저
+      // 오버라이드는 의미가 달라 복원이 어려우므로 버리고, 기본 SCALE_HIGHLIGHTS
+      // 매핑으로 되돌린다 (highlightsByScale: {}). 메트로놈·UI 상태는 보존.
+      migrate: (persistedState, version) => {
+        if (!persistedState || typeof persistedState !== 'object') return persistedState as AppState;
+        if (version < 2) {
+          const s = persistedState as Record<string, unknown>;
+          const fb = (s.fretboard as Record<string, unknown>) ?? {};
+          delete fb.importantDegreesByScale;
+          fb.highlightsByScale = {};
+          s.fretboard = fb;
+        }
+        return persistedState as AppState;
+      },
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
         metronome: {
