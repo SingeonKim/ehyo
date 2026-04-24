@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "WATCHPACK_POLLING=true CHOKIDAR_USEPOLLING=true next dev",
+    "dev": "bash -c 'if [ -d .next/standalone ]; then echo \"Detected prod build artifacts in .next/, cleaning for dev...\"; rm -rf .next; fi' && WATCHPACK_POLLING=true CHOKIDAR_USEPOLLING=true next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

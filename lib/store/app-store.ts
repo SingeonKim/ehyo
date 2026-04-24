@@ -121,7 +121,8 @@ const DEFAULT_METRONOME: MetronomeState = {
   subdivision: 'quarter',
   accentBeatOne: true,
   soundType: 'click',
-  volume: 0.8,
+  // 초보가 시작하기 편한 볼륨. 유저는 Volume 슬라이더로 조정.
+  volume: 0.5,
   isPlaying: false,
   tapTimestamps: [],
 };
@@ -273,10 +274,12 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 4,
+      version: 5,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
+      // v4 → v5: volume 기본값 0.8 → 0.5. 유저가 슬라이더로 바꾸지 않았던 경우
+      //         (정확히 0.8인 경우)만 조정. 커스터마이징된 값은 보존.
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== 'object') return persistedState as AppState;
         const s = persistedState as Record<string, unknown>;
@@ -291,6 +294,13 @@ export const useAppStore = create<AppState>()(
           fb.accidentalMode = 'auto';
         }
         s.fretboard = fb;
+        if (version < 5) {
+          const met = (s.metronome as Record<string, unknown>) ?? {};
+          if (met.volume === 0.8) {
+            met.volume = 0.5;
+          }
+          s.metronome = met;
+        }
         return persistedState as AppState;
       },
       // 런타임 전용 상태는 저장 제외
@@ -307,6 +317,21 @@ export const useAppStore = create<AppState>()(
         fretboard: state.fretboard,
         ui: state.ui,
       }),
+      // Zustand 기본 merge는 top-level shallow. metronome 같은 nested object가
+      // partialize로 일부 필드만 저장되면 rehydrate 시 기본값의 나머지 필드가
+      // 통째로 날아간다 (tapTimestamps: undefined → tap 액션 크래시).
+      // nested deep-merge로 누락된 필드를 defaults로부터 복원.
+      merge: (persistedState, currentState) => {
+        const p = persistedState as Partial<AppState> | undefined;
+        if (!p) return currentState;
+        return {
+          ...currentState,
+          ...p,
+          metronome: { ...currentState.metronome, ...(p.metronome ?? {}) },
+          fretboard: { ...currentState.fretboard, ...(p.fretboard ?? {}) },
+          ui: { ...currentState.ui, ...(p.ui ?? {}) },
+        };
+      },
     },
   ),
 );
