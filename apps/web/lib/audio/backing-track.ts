@@ -41,6 +41,11 @@ export interface BackingEngine {
   getState(): BackingState;
   subscribe(listener: (s: BackingState) => void): () => void;
   start(template: ProgressionTemplate, keyRoot: PitchClass): Promise<void>;
+  /**
+   * 재생 중 Key를 교체. 현재 바의 소리는 유지, 다음 바부터 새 Key로 전조.
+   * 재생 중이 아니면 no-op.
+   */
+  setKey(keyRoot: PitchClass): void;
   stop(): void;
   dispose(): void;
 }
@@ -63,6 +68,9 @@ function createEngine(): BackingEngine {
   let polySynth: PolySynthLike | null = null;
   let scheduleId: number | null = null;
   let barIndex = 0;
+  // 재생 중 Key 교체를 위해 mutable ref 유지. 클로저 캡처 대신 이 ref를 읽는다.
+  let currentKeyRoot: PitchClass = 0;
+  let currentTemplate: ProgressionTemplate | null = null;
 
   const setState = (next: BackingState) => {
     state = next;
@@ -122,16 +130,21 @@ function createEngine(): BackingEngine {
 
     const synth = ensurePolySynth();
     barIndex = 0;
+    currentKeyRoot = keyRoot;
+    currentTemplate = template;
 
+    // 콜백은 currentKeyRoot·currentTemplate ref를 읽는다 — setKey로 런타임 교체 가능.
     const callback = (time: number) => {
-      const idx = barIndex % template.bars;
-      const step = template.progression[idx];
+      const tpl = currentTemplate;
+      if (!tpl) return;
+      const idx = barIndex % tpl.bars;
+      const step = tpl.progression[idx];
       if (!step) {
         barIndex += 1;
         return;
       }
       const symbol = step.chord;
-      const midi = chordSymbolToMidi(symbol, keyRoot);
+      const midi = chordSymbolToMidi(symbol, currentKeyRoot);
       if (midi) {
         synth.triggerAttackRelease(
           midi.map(midiToFrequency),
@@ -145,8 +158,8 @@ function createEngine(): BackingEngine {
       }
       setState({
         status: 'playing',
-        template,
-        keyRoot,
+        template: tpl,
+        keyRoot: currentKeyRoot,
         barIndex: idx,
         chordSymbol: symbol,
       });
@@ -163,6 +176,14 @@ function createEngine(): BackingEngine {
       barIndex: 0,
       chordSymbol: template.progression[0]?.chord ?? '',
     });
+  };
+
+  const setKey: BackingEngine['setKey'] = (keyRoot) => {
+    currentKeyRoot = keyRoot;
+    // 재생 중이면 상태에도 새 키를 반영. idle/loading/error에서는 현재 상태 유지.
+    if (state.status === 'playing') {
+      setState({ ...state, keyRoot });
+    }
   };
 
   const stop: BackingEngine['stop'] = () => {
@@ -187,6 +208,7 @@ function createEngine(): BackingEngine {
       return () => listeners.delete(l);
     },
     start,
+    setKey,
     stop,
     dispose,
   };
@@ -229,6 +251,8 @@ if (typeof window !== 'undefined') {
     if (_bridgeWired) return;
     _bridgeWired = true;
     const engine = getBackingEngine();
+
+    // engine → store: 재생 상태·현재 코드 전파
     engine.subscribe((s) => {
       const store = useAppStore.getState();
       if (s.status === 'playing') {
@@ -240,6 +264,14 @@ if (typeof window !== 'undefined') {
       } else {
         store._setBackingPlaying(null);
         store._setBackingCurrentChord(null);
+      }
+    });
+
+    // store → engine: Key 변경을 런타임 전조로 전파.
+    // selector로 backingKey만 구독 — equality fn이 PitchClass 기본 비교로 충분.
+    useAppStore.subscribe((s, prev) => {
+      if (s.backing.backingKey !== prev.backing.backingKey) {
+        engine.setKey(s.backing.backingKey);
       }
     });
   });
