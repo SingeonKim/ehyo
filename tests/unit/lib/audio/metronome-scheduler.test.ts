@@ -178,6 +178,41 @@ describe('subdivision', () => {
   });
 });
 
+describe('time signature denominator 효과', () => {
+  it('6/8 @ 120BPM: eighth 기준 0.25s 간격 (4/4의 절반)', async () => {
+    const config: SchedulerConfig = {
+      ...QUARTER_4_4,
+      timeSignature: { numerator: 6, denominator: 8 },
+    };
+    const { scheduler, events, worker, mock } = runScheduler(config, 0);
+    await scheduler.start();
+    mock.advance(2, () => worker.fireTick());
+
+    const intervals: number[] = [];
+    for (let i = 1; i < events.length; i++) {
+      intervals.push((events[i]?.time ?? 0) - (events[i - 1]?.time ?? 0));
+    }
+    // quarter=120일 때 eighth는 240/min → 0.25s
+    intervals.forEach((d) => expect(d).toBeCloseTo(0.25, 3));
+  });
+
+  it('2/2 @ 120BPM: half 기준 1.0s 간격 (4/4의 2배)', async () => {
+    const config: SchedulerConfig = {
+      ...QUARTER_4_4,
+      timeSignature: { numerator: 2, denominator: 2 },
+    };
+    const { scheduler, events, worker, mock } = runScheduler(config, 0);
+    await scheduler.start();
+    mock.advance(4, () => worker.fireTick());
+
+    const intervals: number[] = [];
+    for (let i = 1; i < events.length; i++) {
+      intervals.push((events[i]?.time ?? 0) - (events[i - 1]?.time ?? 0));
+    }
+    intervals.forEach((d) => expect(d).toBeCloseTo(1.0, 2));
+  });
+});
+
 describe('BPM 경계', () => {
   it('BPM 20 (최저)', async () => {
     const { scheduler, events, worker, mock } = runScheduler(

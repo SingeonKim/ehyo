@@ -33,40 +33,42 @@ interface SoundPreset {
 }
 
 const PRESETS: Record<SoundType, SoundPreset> = {
+  // click: sine + 부드러운 tail. 기존 1kHz/linear decay는 귀를 찌르는 감이 있어
+  // 주파수를 700Hz로 내리고 exponential decay(아래)로 자연스럽게 소멸.
   click: {
     oscType: 'sine',
-    baseFreq: 1000,
-    accentFreqRatio: 1.4,
-    decaySec: 0.05,
-    peakGain: 0.9,
+    baseFreq: 700,
+    accentFreqRatio: 1.35,
+    decaySec: 0.09,
+    peakGain: 0.55,
   },
   wood: {
     oscType: 'triangle',
     baseFreq: 800,
     accentFreqRatio: 1.25,
-    decaySec: 0.06,
-    peakGain: 0.85,
+    decaySec: 0.08,
+    peakGain: 0.7,
   },
   cowbell: {
     oscType: 'square',
     baseFreq: 540,
     accentFreqRatio: 1.3,
-    decaySec: 0.12,
-    peakGain: 0.5,
+    decaySec: 0.14,
+    peakGain: 0.4,
   },
   digital: {
     oscType: 'square',
     baseFreq: 2000,
     accentFreqRatio: 1.25,
-    decaySec: 0.03,
-    peakGain: 0.55,
+    decaySec: 0.04,
+    peakGain: 0.45,
   },
   rim: {
     oscType: 'sawtooth',
-    baseFreq: 1600,
+    baseFreq: 1400,
     accentFreqRatio: 1.4,
-    decaySec: 0.04,
-    peakGain: 0.6,
+    decaySec: 0.05,
+    peakGain: 0.5,
   },
 };
 
@@ -101,10 +103,16 @@ export function scheduleClick(
   const subdivMul = isSubdiv ? SUBDIV_VOLUME_RATIO : 1;
   const peak = preset.peakGain * accentMul * subdivMul * Math.max(0, Math.min(1, volume));
 
-  // envelope: 0 → peak (즉시) → 0 (decay 선형). click 계열은 attack이 거의 없음.
+  // envelope: 0 → peak (1ms attack) → exponential decay.
+  // exponential이 linear보다 귀에 자연스러운 tail 구현. 단 0에는 수학적으로 도달
+  // 불가해 매우 작은 값(0.0001)로 타겟 지정하고 오실레이터 stop 직전 이후엔 무음.
   gain.gain.setValueAtTime(0, time);
   gain.gain.linearRampToValueAtTime(peak, time + 0.001);
-  gain.gain.linearRampToValueAtTime(0, time + preset.decaySec);
+  gain.gain.exponentialRampToValueAtTime(
+    Math.max(0.0001, peak * 0.001),
+    time + preset.decaySec,
+  );
+  gain.gain.setValueAtTime(0, time + preset.decaySec + 0.01);
 
   osc.connect(gain);
   gain.connect(destination);

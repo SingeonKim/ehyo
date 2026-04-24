@@ -50,9 +50,21 @@ function detectIOS(): boolean {
   return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
 }
 
-/** 주어진 BPM·subdivision에서 한 tick(subdivision) 간격 초. */
+/**
+ * 주어진 BPM·time signature·subdivision에서 한 tick(subdivision) 간격 초.
+ *
+ * BPM 해석 — 고정 4분음 기준 (클래식 MM 표기와 동일).
+ *   ♩=120 의미: 4분음이 분당 120개. 따라서:
+ *     4/4 @ 120 → 한 박(4분음) 0.5s, 한 마디 = 4×0.5 = 2s
+ *     6/8 @ 120 → 한 박(8분음) 0.25s, 한 마디 = 6×0.25 = 1.5s  (빨라짐 ✓)
+ *     2/2 @ 120 → 한 박(2분음) 1.0s, 한 마디 = 2×1.0 = 2s  (느려짐)
+ *   공식: beatSec = (60/bpm) × (4/denominator)
+ *
+ * 이전 버전은 denominator를 무시해 6/8도 4/4와 같은 속도였다 — 6/8에서 사용자가
+ * "8분음이 더 빨라져야 하는데 안 빨라진다"고 느끼는 원인.
+ */
 function tickInterval(config: SchedulerConfig): number {
-  const beatSec = 60 / config.bpm;
+  const beatSec = (60 / config.bpm) * (4 / config.timeSignature.denominator);
   return beatSec / SUBDIVISION_COUNT[config.subdivision];
 }
 
