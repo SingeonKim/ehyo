@@ -92,6 +92,9 @@ export interface AppState {
    * Root(semitones=0)에는 적용 금지 (항상 red 고정).
    */
   cycleNoteHighlight: (scale: ScaleKey, semitones: number) => void;
+
+  /** 현재 스케일의 override를 제거해 SCALE_HIGHLIGHTS 기본값으로 되돌린다. */
+  resetHighlights: (scale: ScaleKey) => void;
 }
 
 /** 색 사이클 순서: none(undefined) → orange → green → blue → none. */
@@ -249,24 +252,33 @@ export const useAppStore = create<AppState>()(
           }
           s.fretboard.highlightsByScale[scale] = base;
         }),
+
+      resetHighlights: (scale) =>
+        set((s) => {
+          // override를 삭제하면 resolveScaleHighlights가 SCALE_HIGHLIGHTS
+          // 기본값을 반환한다. 앞으로 기본값이 바뀌어도 리셋한 스케일은 항상 최신.
+          delete s.fretboard.highlightsByScale[scale];
+        }),
     })),
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 2,
-      // v1 → v2: fretboard.importantDegreesByScale (number[])가
-      // highlightsByScale (Record<number, ImportantColor>)로 교체됨. 기존 유저
-      // 오버라이드는 의미가 달라 복원이 어려우므로 버리고, 기본 SCALE_HIGHLIGHTS
-      // 매핑으로 되돌린다 (highlightsByScale: {}). 메트로놈·UI 상태는 보존.
+      version: 3,
+      // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
+      // v2 → v3: SCALE_HIGHLIGHTS 기본값이 I-IV-V 프레임으로 재조정(3→4/5도).
+      //   기존 유저의 override 스냅샷은 구 기본값(3도 orange) 기준이라 새 기본을
+      //   보지 못함. override를 비워 새 기본값이 즉시 적용되게 리셋.
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== 'object') return persistedState as AppState;
+        const s = persistedState as Record<string, unknown>;
+        const fb = (s.fretboard as Record<string, unknown>) ?? {};
         if (version < 2) {
-          const s = persistedState as Record<string, unknown>;
-          const fb = (s.fretboard as Record<string, unknown>) ?? {};
           delete fb.importantDegreesByScale;
-          fb.highlightsByScale = {};
-          s.fretboard = fb;
         }
+        if (version < 3) {
+          fb.highlightsByScale = {};
+        }
+        s.fretboard = fb;
         return persistedState as AppState;
       },
       // 런타임 전용 상태는 저장 제외

@@ -39,20 +39,33 @@ export function ImportantDegreesToggle() {
   const scale = useAppStore((s) => s.fretboard.scale);
   const override = useAppStore((s) => s.fretboard.highlightsByScale[scale]);
   const cycle = useAppStore((s) => s.cycleNoteHighlight);
+  const reset = useAppStore((s) => s.resetHighlights);
 
   const allDegrees = getScaleDegreeLabels(scale);
   const applied = resolveScaleHighlights(scale, override);
   const defaults = SCALE_HIGHLIGHTS[scale];
+  const hasOverride = override !== undefined;
 
   return (
     <div className="space-y-2">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-4">
         <label className="font-mono text-xs uppercase tracking-widest text-ink-muted">
           Highlight Colors
         </label>
-        <span className="font-mono text-[0.65rem] text-ink-muted">
-          클릭: 색 사이클 (orange → green → blue → off)
-        </span>
+        <div className="flex items-baseline gap-3">
+          <span className="hidden font-mono text-[0.65rem] text-ink-muted sm:inline">
+            클릭: orange → green → blue → off
+          </span>
+          <button
+            type="button"
+            onClick={() => reset(scale)}
+            disabled={!hasOverride}
+            className="font-mono text-[0.65rem] uppercase tracking-widest text-ink-muted transition-colors duration-75 hover:text-accent-brass disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-muted"
+            title={hasOverride ? '현재 스케일을 기본값으로 되돌림' : '이미 기본값'}
+          >
+            Reset
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap gap-1.5">
         {allDegrees.map(({ semitones, label }) => {
