@@ -37,6 +37,14 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
                 Fretboard
               </Link>
             </li>
+            <li>
+              <Link
+                href="/jam"
+                className="text-ink-secondary transition-colors hover:text-accent-brass"
+              >
+                Jam
+              </Link>
+            </li>
           </ul>
           <MetronomeDock />
         </nav>
