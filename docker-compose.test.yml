@@ -13,10 +13,13 @@ services:
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000"]
+      # alpine runner 이미지에 wget/curl 미포함 보장 안 됨.
+      # node는 CMD로 사용 중이니 항상 있음 → node 내장 http로 헬스체크.
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/', r => process.exit(r.statusCode < 400 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
+      start_period: 10s
 
   playwright:
     image: mcr.microsoft.com/playwright:v1.49.0-jammy
