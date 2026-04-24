@@ -2,14 +2,14 @@ import { describe, it, expect } from 'vitest';
 
 import {
   CATEGORY_LABELS,
-  IMPORTANT_DEGREES,
   SCALES,
   SCALE_CATEGORIES,
+  SCALE_HIGHLIGHTS,
   SCALE_LABELS,
   getScaleDegreeLabels,
   getScaleNotes,
   getScalePitchClasses,
-  resolveImportantDegrees,
+  resolveScaleHighlights,
 } from '@/lib/theory/scales';
 import type { PitchClass, ScaleKey } from '@/lib/theory/types';
 
@@ -40,22 +40,27 @@ describe('SCALES 불변식', () => {
   });
 });
 
-describe('IMPORTANT_DEGREES 불변식', () => {
-  it.each(ALL_SCALES)('%s: Root(0)를 항상 포함', (scale) => {
-    expect(IMPORTANT_DEGREES[scale]).toContain(0);
+describe('SCALE_HIGHLIGHTS 불변식', () => {
+  it.each(ALL_SCALES)('%s: Root(0)는 포함하지 않음 (Root는 별도 고정 red)', (scale) => {
+    expect(SCALE_HIGHLIGHTS[scale]).not.toHaveProperty('0');
   });
 
-  it.each(ALL_SCALES)('%s: IMPORTANT_DEGREES는 SCALES의 부분집합', (scale) => {
+  it.each(ALL_SCALES)('%s: 모든 semitone 키는 SCALES에 속한다', (scale) => {
     const scaleSet = new Set(SCALES[scale]);
-    IMPORTANT_DEGREES[scale].forEach((d) => {
-      expect(scaleSet.has(d)).toBe(true);
+    Object.keys(SCALE_HIGHLIGHTS[scale]).forEach((k) => {
+      expect(scaleSet.has(Number(k))).toBe(true);
     });
   });
 
-  it.each(ALL_SCALES)('%s: 개수 1~4개', (scale) => {
-    const count = IMPORTANT_DEGREES[scale].length;
-    expect(count).toBeGreaterThanOrEqual(1);
-    expect(count).toBeLessThanOrEqual(4);
+  it.each(ALL_SCALES)('%s: 모든 값은 orange/green/blue 중 하나', (scale) => {
+    const allowed = new Set(['orange', 'green', 'blue']);
+    Object.values(SCALE_HIGHLIGHTS[scale]).forEach((color) => {
+      expect(allowed.has(color as string)).toBe(true);
+    });
+  });
+
+  it.each(ALL_SCALES)('%s: 비-루트 강조는 최대 3개 (대칭 스케일은 0개 가능)', (scale) => {
+    expect(Object.keys(SCALE_HIGHLIGHTS[scale]).length).toBeLessThanOrEqual(3);
   });
 });
 
@@ -80,24 +85,34 @@ describe('음악 이론 정확성 (대표 스케일)', () => {
     expect(SCALES.melodic_minor).toContain(11);
   });
 
-  it('Lydian의 특성음 #4(=반음 6)', () => {
+  it('Lydian의 특성음 #4(=반음 6)는 green', () => {
     expect(SCALES.lydian).toContain(6);
-    expect(IMPORTANT_DEGREES.lydian).toContain(6);
+    expect(SCALE_HIGHLIGHTS.lydian[6]).toBe('green');
   });
 
-  it('Mixolydian의 특성음 b7(=반음 10)', () => {
+  it('Mixolydian의 특성음 b7(=반음 10)는 green', () => {
     expect(SCALES.mixolydian).toContain(10);
-    expect(IMPORTANT_DEGREES.mixolydian).toContain(10);
+    expect(SCALE_HIGHLIGHTS.mixolydian[10]).toBe('green');
   });
 
-  it('Phrygian의 특성음 b2(=반음 1)', () => {
+  it('Phrygian의 특성음 b2(=반음 1)는 green', () => {
     expect(SCALES.phrygian).toContain(1);
-    expect(IMPORTANT_DEGREES.phrygian).toContain(1);
+    expect(SCALE_HIGHLIGHTS.phrygian[1]).toBe('green');
   });
 
-  it('Minor Blues는 블루노트 b5(=반음 6) 포함', () => {
+  it('Minor Blues 블루노트 b5(=반음 6)는 blue', () => {
     expect(SCALES.minor_blues).toContain(6);
-    expect(IMPORTANT_DEGREES.minor_blues).toContain(6);
+    expect(SCALE_HIGHLIGHTS.minor_blues[6]).toBe('blue');
+  });
+
+  it('Major Blues 블루노트 b3(=반음 3)는 blue', () => {
+    expect(SCALES.major_blues).toContain(3);
+    expect(SCALE_HIGHLIGHTS.major_blues[3]).toBe('blue');
+  });
+
+  it('Major의 3도·5도는 orange (코드 톤)', () => {
+    expect(SCALE_HIGHLIGHTS.major[4]).toBe('orange');
+    expect(SCALE_HIGHLIGHTS.major[7]).toBe('orange');
   });
 
   it('Whole Tone은 정확히 6개 음, 전부 온음 간격', () => {
@@ -112,8 +127,10 @@ describe('음악 이론 정확성 (대표 스케일)', () => {
     expect(SCALES.diminished_wh).toEqual([0, 2, 3, 5, 6, 8, 9, 11]);
   });
 
-  it('대칭 스케일은 중요 노트가 최소화 (whole_tone은 Root만)', () => {
-    expect(IMPORTANT_DEGREES.whole_tone).toEqual([0]);
+  it('대칭 스케일은 강조 없음 (Root는 언제나 별도 red)', () => {
+    expect(SCALE_HIGHLIGHTS.whole_tone).toEqual({});
+    expect(SCALE_HIGHLIGHTS.diminished_hw).toEqual({});
+    expect(SCALE_HIGHLIGHTS.diminished_wh).toEqual({});
   });
 });
 
@@ -168,17 +185,17 @@ describe('getScalePitchClasses', () => {
   });
 });
 
-describe('resolveImportantDegrees', () => {
-  it('override 없으면 기본값', () => {
-    expect(resolveImportantDegrees('major', undefined)).toEqual(IMPORTANT_DEGREES.major);
+describe('resolveScaleHighlights', () => {
+  it('override 없으면 SCALE_HIGHLIGHTS 기본값', () => {
+    expect(resolveScaleHighlights('major', undefined)).toEqual(SCALE_HIGHLIGHTS.major);
   });
 
   it('override가 있으면 그것을 사용', () => {
-    expect(resolveImportantDegrees('major', [0, 4])).toEqual([0, 4]);
+    expect(resolveScaleHighlights('major', { 4: 'green' })).toEqual({ 4: 'green' });
   });
 
-  it('override 빈 배열도 유효 (Root 강조 없음)', () => {
-    expect(resolveImportantDegrees('major', [])).toEqual([]);
+  it('override 빈 맵도 유효 (Root 외 강조 없음)', () => {
+    expect(resolveScaleHighlights('major', {})).toEqual({});
   });
 });
 

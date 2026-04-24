@@ -8,7 +8,7 @@ import {
   pitchAt,
   type NoteMark,
 } from '@/lib/theory/fretboard';
-import { IMPORTANT_DEGREES, SCALES } from '@/lib/theory/scales';
+import { SCALES, SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
 import type { PitchClass } from '@/lib/theory/types';
 
 describe('STANDARD_TUNING', () => {
@@ -56,7 +56,7 @@ describe('getFretboardNotes — 일반 동작', () => {
     frets: 22,
     root: 0 as PitchClass,
     scale: 'major' as const,
-    importantDegrees: IMPORTANT_DEGREES.major,
+    highlights: SCALE_HIGHLIGHTS.major,
   };
 
   it('결과의 모든 마크가 스케일에 속하는 피치 클래스', () => {
@@ -97,7 +97,7 @@ describe('getFretboardNotes — tier 결정', () => {
       frets: 22,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     const rootMarks = marks.filter((m) => m.semitonesFromRoot === 0);
     expect(rootMarks.length).toBeGreaterThan(0);
@@ -107,55 +107,56 @@ describe('getFretboardNotes — tier 결정', () => {
     });
   });
 
-  it('C major에서 F(4도, semi 5)와 G(5도, semi 7)는 important', () => {
+  it('C major에서 E(3도, semi 4)와 G(5도, semi 7)는 orange tier', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets: 22,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major, // [0, 5, 7]
+      highlights: SCALE_HIGHLIGHTS.major, // { 4: 'orange', 7: 'orange' }
     });
-    const fourths = marks.filter((m) => m.semitonesFromRoot === 5);
+    const thirds = marks.filter((m) => m.semitonesFromRoot === 4);
     const fifths = marks.filter((m) => m.semitonesFromRoot === 7);
-    fourths.forEach((m) => expect(m.tier).toBe('important'));
-    fifths.forEach((m) => expect(m.tier).toBe('important'));
+    thirds.forEach((m) => expect(m.tier).toBe('orange'));
+    fifths.forEach((m) => expect(m.tier).toBe('orange'));
   });
 
-  it('중요하지 않은 스케일 음은 regular', () => {
+  it('highlights 맵 외의 스케일 음은 regular', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets: 22,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
-    // 2도(D, semi 2), 3도(E, semi 4), 6도(A, semi 9), 7도(B, semi 11)
-    const regulars = marks.filter((m) => [2, 4, 9, 11].includes(m.semitonesFromRoot));
+    // Major의 highlights는 {4, 7} → 2, 5, 9, 11은 regular
+    const regulars = marks.filter((m) => [2, 5, 9, 11].includes(m.semitonesFromRoot));
     expect(regulars.length).toBeGreaterThan(0);
     regulars.forEach((m) => expect(m.tier).toBe('regular'));
   });
 
-  it('유저 override가 있으면 그것을 따른다', () => {
+  it('유저 override로 특정 semitone에 다른 색 지정', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets: 12,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: [0, 4], // 유저가 Root와 3도만 중요로 설정
+      // 유저가 3도만 green으로 강조, 다른 highlight는 비움
+      highlights: { 4: 'green' },
     });
     const thirds = marks.filter((m) => m.semitonesFromRoot === 4);
     const fifths = marks.filter((m) => m.semitonesFromRoot === 7);
-    thirds.forEach((m) => expect(m.tier).toBe('important'));
+    thirds.forEach((m) => expect(m.tier).toBe('green'));
     fifths.forEach((m) => expect(m.tier).toBe('regular'));
   });
 
-  it('빈 importantDegrees는 Root만 Root로, 나머지는 regular', () => {
+  it('빈 highlights는 Root만 Root로, 나머지는 regular', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets: 12,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: [],
+      highlights: {},
     });
     marks.forEach((m) => {
       if (m.semitonesFromRoot === 0) {
@@ -164,6 +165,45 @@ describe('getFretboardNotes — tier 결정', () => {
         expect(m.tier).toBe('regular');
       }
     });
+  });
+
+  it('Minor Blues의 b5(semitone 6)는 blue tier', () => {
+    const marks = getFretboardNotes({
+      tuning: STANDARD_TUNING,
+      frets: 12,
+      root: 9 as PitchClass, // A
+      scale: 'minor_blues',
+      highlights: SCALE_HIGHLIGHTS.minor_blues,
+    });
+    const blueNotes = marks.filter((m) => m.semitonesFromRoot === 6);
+    expect(blueNotes.length).toBeGreaterThan(0);
+    blueNotes.forEach((m) => expect(m.tier).toBe('blue'));
+  });
+
+  it('Major Blues의 b3(semitone 3)는 blue tier', () => {
+    const marks = getFretboardNotes({
+      tuning: STANDARD_TUNING,
+      frets: 12,
+      root: 0 as PitchClass,
+      scale: 'major_blues',
+      highlights: SCALE_HIGHLIGHTS.major_blues,
+    });
+    const blueNotes = marks.filter((m) => m.semitonesFromRoot === 3);
+    expect(blueNotes.length).toBeGreaterThan(0);
+    blueNotes.forEach((m) => expect(m.tier).toBe('blue'));
+  });
+
+  it('Lydian의 #4(semitone 6)는 green tier (모드 특성음)', () => {
+    const marks = getFretboardNotes({
+      tuning: STANDARD_TUNING,
+      frets: 12,
+      root: 0 as PitchClass,
+      scale: 'lydian',
+      highlights: SCALE_HIGHLIGHTS.lydian,
+    });
+    const characteristic = marks.filter((m) => m.semitonesFromRoot === 6);
+    expect(characteristic.length).toBeGreaterThan(0);
+    characteristic.forEach((m) => expect(m.tier).toBe('green'));
   });
 });
 
@@ -174,7 +214,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
       frets: 12,
       root: 0 as PitchClass,
       scale: 'major', // F#는 없지만 확인용으로 chromatic에 있으면 샾
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     // C major는 샾이 F# 없이 구성되므로 모든 이름이 자연음
     const names = new Set(marks.map((m) => m.noteName));
@@ -188,7 +228,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
       frets: 12,
       root: 10 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     const names = new Set(marks.map((m) => m.noteName));
     // Bb major는 Bb C D Eb F G A — Bb, Eb 플랫 표기 확인
@@ -204,7 +244,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
       frets: 5,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     const cMark = marks.find((m) => m.semitonesFromRoot === 0);
     const fMark = marks.find((m) => m.semitonesFromRoot === 5);
@@ -220,7 +260,7 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       frets: 0,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     expect(marks).toEqual([]);
   });
@@ -230,12 +270,12 @@ describe('getFretboardNotes — 엣지 케이스', () => {
     const major = getFretboardNotes({
       ...common,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     const whole = getFretboardNotes({
       ...common,
       scale: 'whole_tone',
-      importantDegrees: IMPORTANT_DEGREES.whole_tone,
+      highlights: SCALE_HIGHLIGHTS.whole_tone,
     });
     expect(whole.length).toBeLessThan(major.length);
   });
@@ -245,12 +285,12 @@ describe('getFretboardNotes — 엣지 케이스', () => {
     const major = getFretboardNotes({
       ...common,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     const dim = getFretboardNotes({
       ...common,
       scale: 'diminished_hw',
-      importantDegrees: IMPORTANT_DEGREES.diminished_hw,
+      highlights: SCALE_HIGHLIGHTS.diminished_hw,
     });
     expect(dim.length).toBeGreaterThan(major.length);
   });
@@ -261,7 +301,7 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       frets: 12,
       root: 0 as PitchClass,
       scale: 'major',
-      importantDegrees: IMPORTANT_DEGREES.major,
+      highlights: SCALE_HIGHLIGHTS.major,
     });
     // 1번줄(high E, open=E=4)에서 C major의 첫 스케일 노트는 1프렛=F(pc 5, 4도).
     const firstString = marks

@@ -9,7 +9,7 @@ import {
   getFretboardNotes,
   getOpenStringLabels,
 } from '@/lib/theory/fretboard';
-import { resolveImportantDegrees } from '@/lib/theory/scales';
+import { resolveScaleHighlights } from '@/lib/theory/scales';
 
 import { Fretboard } from './Fretboard';
 import { FretboardOptions } from './FretboardOptions';
@@ -39,18 +39,18 @@ export function FretboardClient() {
   const labelMode = useAppStore((s) => s.fretboard.labelMode);
   const frets = useAppStore((s) => s.fretboard.frets);
   const fretSpacing = useAppStore((s) => s.fretboard.fretSpacing);
-  const importantOverride = useAppStore((s) => s.fretboard.importantDegreesByScale[scale]);
+  const highlightsOverride = useAppStore((s) => s.fretboard.highlightsByScale[scale]);
 
   const notes = useMemo(() => {
-    const importantDegrees = resolveImportantDegrees(scale, importantOverride);
+    const highlights = resolveScaleHighlights(scale, highlightsOverride);
     return getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets,
       root,
       scale,
-      importantDegrees,
+      highlights,
     });
-  }, [root, scale, frets, importantOverride]);
+  }, [root, scale, frets, highlightsOverride]);
 
   // 오픈 스트링은 스케일에 의존하지 않고 root의 플랫/샾 컨벤션만 반영.
   const openStrings = useMemo(() => getOpenStringLabels(STANDARD_TUNING, root), [root]);

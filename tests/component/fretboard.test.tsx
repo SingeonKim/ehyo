@@ -21,7 +21,7 @@ afterEach(() => {
     fretboard: {
       root: 0,
       scale: 'major',
-      importantDegreesByScale: {},
+      highlightsByScale: {},
       labelMode: 'name',
       handedness: 'right',
       frets: 22,
@@ -87,20 +87,22 @@ describe('FretboardClient', () => {
     expect(textsAfter).toBeLessThan(textsBefore);
   });
 
-  it('Important Degrees 토글 — 기본 강조(5도) 해제 시 aria-pressed=false', async () => {
+  it('강조 색 사이클 — Major의 orange 5도를 클릭하면 green으로 전환', async () => {
     const user = userEvent.setup();
     render(<FretboardClient />);
     await screen.findByRole('img', { name: /Guitar fretboard/i });
 
-    // Major 스케일의 기본 중요 도수 = 1, 4, 5. 5도 pill(aria-label "Degree 5 — …")을
-    // 클릭해 해제하면 스토어의 override 배열에 5도(반음 7)가 빠진다.
-    const fifthPill = screen.getByRole('button', { name: /Degree 5/, pressed: true });
+    // Major 기본: { 4: orange, 7: orange }. "5" pill(semitone 7)은 aria-label에
+    // "Degree 5 — orange" 포함. 클릭 시 orange → green 사이클.
+    const fifthPill = screen.getByRole('button', { name: /Degree 5 — orange/ });
     await user.click(fifthPill);
 
-    // Zustand 스토어 변화 검증 — DOM re-query는 E2E(Playwright)에서 담당.
-    const override = useAppStore.getState().fretboard.importantDegreesByScale.major;
+    // Zustand 스토어 변화 검증: semitone 7의 색이 'green'
+    const override = useAppStore.getState().fretboard.highlightsByScale.major;
     expect(override).toBeDefined();
-    expect(override).not.toContain(7);
+    expect(override?.[7]).toBe('green');
+    // 다른 기본 강조(4도=orange)는 유지
+    expect(override?.[4]).toBe('orange');
   });
 
   it('손잡이 Left 선택 → store handedness=left', async () => {

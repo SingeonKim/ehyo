@@ -28,8 +28,15 @@ export type ScaleKey =
 
 export type ScaleCategory = 'standard' | 'pentatonic' | 'jazz' | 'other';
 
-/** 지판 노트 마커 3단계 — FretboardNote 컴포넌트가 prop으로 받는다. */
-export type NoteTier = 'root' | 'important' | 'regular';
+/** 강조 노트의 색상 — Root(red) 외 3종. 역할 기반:
+ *   orange = 코드 톤 (3·5·7도)
+ *   green  = 모드 특성음
+ *   blue   = 블루노트 (블루스 전용)
+ */
+export type ImportantColor = 'orange' | 'green' | 'blue';
+
+/** 지판 노트 마커 티어 — FretboardNote가 prop으로 받는 시각 분류. */
+export type NoteTier = 'root' | ImportantColor | 'regular';
 
 /** 라벨 표시 모드. */
 export type LabelMode = 'name' | 'degree' | 'none';

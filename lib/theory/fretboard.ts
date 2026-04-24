@@ -1,6 +1,6 @@
 import type { NoteTier, PitchClass, ScaleKey } from './types';
 import { getNoteName, isFlatKey, semitonesFromRoot, semitonesToDegree } from './notes';
-import { SCALES } from './scales';
+import { SCALES, type ScaleHighlights } from './scales';
 
 /*
  * 지판 노트 계산 — 순수 음악 이론 + 좌표(string, fret) 매핑.
@@ -72,12 +72,11 @@ export function getFretboardNotes(params: {
   frets: number;
   root: PitchClass;
   scale: ScaleKey;
-  /** 적용할 중요 도수 배열 (resolveImportantDegrees의 결과를 받음). */
-  importantDegrees: readonly number[];
+  /** 적용할 강조 색상 매핑 (resolveScaleHighlights의 결과). semitone → color. */
+  highlights: ScaleHighlights;
 }): NoteMark[] {
-  const { tuning, frets, root, scale, importantDegrees } = params;
+  const { tuning, frets, root, scale, highlights } = params;
   const scaleSet = new Set(SCALES[scale]);
-  const importantSet = new Set(importantDegrees);
   const useFlats = isFlatKey(root);
 
   const marks: NoteMark[] = [];
@@ -90,8 +89,8 @@ export function getFretboardNotes(params: {
 
       if (!scaleSet.has(semi)) continue;
 
-      const tier: NoteTier =
-        semi === 0 ? 'root' : importantSet.has(semi) ? 'important' : 'regular';
+      // Root는 항상 'root', 나머지는 highlights 맵에서 색 조회. 없으면 regular.
+      const tier: NoteTier = semi === 0 ? 'root' : (highlights[semi] ?? 'regular');
 
       marks.push({
         string: stringNumberFromIndex(tuning, stringIdx),

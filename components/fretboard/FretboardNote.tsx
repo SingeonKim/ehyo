@@ -3,13 +3,14 @@ import type { LabelMode, NoteTier } from '@/lib/theory/types';
 /*
  * 지판 위 노트 한 개 — 원 + 텍스트 라벨.
  *
- * tier별 시각 규율:
- *   root      → 큰 원, 채움, scale-root 색
- *   important → 중간 원, 연한 채움, scale-important 색
- *   regular   → 작은 원, outline only, scale-tone 색
+ * tier별 시각 규율 — 크기는 regular 기준 상대 비율:
+ *   root    → 1.2× (채움, scale-root/red)
+ *   orange  → 1.1× (채움, highlight-orange)
+ *   green   → 1.1× (채움, highlight-green)
+ *   blue    → 1.1× (채움, highlight-blue)
+ *   regular → 1.0× (outline only, scale-tone)
  *
- * 크기는 fretWidth의 비율 (fretboard-renderer 에이전트 규칙):
- *   root 0.32 / important 0.26 / regular 0.19
+ * 컬러는 전부 CSS 변수 토큰. hex 하드코딩 금지.
  */
 
 interface FretboardNoteProps {
@@ -24,11 +25,24 @@ interface FretboardNoteProps {
   fret: number;
 }
 
+// regular = 기준 1.0 → fretWidth * 0.19.  root = 1.2 → 0.228, colored = 1.1 → 0.209.
 const TIER_RADIUS_RATIO: Record<NoteTier, number> = {
-  root: 0.32,
-  important: 0.26,
+  root: 0.23,
+  orange: 0.21,
+  green: 0.21,
+  blue: 0.21,
   regular: 0.19,
 };
+
+const TIER_COLOR_TOKEN: Record<NoteTier, string> = {
+  root: 'var(--color-scale-root)',
+  orange: 'var(--color-highlight-orange)',
+  green: 'var(--color-highlight-green)',
+  blue: 'var(--color-highlight-blue)',
+  regular: 'var(--color-scale-tone)',
+};
+
+const COLORED_TIERS: ReadonlySet<NoteTier> = new Set<NoteTier>(['root', 'orange', 'green', 'blue']);
 
 export function FretboardNote({
   cx,
@@ -43,32 +57,22 @@ export function FretboardNote({
 }: FretboardNoteProps) {
   const r = fretWidth * TIER_RADIUS_RATIO[tier];
   const label = labelMode === 'name' ? noteName : labelMode === 'degree' ? degree : '';
+  const color = TIER_COLOR_TOKEN[tier];
+  const isColored = COLORED_TIERS.has(tier);
 
-  // 색상은 CSS 변수 토큰으로 — 컴포넌트에 hex 직접 금지
-  const fillVar =
-    tier === 'root'
-      ? 'var(--color-scale-root)'
-      : tier === 'important'
-        ? 'var(--color-scale-important)'
-        : 'none'; // regular는 outline only
-  const strokeVar =
-    tier === 'root'
-      ? 'var(--color-scale-root)'
-      : tier === 'important'
-        ? 'var(--color-scale-important)'
-        : 'var(--color-scale-tone)';
+  // regular는 outline만, 나머지는 fill + 같은 색 stroke
+  const fillVar = isColored ? color : 'none';
+  const strokeVar = color;
 
-  // 접근성 레이블 — Root와 Important만 스크린리더에 노출. Regular는 presentation으로
-  // 스크린리더가 모든 노트를 읊어내는 것을 방지.
+  // 접근성 — Root와 colored 강조만 스크린리더에 노출.
   const ariaLabel =
     tier === 'root'
       ? `Root note ${noteName} on string ${stringNumber} fret ${fret}`
-      : tier === 'important'
-        ? `Important note ${noteName} (${degree}) on string ${stringNumber} fret ${fret}`
+      : isColored
+        ? `Highlighted note ${noteName} (${degree}, ${tier}) on string ${stringNumber} fret ${fret}`
         : undefined;
-  const ariaHidden = tier === 'regular';
+  const ariaHidden = !isColored;
 
-  // 텍스트 크기는 반지름 비례
   const fontSize = r * 0.9;
 
   return (
@@ -83,7 +87,7 @@ export function FretboardNote({
         r={r}
         fill={fillVar}
         stroke={strokeVar}
-        strokeWidth={tier === 'regular' ? 1.5 : 2}
+        strokeWidth={isColored ? 2 : 1.5}
       />
       {label && (
         <text
@@ -93,8 +97,8 @@ export function FretboardNote({
           dominantBaseline="central"
           fontSize={fontSize}
           fontFamily="var(--font-mono)"
-          // Root는 배경색 위에 씀 (강한 대비), 나머지는 primary ink
-          fill={tier === 'root' ? 'var(--color-bg-base)' : 'var(--color-ink-primary)'}
+          // colored 채움 위에는 배경색(강한 대비), outline은 primary ink
+          fill={isColored ? 'var(--color-bg-base)' : 'var(--color-ink-primary)'}
           className="select-none pointer-events-none"
         >
           {label}

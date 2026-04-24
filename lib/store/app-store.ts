@@ -5,11 +5,12 @@ import { immer } from 'zustand/middleware/immer';
 import type {
   FretSpacing,
   Handedness,
+  ImportantColor,
   LabelMode,
   PitchClass,
   ScaleKey,
 } from '@/lib/theory/types';
-import { IMPORTANT_DEGREES } from '@/lib/theory/scales';
+import { SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -51,8 +52,8 @@ export interface MetronomeState {
 export interface FretboardState {
   root: PitchClass;
   scale: ScaleKey;
-  /** 스케일별 강조 도수 사용자 토글 결과. 값이 없으면 IMPORTANT_DEGREES 기본값 사용. */
-  importantDegreesByScale: Partial<Record<ScaleKey, number[]>>;
+  /** 스케일별 강조 색상 매핑(semitone→color) 오버라이드. 없으면 SCALE_HIGHLIGHTS 기본. */
+  highlightsByScale: Partial<Record<ScaleKey, Record<number, ImportantColor>>>;
   labelMode: LabelMode;
   handedness: Handedness;
   frets: 22 | 24;
@@ -86,7 +87,24 @@ export interface AppState {
   setScale: (scale: ScaleKey) => void;
   setLabelMode: (mode: LabelMode) => void;
   setHandedness: (h: Handedness) => void;
-  toggleImportantDegree: (scale: ScaleKey, degree: number) => void;
+  /**
+   * 특정 semitone의 강조 색상을 사이클 전환: undefined → orange → green → blue → undefined.
+   * Root(semitones=0)에는 적용 금지 (항상 red 고정).
+   */
+  cycleNoteHighlight: (scale: ScaleKey, semitones: number) => void;
+}
+
+/** 색 사이클 순서: none(undefined) → orange → green → blue → none. */
+const COLOR_CYCLE: readonly (ImportantColor | undefined)[] = [
+  undefined,
+  'orange',
+  'green',
+  'blue',
+] as const;
+
+function nextHighlightColor(current: ImportantColor | undefined): ImportantColor | undefined {
+  const idx = COLOR_CYCLE.indexOf(current);
+  return COLOR_CYCLE[(idx + 1) % COLOR_CYCLE.length];
 }
 
 // ─── 기본값 ───────────────────────────────────────────────
@@ -104,7 +122,7 @@ const DEFAULT_METRONOME: MetronomeState = {
 const DEFAULT_FRETBOARD: FretboardState = {
   root: 0,        // C
   scale: 'major',
-  importantDegreesByScale: {},
+  highlightsByScale: {},
   labelMode: 'name',
   handedness: 'right',
   frets: 22,
@@ -211,20 +229,25 @@ export const useAppStore = create<AppState>()(
           s.fretboard.handedness = h;
         }),
 
-      toggleImportantDegree: (scale, degree) =>
+      cycleNoteHighlight: (scale, semitones) =>
         set((s) => {
-          // 오버라이드가 없는 최초 상태에서는 기본값(IMPORTANT_DEGREES)을 시작점으로
-          // 삼아야 UX가 자연스럽다. 예: Major의 기본 강조는 [0,5,7]. 유저가 5도를
-          // 클릭하면 "기본에서 5도를 뺀 [0,7]"이 override로 저장되어야 한다. 이전에는
-          // 빈 배열에서 시작해 5도를 추가하는 역동작이 돼 있었다.
-          const existing = s.fretboard.importantDegreesByScale[scale];
-          const current = existing ?? [...IMPORTANT_DEGREES[scale]];
-          const idx = current.indexOf(degree);
-          if (idx >= 0) {
-            s.fretboard.importantDegreesByScale[scale] = current.filter((d) => d !== degree);
+          // Root는 항상 red 고정 — 토글 무시
+          if (semitones === 0) return;
+
+          // 최초 상태면 SCALE_HIGHLIGHTS 기본값을 복제해 시작점으로 사용.
+          // 그래야 유저가 기본 강조 도수를 "다음 색으로 바꾸거나 끄는" UX를 얻는다.
+          const existing = s.fretboard.highlightsByScale[scale];
+          const base: Record<number, ImportantColor> = existing
+            ? { ...existing }
+            : { ...(SCALE_HIGHLIGHTS[scale] as Record<number, ImportantColor>) };
+
+          const next = nextHighlightColor(base[semitones]);
+          if (next === undefined) {
+            delete base[semitones];
           } else {
-            s.fretboard.importantDegreesByScale[scale] = [...current, degree].sort((a, b) => a - b);
+            base[semitones] = next;
           }
+          s.fretboard.highlightsByScale[scale] = base;
         }),
     })),
     {

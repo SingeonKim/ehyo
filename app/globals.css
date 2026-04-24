@@ -26,11 +26,19 @@
   --color-accent-copper: #B87333;
   --color-accent-signal: #E8554E;   /* Beat 1 accent, recording */
 
-  /* ── Fretboard note 3-tier ───────────────────── */
-  --color-scale-root: #E8554E;       /* Root — 가장 강함 */
-  --color-scale-important: #E8A14E;  /* 중요 노트 (IMPORTANT_DEGREES) */
-  --color-scale-tone: #C9A961;       /* 일반 스케일 노트 */
-  --color-scale-chord: #5EB0E5;      /* 현재 코드 톤 (Phase 5 ring 레이어) */
+  /* ── Fretboard notes — tier by color ─────────
+     root (red)     → Root 고정
+     orange/green/blue → 강조 사이클 (코드톤·특성음·블루노트 등)
+     tone            → 일반 스케일 노트 (outline only)
+     chord           → Phase 5 배킹 트랙 "현재 코드 톤" ring 레이어 */
+  --color-scale-root: #E8554E;
+  --color-scale-tone: #C9A961;
+  --color-scale-chord: #5EB0E5;
+  --color-highlight-orange: #E8A14E;
+  --color-highlight-green: #8BBF73;
+  --color-highlight-blue: #5EB0E5;
+  /* 호환 유지용 — 기존 참조가 남아있다면 orange로 폴백 */
+  --color-scale-important: var(--color-highlight-orange);
 
   /* ── State ────────────────────────────────────── */
   --color-state-ok: #8BBF73;
