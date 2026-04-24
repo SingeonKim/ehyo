@@ -300,6 +300,59 @@ git worktree add ../my-music-app-ui feat/metronome-ui
 
 ---
 
+## 트러블슈팅 (실제 겪은 것만)
+
+### `ENOENT: ... .next/server/pages/_document.js` (Runtime Error)
+`pnpm build` 뒤에 `pnpm dev`를 띄우면 dev 컴파일러가 prod 빌드 잔해와 섞여
+Pages Router 경로를 찾아 실패한다 (App Router 프로젝트인데).
+
+```bash
+pkill -f "next dev"
+rm -rf .next
+pnpm dev
+```
+
+재발 방지: **build와 dev를 같은 체크아웃에서 섞지 말 것.** 빌드 검증이 필요하면
+별도 디렉토리/워크트리에서 하거나, 빌드 직후 `.next` 정리.
+
+### 포트 3000이 이미 사용 중 → 3001 폴백
+Next.js가 자동으로 3001로 올린다. 이전 세션의 zombie process가 3000을 붙잡고
+있는 경우가 많다.
+
+```bash
+# WSL에서 3000 점유자 찾기
+ss -tlnp | grep :3000
+# Windows 쪽에서 점유 시 (파워셸)
+# netstat -ano | findstr :3000
+```
+
+정리 못 하면 3001로 계속 써도 무방 — 브라우저 URL만 맞추면 됨.
+
+### Fast Refresh가 계속 full reload
+`.next` 캐시 오염이거나, 'use client' 경계를 넘어 Server Component에서 Client 훅을
+쓰고 있을 때. 캐시 문제면 위 절차, 경계 문제면 dynamic import.
+
+### localStorage 스키마 변경 시 유저 화면이 깨짐
+`lib/store/app-store.ts`의 persist `version`을 올리고 `migrate`에서 구 필드를
+제거·변환. v1 → v2 예시는 현재 코드 참조.
+
+### 브라우저 변경이 반영 안 됨
+1. 브라우저가 엉뚱한 포트(3001 아닌 3000 등)를 보고 있는지 확인
+2. Ctrl+Shift+R 하드 리프레시
+3. 위 `.next` 클린 절차
+
+### Playwright 로컬 실행이 libnspr4 에러
+WSL에 시스템 chromium 의존 라이브러리 없음. `docker compose -f
+docker-compose.test.yml up` 으로 돌리거나, `sudo apt install libnspr4 libnss3
+libasound2t64` (sudo 권한 필요).
+
+### Chrome DevTools / Playwright MCP가 chrome 못 찾음
+Windows에 Google Chrome 64-bit(`C:\Program Files\Google\Chrome\...`) 설치가 제일
+깔끔. x86(32-bit) 설치본만 있으면 `AppData/Local/Google/Chrome/Application/`에
+심링크로 우회 가능하지만 CDP 연결이 불안정.
+
+---
+
 ## 예외·주의
 
 - **amend 금지**: 이미 푸시된 커밋은 amend 대신 새 커밋. 푸시 전 로컬 커밋은 amend 허용.
