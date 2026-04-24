@@ -13,7 +13,7 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
   return (
     <div className="min-h-screen bg-bg-base text-ink-primary">
       <header className="sticky top-0 z-10 border-b border-ink-muted/10 bg-bg-base">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
+        <nav aria-label="연습 섹션 내비게이션" className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
           <Link
             href="/"
             className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted transition-colors hover:text-ink-primary"

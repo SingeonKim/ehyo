@@ -26,7 +26,7 @@ export function OpenStringMarker({
   cy,
   fretWidth,
   noteName,
-  stringNumber,
+  stringNumber: _stringNumber,
 }: OpenStringMarkerProps) {
   // 글자 크기는 regular 노트의 시각적 무게감과 맞추되 텍스트 단독 렌더라
   // 조금 더 크게 잡아 읽힘 확보. fretWidth * 0.19는 regular 반지름이었고,
@@ -43,7 +43,7 @@ export function OpenStringMarker({
       fontFamily="var(--font-mono)"
       fill="var(--color-ink-secondary)"
       className="select-none pointer-events-none"
-      aria-label={`Open string ${stringNumber}: ${noteName}`}
+      aria-hidden="true"
     >
       {noteName}
     </text>
