@@ -14,7 +14,10 @@ services:
       NODE_ENV: development
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
+      # 브라우저(클라이언트)에서 호출할 URL — 호스트 3000 포트에서 api의 8000 포트로
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      # Next.js 서버(SSR)가 compose 네트워크 내부에서 api 서비스를 호출할 URL
+      API_INTERNAL_BASE_URL: http://api:8000
     ports:
       - "3000:3000"
     volumes:
