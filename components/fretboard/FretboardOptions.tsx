@@ -3,7 +3,7 @@
 import { clsx } from 'clsx';
 
 import { useAppStore } from '@/lib/store/app-store';
-import type { Handedness, LabelMode } from '@/lib/theory/types';
+import type { AccidentalMode, Handedness, LabelMode } from '@/lib/theory/types';
 
 /*
  * 지판 옵션 — 라벨 모드, 손잡이. 프렛 개수·프렛 간격은 Phase 2 후반 확장 여지로
@@ -21,15 +21,29 @@ const HANDS: readonly { value: Handedness; label: string }[] = [
   { value: 'left', label: 'Left' },
 ] as const;
 
+const ACCIDENTALS: readonly { value: AccidentalMode; label: string }[] = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'sharp', label: '♯' },
+  { value: 'flat', label: '♭' },
+] as const;
+
 export function FretboardOptions() {
   const labelMode = useAppStore((s) => s.fretboard.labelMode);
   const setLabelMode = useAppStore((s) => s.setLabelMode);
   const handedness = useAppStore((s) => s.fretboard.handedness);
   const setHandedness = useAppStore((s) => s.setHandedness);
+  const accidentalMode = useAppStore((s) => s.fretboard.accidentalMode);
+  const setAccidentalMode = useAppStore((s) => s.setAccidentalMode);
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid gap-4 sm:grid-cols-3">
       <Segmented label="Label" value={labelMode} options={LABEL_MODES} onChange={setLabelMode} />
+      <Segmented
+        label="Accidental"
+        value={accidentalMode}
+        options={ACCIDENTALS}
+        onChange={setAccidentalMode}
+      />
       <Segmented label="Hand" value={handedness} options={HANDS} onChange={setHandedness} />
     </div>
   );

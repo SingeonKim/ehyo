@@ -9,6 +9,7 @@ import {
   getFretboardNotes,
   getOpenStringLabels,
 } from '@/lib/theory/fretboard';
+import { shouldUseFlats } from '@/lib/theory/notes';
 import { resolveScaleHighlights } from '@/lib/theory/scales';
 
 import { Fretboard } from './Fretboard';
@@ -40,6 +41,10 @@ export function FretboardClient() {
   const frets = useAppStore((s) => s.fretboard.frets);
   const fretSpacing = useAppStore((s) => s.fretboard.fretSpacing);
   const highlightsOverride = useAppStore((s) => s.fretboard.highlightsByScale[scale]);
+  const accidentalMode = useAppStore((s) => s.fretboard.accidentalMode);
+
+  // 이명동음 표기 결정 — mode + root 조합. useMemo 이전에 계산해 의존성 배열 줄임.
+  const useFlats = shouldUseFlats(root, accidentalMode);
 
   const notes = useMemo(() => {
     const highlights = resolveScaleHighlights(scale, highlightsOverride);
@@ -49,11 +54,12 @@ export function FretboardClient() {
       root,
       scale,
       highlights,
+      useFlats,
     });
-  }, [root, scale, frets, highlightsOverride]);
+  }, [root, scale, frets, highlightsOverride, useFlats]);
 
-  // 오픈 스트링은 스케일에 의존하지 않고 root의 플랫/샾 컨벤션만 반영.
-  const openStrings = useMemo(() => getOpenStringLabels(STANDARD_TUNING, root), [root]);
+  // 오픈 스트링은 스케일에 무관하고 root + mode 조합의 useFlats만 반영.
+  const openStrings = useMemo(() => getOpenStringLabels(STANDARD_TUNING, useFlats), [useFlats]);
 
   if (!hydrated) {
     return (

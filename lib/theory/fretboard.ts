@@ -1,5 +1,5 @@
 import type { NoteTier, PitchClass, ScaleKey } from './types';
-import { getNoteName, isFlatKey, semitonesFromRoot, semitonesToDegree } from './notes';
+import { getNoteName, semitonesFromRoot, semitonesToDegree } from './notes';
 import { SCALES, type ScaleHighlights } from './scales';
 
 /*
@@ -74,10 +74,11 @@ export function getFretboardNotes(params: {
   scale: ScaleKey;
   /** 적용할 강조 색상 매핑 (resolveScaleHighlights의 결과). semitone → color. */
   highlights: ScaleHighlights;
+  /** 플랫 표기 사용 여부. 호출자가 shouldUseFlats(root, mode)로 계산해 주입. */
+  useFlats: boolean;
 }): NoteMark[] {
-  const { tuning, frets, root, scale, highlights } = params;
+  const { tuning, frets, root, scale, highlights, useFlats } = params;
   const scaleSet = new Set(SCALES[scale]);
-  const useFlats = isFlatKey(root);
 
   const marks: NoteMark[] = [];
 
@@ -112,7 +113,7 @@ export interface OpenStringLabel {
   /** 1~6, 1번줄(최고음). */
   string: number;
   pitchClass: PitchClass;
-  /** 샾/플랫 이명동음은 Root 컨벤션(isFlatKey)에 맞춰 선택. */
+  /** 이명동음 표기는 호출자가 결정해 넘긴 useFlats에 따른다. */
   noteName: string;
 }
 
@@ -123,9 +124,8 @@ export interface OpenStringLabel {
  */
 export function getOpenStringLabels(
   tuning: readonly PitchClass[],
-  root: PitchClass,
+  useFlats: boolean,
 ): OpenStringLabel[] {
-  const useFlats = isFlatKey(root);
   return tuning.map((pc, idx) => ({
     string: stringNumberFromIndex(tuning, idx),
     pitchClass: pc,

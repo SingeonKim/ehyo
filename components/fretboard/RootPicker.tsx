@@ -3,7 +3,7 @@
 import { clsx } from 'clsx';
 
 import { useAppStore } from '@/lib/store/app-store';
-import { NOTE_NAMES_FLAT, NOTE_NAMES_SHARP, isFlatKey } from '@/lib/theory/notes';
+import { NOTE_NAMES_FLAT, NOTE_NAMES_SHARP, shouldUseFlats } from '@/lib/theory/notes';
 import type { PitchClass } from '@/lib/theory/types';
 
 /*
@@ -19,16 +19,25 @@ const PITCH_CLASSES: readonly PitchClass[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 
 export function RootPicker() {
   const root = useAppStore((s) => s.fretboard.root);
   const setRoot = useAppStore((s) => s.setRoot);
-  const useFlats = isFlatKey(root);
+  const accidentalMode = useAppStore((s) => s.fretboard.accidentalMode);
+  const useFlats = shouldUseFlats(root, accidentalMode);
   const names = useFlats ? NOTE_NAMES_FLAT : NOTE_NAMES_SHARP;
+
+  // 표시용 현재 모드 라벨
+  const conventionHint =
+    accidentalMode === 'auto'
+      ? useFlats
+        ? 'auto → flat'
+        : 'auto → sharp'
+      : accidentalMode === 'sharp'
+        ? 'sharp (forced)'
+        : 'flat (forced)';
 
   return (
     <div role="radiogroup" aria-label="Root 노트 선택" className="space-y-2">
       <div className="flex items-baseline justify-between">
         <label className="font-mono text-xs uppercase tracking-widest text-ink-muted">Root</label>
-        <span className="font-mono text-xs text-ink-muted">
-          {useFlats ? 'flat convention' : 'sharp convention'}
-        </span>
+        <span className="font-mono text-xs text-ink-muted">{conventionHint}</span>
       </div>
       <div className="flex gap-px overflow-hidden rounded-sm border border-ink-muted/20">
         {PITCH_CLASSES.map((pc) => {

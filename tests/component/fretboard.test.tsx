@@ -26,6 +26,7 @@ afterEach(() => {
       handedness: 'right',
       frets: 22,
       fretSpacing: 'uniform',
+      accidentalMode: 'auto',
     },
   });
 });

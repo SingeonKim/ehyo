@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 
 import type {
+  AccidentalMode,
   FretSpacing,
   Handedness,
   ImportantColor,
@@ -58,6 +59,8 @@ export interface FretboardState {
   handedness: Handedness;
   frets: 22 | 24;
   fretSpacing: FretSpacing;
+  /** 이명동음 표기 모드. 기본 'auto'(Root의 전통 조표). */
+  accidentalMode: AccidentalMode;
 }
 
 // ─── UI ────────────────────────────────────────────────────
@@ -87,6 +90,7 @@ export interface AppState {
   setScale: (scale: ScaleKey) => void;
   setLabelMode: (mode: LabelMode) => void;
   setHandedness: (h: Handedness) => void;
+  setAccidentalMode: (mode: AccidentalMode) => void;
   /**
    * 특정 semitone의 강조 색상을 사이클 전환: undefined → orange → green → blue → undefined.
    * Root(semitones=0)에는 적용 금지 (항상 red 고정).
@@ -130,6 +134,7 @@ const DEFAULT_FRETBOARD: FretboardState = {
   handedness: 'right',
   frets: 22,
   fretSpacing: 'uniform',
+  accidentalMode: 'auto',
 };
 
 const DEFAULT_UI: UiState = {
@@ -232,6 +237,11 @@ export const useAppStore = create<AppState>()(
           s.fretboard.handedness = h;
         }),
 
+      setAccidentalMode: (mode) =>
+        set((s) => {
+          s.fretboard.accidentalMode = mode;
+        }),
+
       cycleNoteHighlight: (scale, semitones) =>
         set((s) => {
           // Root는 항상 red 고정 — 토글 무시
@@ -263,11 +273,10 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 3,
+      version: 4,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
-      // v2 → v3: SCALE_HIGHLIGHTS 기본값이 I-IV-V 프레임으로 재조정(3→4/5도).
-      //   기존 유저의 override 스냅샷은 구 기본값(3도 orange) 기준이라 새 기본을
-      //   보지 못함. override를 비워 새 기본값이 즉시 적용되게 리셋.
+      // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
+      // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
       migrate: (persistedState, version) => {
         if (!persistedState || typeof persistedState !== 'object') return persistedState as AppState;
         const s = persistedState as Record<string, unknown>;
@@ -277,6 +286,9 @@ export const useAppStore = create<AppState>()(
         }
         if (version < 3) {
           fb.highlightsByScale = {};
+        }
+        if (version < 4 && fb.accidentalMode === undefined) {
+          fb.accidentalMode = 'auto';
         }
         s.fretboard = fb;
         return persistedState as AppState;

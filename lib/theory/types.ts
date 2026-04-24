@@ -46,3 +46,11 @@ export type Handedness = 'right' | 'left';
 
 /** 프렛 간격 방식. uniform은 교육용, equal-temperament는 실기타 근사. */
 export type FretSpacing = 'uniform' | 'equal-temperament';
+
+/**
+ * 이명동음(샾/플랫) 표기 모드.
+ *   auto  → Root의 전통 조표에 따라 자동 (F·Bb·Eb·Ab·Db는 플랫, 나머지는 샾)
+ *   sharp → 강제 샾 (C#, D#, F#, G#, A#)
+ *   flat  → 강제 플랫 (Db, Eb, Gb, Ab, Bb)
+ */
+export type AccidentalMode = 'auto' | 'sharp' | 'flat';

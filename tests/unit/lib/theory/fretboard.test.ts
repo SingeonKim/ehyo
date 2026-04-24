@@ -57,6 +57,7 @@ describe('getFretboardNotes — 일반 동작', () => {
     root: 0 as PitchClass,
     scale: 'major' as const,
     highlights: SCALE_HIGHLIGHTS.major,
+    useFlats: false, // C major → sharp 컨벤션
   };
 
   it('결과의 모든 마크가 스케일에 속하는 피치 클래스', () => {
@@ -98,6 +99,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     const rootMarks = marks.filter((m) => m.semitonesFromRoot === 0);
     expect(rootMarks.length).toBeGreaterThan(0);
@@ -114,6 +116,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major, // { 5: 'orange', 7: 'orange' }
+      useFlats: false,
     });
     const fourths = marks.filter((m) => m.semitonesFromRoot === 5);
     const fifths = marks.filter((m) => m.semitonesFromRoot === 7);
@@ -128,6 +131,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     const thirds = marks.filter((m) => m.semitonesFromRoot === 4);
     expect(thirds.length).toBeGreaterThan(0);
@@ -141,6 +145,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     // Major의 highlights는 {5, 7} → 2(2도), 4(3도), 9(6도), 11(7도)은 regular
     const regulars = marks.filter((m) => [2, 4, 9, 11].includes(m.semitonesFromRoot));
@@ -156,6 +161,7 @@ describe('getFretboardNotes — tier 결정', () => {
       scale: 'major',
       // 유저가 3도만 green으로 강조, 다른 highlight는 비움
       highlights: { 4: 'green' },
+      useFlats: false,
     });
     const thirds = marks.filter((m) => m.semitonesFromRoot === 4);
     const fifths = marks.filter((m) => m.semitonesFromRoot === 7);
@@ -170,6 +176,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: {},
+      useFlats: false,
     });
     marks.forEach((m) => {
       if (m.semitonesFromRoot === 0) {
@@ -187,6 +194,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 9 as PitchClass, // A
       scale: 'minor_blues',
       highlights: SCALE_HIGHLIGHTS.minor_blues,
+      useFlats: false,
     });
     const blueNotes = marks.filter((m) => m.semitonesFromRoot === 6);
     expect(blueNotes.length).toBeGreaterThan(0);
@@ -200,6 +208,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'major_blues',
       highlights: SCALE_HIGHLIGHTS.major_blues,
+      useFlats: false,
     });
     const blueNotes = marks.filter((m) => m.semitonesFromRoot === 3);
     expect(blueNotes.length).toBeGreaterThan(0);
@@ -213,6 +222,7 @@ describe('getFretboardNotes — tier 결정', () => {
       root: 0 as PitchClass,
       scale: 'lydian',
       highlights: SCALE_HIGHLIGHTS.lydian,
+      useFlats: false,
     });
     const characteristic = marks.filter((m) => m.semitonesFromRoot === 6);
     expect(characteristic.length).toBeGreaterThan(0);
@@ -228,6 +238,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
       root: 0 as PitchClass,
       scale: 'major', // F#는 없지만 확인용으로 chromatic에 있으면 샾
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     // C major는 샾이 F# 없이 구성되므로 모든 이름이 자연음
     const names = new Set(marks.map((m) => m.noteName));
@@ -242,6 +253,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
       root: 10 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: true, // Bb 키는 플랫 컨벤션
     });
     const names = new Set(marks.map((m) => m.noteName));
     // Bb major는 Bb C D Eb F G A — Bb, Eb 플랫 표기 확인
@@ -258,6 +270,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     const cMark = marks.find((m) => m.semitonesFromRoot === 0);
     const fMark = marks.find((m) => m.semitonesFromRoot === 5);
@@ -274,6 +287,7 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     expect(marks).toEqual([]);
   });
@@ -284,11 +298,13 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       ...common,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     const whole = getFretboardNotes({
       ...common,
       scale: 'whole_tone',
       highlights: SCALE_HIGHLIGHTS.whole_tone,
+      useFlats: false,
     });
     expect(whole.length).toBeLessThan(major.length);
   });
@@ -299,11 +315,13 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       ...common,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     const dim = getFretboardNotes({
       ...common,
       scale: 'diminished_hw',
       highlights: SCALE_HIGHLIGHTS.diminished_hw,
+      useFlats: false,
     });
     expect(dim.length).toBeGreaterThan(major.length);
   });
@@ -315,6 +333,7 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       root: 0 as PitchClass,
       scale: 'major',
       highlights: SCALE_HIGHLIGHTS.major,
+      useFlats: false,
     });
     // 1번줄(high E, open=E=4)에서 C major의 첫 스케일 노트는 1프렛=F(pc 5, 4도).
     const firstString = marks
@@ -327,33 +346,33 @@ describe('getFretboardNotes — 엣지 케이스', () => {
 
 describe('getOpenStringLabels', () => {
   it('표준 튜닝에서 6개 레이블을 항상 반환', () => {
-    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    const labels = getOpenStringLabels(STANDARD_TUNING, false);
     expect(labels).toHaveLength(6);
   });
 
   it('스케일이 무엇이든 6개 전부 반환 (whole_tone처럼 음이 적은 스케일에서도)', () => {
     // 서명에 scale이 없으므로 이 함수는 스케일과 무관. 이 불변식을 명시적으로 테스트.
     // tuning 순서(저음→고음: 6번줄 low E → 1번줄 high E)대로 반환.
-    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    const labels = getOpenStringLabels(STANDARD_TUNING, false);
     expect(labels.map((l) => l.noteName)).toEqual(['E', 'A', 'D', 'G', 'B', 'E']);
   });
 
   it('string 번호 매핑: tuning 앞 인덱스가 큰 string 번호(저음)', () => {
-    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    const labels = getOpenStringLabels(STANDARD_TUNING, false);
     // tuning[0] = 6번줄 low E, tuning[5] = 1번줄 high E
     expect(labels[0]).toMatchObject({ string: 6, noteName: 'E' });
     expect(labels[5]).toMatchObject({ string: 1, noteName: 'E' });
   });
 
   it('string 번호 1은 1번줄(최고음 E)', () => {
-    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    const labels = getOpenStringLabels(STANDARD_TUNING, false);
     const first = labels.find((l) => l.string === 1);
     expect(first?.pitchClass).toBe(4);
     expect(first?.noteName).toBe('E');
   });
 
-  it('Bb Root → 플랫 컨벤션. 단 표준 튜닝은 모두 자연음이라 이름 변화 없음', () => {
-    const labels = getOpenStringLabels(STANDARD_TUNING, 10 as PitchClass);
+  it('useFlats=true → 플랫 컨벤션. 단 표준 튜닝은 모두 자연음이라 이름 변화 없음', () => {
+    const labels = getOpenStringLabels(STANDARD_TUNING, true);
     expect(labels.map((l) => l.noteName)).toEqual(['E', 'A', 'D', 'G', 'B', 'E']);
   });
 });

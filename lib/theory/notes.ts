@@ -1,4 +1,4 @@
-import type { PitchClass } from './types';
+import type { AccidentalMode, PitchClass } from './types';
 
 /*
  * 피치 클래스·노트 이름·도수 변환 유틸.
@@ -61,7 +61,7 @@ export const DEGREE_LABELS: readonly string[] = [
 ] as const;
 
 /**
- * 플랫 이명동음을 사용하는 Root인가.
+ * 플랫 이명동음을 사용하는 Root인가 (전통 조표 기준).
  * 재즈·팝 컨벤션에 따라 플랫 계열 메이저 키에서 스케일을 플랫으로 나열한다.
  *
  * 포함: F=5 (1♭), Bb=10 (2♭), Eb=3 (3♭), Ab=8 (4♭), Db=1 (5♭)
@@ -70,6 +70,18 @@ export const DEGREE_LABELS: readonly string[] = [
  */
 export function isFlatKey(root: PitchClass): boolean {
   return root === 5 || root === 10 || root === 3 || root === 8 || root === 1;
+}
+
+/**
+ * 사용자 설정(AccidentalMode)과 Root를 조합해 "플랫 표기를 쓸지" 결정.
+ *   auto  → isFlatKey(root) 그대로 (전통 조표 컨벤션)
+ *   sharp → 항상 false (샾으로 강제)
+ *   flat  → 항상 true (플랫으로 강제)
+ */
+export function shouldUseFlats(root: PitchClass, mode: AccidentalMode): boolean {
+  if (mode === 'sharp') return false;
+  if (mode === 'flat') return true;
+  return isFlatKey(root);
 }
 
 /**
