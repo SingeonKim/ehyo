@@ -4,6 +4,7 @@ import {
   INLAY_POSITIONS,
   STANDARD_TUNING,
   getFretboardNotes,
+  getOpenStringLabels,
   pitchAt,
   type NoteMark,
 } from '@/lib/theory/fretboard';
@@ -74,18 +75,18 @@ describe('getFretboardNotes — 일반 동작', () => {
     });
   });
 
-  it('fret은 0 ~ frets 범위', () => {
+  it('fret은 1 ~ frets 범위 (오픈 스트링 제외)', () => {
     const marks = getFretboardNotes({ ...baseParams, frets: 22 });
     marks.forEach((m) => {
-      expect(m.fret).toBeGreaterThanOrEqual(0);
+      expect(m.fret).toBeGreaterThanOrEqual(1);
       expect(m.fret).toBeLessThanOrEqual(22);
     });
   });
 
-  it('C major, 오픈 스트링만 봤을 때 스케일 노트 수 = 5 (E, A, D, G, B, E 중 5개 고유 + E 중복)', () => {
-    // 오픈: [E, A, D, G, B, E] — C major는 전부 포함 (E=4, A=9, D=2, G=7, B=11 모두 major 스케일에 속함)
-    const marks = getFretboardNotes(baseParams).filter((m) => m.fret === 0);
-    expect(marks).toHaveLength(6);
+  it('오픈 스트링은 getFretboardNotes 결과에 포함되지 않는다', () => {
+    // 오픈 스트링은 getOpenStringLabels가 별도로 관리한다.
+    const marks = getFretboardNotes(baseParams);
+    expect(marks.some((m) => m.fret === 0)).toBe(false);
   });
 });
 
@@ -213,7 +214,7 @@ describe('getFretboardNotes — 노트 이름 표기', () => {
 });
 
 describe('getFretboardNotes — 엣지 케이스', () => {
-  it('frets=0 이면 오픈 스트링만', () => {
+  it('frets=0 이면 결과는 빈 배열 (오픈은 getOpenStringLabels 담당)', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets: 0,
@@ -221,7 +222,7 @@ describe('getFretboardNotes — 엣지 케이스', () => {
       scale: 'major',
       importantDegrees: IMPORTANT_DEGREES.major,
     });
-    marks.forEach((m) => expect(m.fret).toBe(0));
+    expect(marks).toEqual([]);
   });
 
   it('Whole Tone scale (6음) Root=C → 지판 노트 수가 Major(7음)보다 적다', () => {
@@ -254,16 +255,53 @@ describe('getFretboardNotes — 엣지 케이스', () => {
     expect(dim.length).toBeGreaterThan(major.length);
   });
 
-  it('string 번호 1은 1번줄(최고음 E)', () => {
+  it('string 번호 1은 1번줄(최고음 E) — fret 1 이상에서도 유지', () => {
     const marks = getFretboardNotes({
       tuning: STANDARD_TUNING,
-      frets: 0,
+      frets: 12,
       root: 0 as PitchClass,
       scale: 'major',
       importantDegrees: IMPORTANT_DEGREES.major,
     });
-    const firstString = marks.find((m): m is NoteMark => m.string === 1);
-    expect(firstString?.pitchClass).toBe(4); // high E
+    // 1번줄(high E, open=E=4)에서 C major의 첫 스케일 노트는 1프렛=F(pc 5, 4도).
+    const firstString = marks
+      .filter((m): m is NoteMark => m.string === 1)
+      .sort((a, b) => a.fret - b.fret)[0];
+    expect(firstString?.fret).toBe(1);
+    expect(firstString?.pitchClass).toBe(5); // F on 1st fret of high E
+  });
+});
+
+describe('getOpenStringLabels', () => {
+  it('표준 튜닝에서 6개 레이블을 항상 반환', () => {
+    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    expect(labels).toHaveLength(6);
+  });
+
+  it('스케일이 무엇이든 6개 전부 반환 (whole_tone처럼 음이 적은 스케일에서도)', () => {
+    // 서명에 scale이 없으므로 이 함수는 스케일과 무관. 이 불변식을 명시적으로 테스트.
+    // tuning 순서(저음→고음: 6번줄 low E → 1번줄 high E)대로 반환.
+    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    expect(labels.map((l) => l.noteName)).toEqual(['E', 'A', 'D', 'G', 'B', 'E']);
+  });
+
+  it('string 번호 매핑: tuning 앞 인덱스가 큰 string 번호(저음)', () => {
+    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    // tuning[0] = 6번줄 low E, tuning[5] = 1번줄 high E
+    expect(labels[0]).toMatchObject({ string: 6, noteName: 'E' });
+    expect(labels[5]).toMatchObject({ string: 1, noteName: 'E' });
+  });
+
+  it('string 번호 1은 1번줄(최고음 E)', () => {
+    const labels = getOpenStringLabels(STANDARD_TUNING, 0 as PitchClass);
+    const first = labels.find((l) => l.string === 1);
+    expect(first?.pitchClass).toBe(4);
+    expect(first?.noteName).toBe('E');
+  });
+
+  it('Bb Root → 플랫 컨벤션. 단 표준 튜닝은 모두 자연음이라 이름 변화 없음', () => {
+    const labels = getOpenStringLabels(STANDARD_TUNING, 10 as PitchClass);
+    expect(labels.map((l) => l.noteName)).toEqual(['E', 'A', 'D', 'G', 'B', 'E']);
   });
 });
 

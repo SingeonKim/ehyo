@@ -4,7 +4,11 @@ import { useMemo } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
-import { STANDARD_TUNING, getFretboardNotes } from '@/lib/theory/fretboard';
+import {
+  STANDARD_TUNING,
+  getFretboardNotes,
+  getOpenStringLabels,
+} from '@/lib/theory/fretboard';
 import { resolveImportantDegrees } from '@/lib/theory/scales';
 
 import { Fretboard } from './Fretboard';
@@ -48,6 +52,9 @@ export function FretboardClient() {
     });
   }, [root, scale, frets, importantOverride]);
 
+  // 오픈 스트링은 스케일에 의존하지 않고 root의 플랫/샾 컨벤션만 반영.
+  const openStrings = useMemo(() => getOpenStringLabels(STANDARD_TUNING, root), [root]);
+
   if (!hydrated) {
     return (
       <div className="flex min-h-[400px] items-center justify-center border border-ink-muted/20 bg-bg-elevated">
@@ -64,6 +71,7 @@ export function FretboardClient() {
       <div className="overflow-x-auto border border-ink-muted/20 bg-bg-elevated px-4 py-6">
         <Fretboard
           notes={notes}
+          openStrings={openStrings}
           frets={frets}
           handedness={handedness}
           fretSpacing={fretSpacing}

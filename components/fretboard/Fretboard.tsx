@@ -1,7 +1,8 @@
-import { INLAY_POSITIONS, type NoteMark } from '@/lib/theory/fretboard';
+import { INLAY_POSITIONS, type NoteMark, type OpenStringLabel } from '@/lib/theory/fretboard';
 import type { FretSpacing, Handedness, LabelMode } from '@/lib/theory/types';
 
 import { FretboardNote } from './FretboardNote';
+import { OpenStringMarker } from './OpenStringMarker';
 
 /*
  * 지판 전체 SVG 렌더러.
@@ -17,6 +18,8 @@ import { FretboardNote } from './FretboardNote';
 
 export interface FretboardProps {
   notes: readonly NoteMark[];
+  /** 오픈 스트링 레이블 6개 — 스케일·라벨 모드 무관하게 항상 표시된다. */
+  openStrings: readonly OpenStringLabel[];
   frets: 22 | 24;
   handedness: Handedness;
   fretSpacing: FretSpacing;
@@ -68,6 +71,7 @@ function computeFretLines(frets: number, fretSpacing: FretSpacing): number[] {
 
 export function Fretboard({
   notes,
+  openStrings,
   frets,
   handedness,
   fretSpacing,
@@ -212,7 +216,19 @@ export function Fretboard({
             </text>
           ))}
 
-      {/* ── 노트 마커 ─────────────── */}
+      {/* ── 오픈 스트링 레이블 (fret 0) ─ 항상 6개, 스케일 무관 ── */}
+      {openStrings.map((o) => (
+        <OpenStringMarker
+          key={`open-${o.string}`}
+          cx={mirrorX(fretCenterX(0))}
+          cy={stringY(o.string)}
+          fretWidth={fretWidthAt(0)}
+          noteName={o.noteName}
+          stringNumber={o.string}
+        />
+      ))}
+
+      {/* ── 노트 마커 (fret 1+) ─────── */}
       {notes.map((n) => (
         <FretboardNote
           key={`${n.string}-${n.fret}`}

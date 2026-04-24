@@ -1,5 +1,5 @@
 import type { NoteTier, PitchClass, ScaleKey } from './types';
-import { isFlatKey, getNoteName, semitonesFromRoot, semitonesToDegree } from './notes';
+import { getNoteName, isFlatKey, semitonesFromRoot, semitonesToDegree } from './notes';
 import { SCALES } from './scales';
 
 /*
@@ -56,8 +56,11 @@ function stringNumberFromIndex(tuning: readonly PitchClass[], idx: number): numb
 }
 
 /**
- * 선택한 Root·스케일에 해당하는 지판 노트들을 전부 계산.
- * 스케일에 포함되지 않는 위치는 배열에 들어가지 않는다 (렌더러가 표시할 대상만).
+ * 선택한 Root·스케일에 해당하는 지판 노트들을 전부 계산 (프렛 1 이상).
+ * 프렛 0 (오픈 스트링)은 별도 관리 — getOpenStringLabels 참조.
+ * 이유: 오픈 스트링은 줄의 기본 음이라 항상 표시되어야 하고, 스케일·중요도
+ * 토글과 무관한 레이블 성격이다. 여기서 함께 반환하면 렌더러 측에서
+ * "fret===0만 다르게 그린다"는 분기가 필요해 분리하는 편이 깔끔하다.
  *
  * tier 결정:
  *   - semitonesFromRoot === 0 → 'root'
@@ -80,7 +83,8 @@ export function getFretboardNotes(params: {
   const marks: NoteMark[] = [];
 
   for (let stringIdx = 0; stringIdx < tuning.length; stringIdx++) {
-    for (let fret = 0; fret <= frets; fret++) {
+    // fret 1부터 — 오픈 스트링은 getOpenStringLabels가 책임진다.
+    for (let fret = 1; fret <= frets; fret++) {
       const pc = pitchAt(tuning, stringIdx, fret);
       const semi = semitonesFromRoot(pc, root);
 
@@ -102,6 +106,32 @@ export function getFretboardNotes(params: {
   }
 
   return marks;
+}
+
+/** 오픈 스트링(프렛 0)의 고정 레이블. 스케일·중요도 토글과 무관하게 6개 모두 항상 표시. */
+export interface OpenStringLabel {
+  /** 1~6, 1번줄(최고음). */
+  string: number;
+  pitchClass: PitchClass;
+  /** 샾/플랫 이명동음은 Root 컨벤션(isFlatKey)에 맞춰 선택. */
+  noteName: string;
+}
+
+/**
+ * 6개 오픈 스트링을 항상 반환.
+ * 지판 UX 관점: 사용자가 어떤 스케일을 골라도 "줄의 기본 음이 무엇인가"는
+ * 지판 학습의 기준점이다. 따라서 스케일 소속과 무관하게 항상 노출.
+ */
+export function getOpenStringLabels(
+  tuning: readonly PitchClass[],
+  root: PitchClass,
+): OpenStringLabel[] {
+  const useFlats = isFlatKey(root);
+  return tuning.map((pc, idx) => ({
+    string: stringNumberFromIndex(tuning, idx),
+    pitchClass: pc,
+    noteName: getNoteName(pc, useFlats),
+  }));
 }
 
 /**
