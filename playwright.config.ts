@@ -21,15 +21,14 @@ export default defineConfig({
     timeout: 5_000,
   },
 
-  // 실패 시에만 스크린샷 저장 — 성공 케이스 용량 낭비 방지
-  screenshot: 'only-on-failure',
-
-  // 실패 시 trace 저장 (CI에서 디버깅할 때 유용)
+  // 공통 브라우저 옵션 — screenshot/trace는 `use` 블록 안에 놓아야 한다.
   use: {
     baseURL: BASE_URL,
     // 기본 뷰포트 1280x720 — 데스크톱 기준
     viewport: { width: 1280, height: 720 },
-    // 실패 시에만 trace 수집
+    // 실패 시에만 스크린샷 저장 — 성공 케이스 용량 낭비 방지
+    screenshot: 'only-on-failure',
+    // 실패 시 trace 저장 (CI에서 디버깅할 때 유용)
     trace: 'retain-on-failure',
     // 스크린샷 비교는 Docker(linux) 안에서만 생성·비교한다.
     // 로컬 macOS에서 직접 비교하면 안티앨리어싱 차이로 false-positive가 발생한다.
@@ -45,8 +44,10 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
+      // 로컬·CI 모두 Playwright 번들 chromium-headless-shell 사용.
+      // 시스템 Chrome 설치(sudo 필요)를 요구하지 않는다.
       use: {
-        ...devices['Desktop Chrome'],
+        browserName: 'chromium',
         viewport: { width: 1280, height: 720 },
       },
     },

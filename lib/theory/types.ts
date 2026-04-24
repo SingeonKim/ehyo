@@ -28,8 +28,15 @@ export type ScaleKey =
 
 export type ScaleCategory = 'standard' | 'pentatonic' | 'jazz' | 'other';
 
-/** 지판 노트 마커 3단계 — FretboardNote 컴포넌트가 prop으로 받는다. */
-export type NoteTier = 'root' | 'important' | 'regular';
+/** 강조 노트의 색상 — Root(red) 외 3종. 역할 기반:
+ *   orange = 코드 톤 (3·5·7도)
+ *   green  = 모드 특성음
+ *   blue   = 블루노트 (블루스 전용)
+ */
+export type ImportantColor = 'orange' | 'green' | 'blue';
+
+/** 지판 노트 마커 티어 — FretboardNote가 prop으로 받는 시각 분류. */
+export type NoteTier = 'root' | ImportantColor | 'regular';
 
 /** 라벨 표시 모드. */
 export type LabelMode = 'name' | 'degree' | 'none';
@@ -39,3 +46,11 @@ export type Handedness = 'right' | 'left';
 
 /** 프렛 간격 방식. uniform은 교육용, equal-temperament는 실기타 근사. */
 export type FretSpacing = 'uniform' | 'equal-temperament';
+
+/**
+ * 이명동음(샾/플랫) 표기 모드.
+ *   auto  → Root의 전통 조표에 따라 자동 (F·Bb·Eb·Ab·Db는 플랫, 나머지는 샾)
+ *   sharp → 강제 샾 (C#, D#, F#, G#, A#)
+ *   flat  → 강제 플랫 (Db, Eb, Gb, Ab, Bb)
+ */
+export type AccidentalMode = 'auto' | 'sharp' | 'flat';

@@ -1,8 +1,11 @@
 import type { Metadata } from 'next';
 
+import { FretboardClient } from '@/components/fretboard/FretboardClient';
+
 /*
- * 지판 페이지 — Server Component (Phase 0 플레이스홀더).
- * Phase 2에서 `<FretboardClient />`를 추가. 인터랙션(Root 클릭, 스케일 변경)이 있으므로 Client.
+ * 지판 페이지 — Server Component. 정적 쉘(메타·헤더)만 담당하고 실제 인터랙션은
+ * FretboardClient가 맡는다. 서버 렌더링의 SEO 이점을 유지하면서 AudioContext
+ * 같은 브라우저 API에 접근하지 않는 경계를 명확히 한다.
  */
 
 export const metadata: Metadata = {
@@ -12,24 +15,17 @@ export const metadata: Metadata = {
 
 export default function FretboardPage() {
   return (
-    <section className="py-12">
-      <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
-        Practice / Fretboard
-      </p>
-      <h1 className="mt-4 font-display text-5xl font-black leading-none tracking-tight md:text-7xl">
-        Scales, visualized.
-      </h1>
+    <section className="py-8">
+      <header className="mb-10">
+        <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
+          Practice / Fretboard
+        </p>
+        <h1 className="mt-3 font-display text-4xl font-black leading-none tracking-tight md:text-6xl">
+          Scales, <span className="text-accent-brass">visualized.</span>
+        </h1>
+      </header>
 
-      <div className="mt-16 border border-ink-muted/20 p-10">
-        <p className="font-mono text-xs uppercase tracking-widest text-ink-muted">Phase 2 — 구현 예정</p>
-        <ul className="mt-4 space-y-1 font-mono text-sm text-ink-secondary">
-          <li>· SVG 지판 렌더러 (22/24 프렛, 좌/우 손잡이)</li>
-          <li>· Root · Scale 선택</li>
-          <li>· 3단계 노트 마커 (Root / Important / Regular)</li>
-          <li>· IMPORTANT_DEGREES 기본값 + 유저 토글</li>
-          <li>· 라벨 모드: name / degree / none</li>
-        </ul>
-      </div>
+      <FretboardClient />
     </section>
   );
 }
