@@ -1,6 +1,7 @@
-# 개발용 compose. `docker compose up`로 핫 리로드되는 Next.js dev 서버 기동.
-# monorepo: context는 루트, Dockerfile 내부에서 apps/web workdir로 전환.
-# Phase 5부터 api, postgres, minio 서비스 추가 예정.
+# 개발용 compose. `docker compose up`로 4개 서비스 일괄 기동:
+#   web (Next.js dev)  |  api (FastAPI)  |  postgres  |  minio
+#
+# Phase 5 Day 2: api·postgres·minio 추가. DB 스키마는 Day 3에 생김.
 
 services:
   web:
@@ -11,17 +12,88 @@ services:
     container_name: my-music-app-web
     environment:
       NODE_ENV: development
-      # WSL/Docker에서 파일 변경 감지 안 되는 경우가 있어 폴링 강제
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
     ports:
       - "3000:3000"
     volumes:
-      # 루트 전체를 bind-mount. Dockerfile의 WORKDIR이 apps/web/이어도 루트 참조 가능.
       - ./:/app
-      # anonymous volumes로 컨테이너 내부 node_modules와 .next 격리 (호스트와 분리)
       - /app/node_modules
       - /app/apps/web/node_modules
       - /app/apps/web/.next
     stdin_open: true
     tty: true
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: dev
+    container_name: my-music-app-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://app:app@postgres:5432/music_app
+      S3_ENDPOINT_URL: http://minio:9000
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_BUCKET: backing-tracks
+      CORS_ORIGINS: '["http://localhost:3000"]'
+    ports:
+      - "8000:8000"
+    volumes:
+      # hot reload용 소스 bind-mount. uv 캐시와 venv는 이미지 내부 유지.
+      - ./apps/api/app:/app/apps/api/app
+      - ./apps/api/pyproject.toml:/app/apps/api/pyproject.toml
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: my-music-app-postgres
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: music_app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d music_app"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: my-music-app-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  miniodata:
