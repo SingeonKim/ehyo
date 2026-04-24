@@ -26,18 +26,24 @@ export default function HomePage() {
           이후 순차 구현됩니다.
         </p>
 
-        <nav className="mt-12 flex flex-wrap gap-4">
+        <nav aria-label="주요 기능 이동" className="mt-12 flex flex-wrap gap-4">
           <Link
-            href="/metronome"
+            href="/jam"
             className="border border-accent-brass px-6 py-3 font-mono text-sm uppercase tracking-wider text-accent-brass transition-colors hover:bg-accent-brass hover:text-bg-base"
           >
-            Metronome →
+            Jam →
+          </Link>
+          <Link
+            href="/metronome"
+            className="border border-ink-secondary px-6 py-3 font-mono text-sm uppercase tracking-wider text-ink-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
+          >
+            Metronome
           </Link>
           <Link
             href="/fretboard"
             className="border border-ink-secondary px-6 py-3 font-mono text-sm uppercase tracking-wider text-ink-secondary transition-colors hover:border-ink-primary hover:text-ink-primary"
           >
-            Fretboard →
+            Fretboard
           </Link>
         </nav>
       </section>

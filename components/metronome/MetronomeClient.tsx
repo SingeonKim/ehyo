@@ -86,7 +86,17 @@ export function MetronomeClient() {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
 
+      // Space만 버튼 click과 충돌 — 포커스된 인터랙티브 요소가 있으면
+      // 브라우저가 처리하도록 통과. ↑↓·T는 버튼에 의미 없는 키라 안전하게 intercept.
+      const isFocusedInteractive =
+        target &&
+        (target.tagName === 'BUTTON' ||
+          target.tagName === 'A' ||
+          target.tagName === 'SELECT' ||
+          target.getAttribute('role') === 'radio');
+
       if (e.code === 'Space') {
+        if (isFocusedInteractive) return;
         e.preventDefault();
         void handleToggle();
       } else if (e.code === 'ArrowUp') {
@@ -411,12 +421,13 @@ function AccentToggle({ value, onToggle }: { value: boolean; onToggle: () => voi
       type="button"
       role="switch"
       aria-checked={value}
+      aria-label={value ? '1번 박 억양 강조 켜짐' : '1번 박 억양 강조 꺼짐'}
       onClick={onToggle}
       className={clsx(
         'border px-3 py-2 font-mono text-xs uppercase tracking-widest transition-colors duration-75',
         value
           ? 'border-accent-signal bg-accent-signal/15 text-accent-signal'
-          : 'border-ink-muted/30 text-ink-muted hover:border-ink-secondary hover:text-ink-secondary',
+          : 'border-ink-muted/30 text-ink-secondary hover:border-ink-secondary hover:text-ink-primary',
       )}
     >
       Accent 1

@@ -60,7 +60,7 @@ export function ImportantDegreesToggle() {
             type="button"
             onClick={() => reset(scale)}
             disabled={!hasOverride}
-            className="font-mono text-[0.65rem] uppercase tracking-widest text-ink-muted transition-colors duration-75 hover:text-accent-brass disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-muted"
+            className="font-mono text-[0.65rem] uppercase tracking-widest text-ink-secondary transition-colors duration-75 hover:text-accent-brass disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-ink-muted"
             title={hasOverride ? '현재 스케일을 기본값으로 되돌림' : '이미 기본값'}
           >
             Reset
@@ -93,7 +93,7 @@ export function ImportantDegreesToggle() {
                 'flex items-center gap-1.5 border px-2.5 py-1 text-center font-mono text-xs transition-colors duration-75',
                 isRoot && 'cursor-default border-scale-root bg-scale-root/20 text-scale-root',
                 !isRoot && colorClasses && colorClasses.pill,
-                !isRoot && !colorClasses && 'border-ink-muted/30 text-ink-muted hover:border-ink-secondary hover:text-ink-secondary',
+                !isRoot && !colorClasses && 'border-ink-muted/30 text-ink-secondary hover:border-ink-secondary hover:text-ink-primary',
               )}
             >
               <span>{label}</span>
