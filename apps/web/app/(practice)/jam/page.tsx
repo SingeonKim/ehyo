@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { FretboardClient } from '@/components/fretboard/FretboardClient';
+import { ProgressionCatalog } from '@/components/jam/ProgressionCatalog';
 import { MetronomeClient } from '@/components/metronome/MetronomeClient';
 
 /*
@@ -53,6 +54,12 @@ export default function JamPage() {
         </h2>
         <FretboardClient />
       </section>
+
+      <div className="border-t border-ink-muted/15" aria-hidden="true" />
+
+      {/* Phase 5 Day 4 — 백엔드 연결 확인용 프리뷰. Phase 5 후반에 각 카드가
+          배킹 트랙 재생 버튼을 얻는다. */}
+      <ProgressionCatalog />
     </section>
   );
 }
