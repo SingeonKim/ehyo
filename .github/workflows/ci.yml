@@ -155,7 +155,38 @@ jobs:
           retention-days: 1
 
   # ──────────────────────────────────────────────
-  # 5. e2e — Playwright (Docker Compose로 실행)
+  # 5. api-test — FastAPI pytest
+  #
+  # 독립 job으로 분리 — 웹 레이어와 파이프라인이 얽히지 않음.
+  # apps/api 만 변경되는 PR은 lint·typecheck·unit·build는 사실상 pass-through.
+  # ──────────────────────────────────────────────
+  api-test:
+    name: api-test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: uv 설치
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.8.x"
+          enable-cache: true
+          cache-dependency-glob: apps/api/pyproject.toml
+
+      - name: Python 3.12 설치
+        run: uv python install 3.12
+
+      - name: 의존성 동기화
+        run: uv sync --all-extras
+
+      - name: pytest
+        run: uv run pytest --tb=short
+
+  # ──────────────────────────────────────────────
+  # 6. e2e — Playwright (Docker Compose로 실행)
   #
   # Docker 안에서 실행하는 이유:
   #   OS별 폰트·렌더링 차이를 제거해 스크린샷 비교를 결정론적으로 유지한다.
