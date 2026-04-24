@@ -1,6 +1,6 @@
 # my-music-app 에이전트 팀
 
-이 프로젝트 전용 서브에이전트 6종. Claude Code가 Task tool로 호출하거나, PROACTIVELY 조건에 해당하는 파일이 수정될 때 자동 소환된다.
+이 프로젝트 전용 서브에이전트 7종. Claude Code가 Task tool로 호출하거나, PROACTIVELY 조건에 해당하는 파일이 수정될 때 자동 소환된다.
 
 ## 구성원
 
@@ -12,6 +12,7 @@
 | `aesthetic-reviewer` | 디자인 규율 집행, AI 슬롭 차단 | UI 전반, CSS 토큰, 애니메이션 |
 | `test-strategist` | Vitest · Playwright · 오디오 타이밍 Spy | `tests/**`, CI, Docker test env |
 | `nextjs-architect` | App Router · Zustand · Tailwind v4 · 빌드 | `app/**`, `lib/store/**`, Docker |
+| `backend-architect` | FastAPI · SQLAlchemy · Alembic · Pydantic (Phase 5+) | `apps/api/**`, DB 스키마·마이그레이션, S3/MinIO |
 
 ## 호출 매트릭스
 
@@ -25,7 +26,11 @@
 | CSS 토큰·폰트 변경 | aesthetic-reviewer | + nextjs-architect |
 | Zustand persist 스키마 변경 | nextjs-architect | + test-strategist |
 | Docker/CI 변경 | test-strategist | + nextjs-architect |
-| 배킹 트랙 엔진 (Phase 5+) | web-audio-engineer | + music-theory-guardian |
+| 새 API 엔드포인트 (Phase 5+) | backend-architect | + test-strategist |
+| DB 스키마·마이그레이션 | backend-architect | + music-theory-guardian (이론 데이터 관련 시) |
+| 모노레포 전환 (Phase 5 초) | nextjs-architect | + backend-architect |
+| 배킹 트랙 엔진 (Phase 5+) | web-audio-engineer | + backend-architect + music-theory-guardian |
+| S3/MinIO 오디오 파일 처리 | backend-architect | + web-audio-engineer |
 
 ## 협업 원칙
 
@@ -51,4 +56,4 @@ Task(subagent_type="aesthetic-reviewer", ...)
 
 에이전트 정의 파일(`.md`)은 frontmatter의 `name`, `description`, `tools`, `model` 네 필드를 반드시 포함한다. 본문은 한국어 가능, 단 식별자/변수명/경로는 원문 유지.
 
-새 도메인이 생기면 (예: Phase 5에서 FastAPI 백엔드 도입) `backend-architect` 에이전트를 추가한다. 기존 에이전트에 영역을 억지로 밀어넣지 않는다.
+새 도메인이 생기면 전담 에이전트를 추가한다. 기존 에이전트에 영역을 억지로 밀어넣지 않는다.
