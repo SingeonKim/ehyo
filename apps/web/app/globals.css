@@ -59,6 +59,17 @@
   /* ── Easing ───────────────────────────────────── */
   --ease-pendulum: cubic-bezier(0.45, 0.05, 0.55, 0.95);
   --ease-signal: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* ── Layout ───────────────────────────────────── */
+  /* (practice)/layout.tsx 헤더 sticky 높이 — py-3(24) + 컨텐츠(28~32) ≈ 56px.
+     헤더 디자인 변경 시 이 값도 같이 갱신. */
+  --header-height: 56px;
+
+  /* ── Chord overlay (Sprint 2-6) ─────────────────
+     scale-root/scale-chord와 색이 동일하지만 의미 분리를 위해 alias.
+     Sprint 2-7에서 chord-tension, chord-color 추가 예정. */
+  --color-chord-overlay-root: var(--color-scale-root);
+  --color-chord-overlay-tone: var(--color-scale-chord);
 }
 
 /* ── Base resets ───────────────────────────────── */
@@ -85,21 +96,21 @@ body {
 }
 
 /* ──────────────────────────────────────
- * Sprint 2-5 — chord tone halo overlay
+ * Sprint 2-6 — chord overlay (chord-root + chord-tone 두 layer)
  * ──────────────────────────────────────
- * key={chordSymbol} prop으로 SVG group이 re-mount되면 keyframe이 0%부터 재시작.
- * attack(20%까지 0.75 점화) → decay(100%까지 0.5 안착, forwards 유지).
- * 전역 prefers-reduced-motion 규칙이 animation-duration을 0.01ms로 강제해도
- * forwards로 마지막 프레임(opacity 0.5)에 안착되어 정적 halo 보장.
+ * key={chordSymbol}로 SVG group이 re-mount되면 keyframe이 0%부터 재시작.
+ * attack(20%까지 0.85 점화) → decay(100%까지 0.6 안착, forwards 유지).
+ * chord-root 빨간 ring 가독성을 위해 0.75/0.5 → 0.85/0.6으로 상향.
+ * prefers-reduced-motion이 duration을 0.01ms로 강제해도 forwards로 0.6 안착.
  */
-@keyframes chord-tone-pulse {
+@keyframes chord-overlay-pulse {
   0%   { opacity: 0; }
-  20%  { opacity: 0.75; }
-  100% { opacity: 0.5; }
+  20%  { opacity: 0.85; }
+  100% { opacity: 0.6; }
 }
 
-.chord-tone-halo {
-  animation: chord-tone-pulse 0.6s ease-out forwards;
+.chord-overlay {
+  animation: chord-overlay-pulse 0.6s ease-out forwards;
 }
 
 /* 사용자가 모션 축소 요청 시 — 진자 애니메이션 등 장식적 모션 억제 */
