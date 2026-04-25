@@ -36,10 +36,12 @@ const TEMPLATE = {
 beforeEach(() => {
   startSpy.mockClear();
   stopSpy.mockClear();
+  // v9: backing key는 fretboard.root로 통합. backing slice에는 더 이상 backingKey 없음.
   useAppStore.setState((s) => ({
     ...s,
+    fretboard: { ...s.fretboard, root: 0 },
     backing: {
-      backingKey: 0,
+      ...s.backing,
       backingPlayingSlug: null,
       backingCurrentChord: null,
     },
@@ -50,8 +52,9 @@ afterEach(() => {
   cleanup();
   useAppStore.setState((s) => ({
     ...s,
+    fretboard: { ...s.fretboard, root: 0 },
     backing: {
-      backingKey: 0,
+      ...s.backing,
       backingPlayingSlug: null,
       backingCurrentChord: null,
     },
@@ -64,11 +67,11 @@ describe('ProgressionPlayButton', () => {
     expect(screen.getByRole('button', { name: /play/i })).toBeInTheDocument();
   });
 
-  it('calls engine.start with template and current backingKey on click', async () => {
+  it('calls engine.start with template and current fretboard.root on click', async () => {
     const user = userEvent.setup();
     useAppStore.setState((s) => ({
       ...s,
-      backing: { ...s.backing, backingKey: 5 },
+      fretboard: { ...s.fretboard, root: 5 },
     }));
 
     render(<ProgressionPlayButton template={TEMPLATE} />);

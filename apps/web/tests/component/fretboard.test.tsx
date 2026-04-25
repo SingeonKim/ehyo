@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Fretboard } from '@/components/fretboard/Fretboard';
 import { FretboardClient } from '@/components/fretboard/FretboardClient';
 import { useAppStore } from '@/lib/store/app-store';
+import type { ChordOverlay } from '@/lib/theory/chord-voicing';
 import { getFretboardNotes, getOpenStringLabels, STANDARD_TUNING } from '@/lib/theory/fretboard';
 
 /*
@@ -142,71 +143,40 @@ const baseFretboardProps = {
   labelMode: 'name' as const,
 };
 
-describe('Fretboard chord-tone halo', () => {
-  it('chordTonePcs가 undefined면 halo group 없음', () => {
+describe('Fretboard chord overlay layers', () => {
+  it('chordOverlay=undefined → overlay group 미존재', () => {
     const { container } = render(<Fretboard {...baseFretboardProps} />);
-    expect(container.querySelector('.chord-tone-halo')).toBeNull();
+    expect(container.querySelector('.chord-overlay')).toBeNull();
   });
 
-  it('chordTonePcs가 빈 Set이면 halo group 없음', () => {
+  it('chordOverlay 있음 → root + tone group 모두 렌더', () => {
+    const overlay: ChordOverlay = { root: 0, tones: new Set([4, 7]) };
     const { container } = render(
-      <Fretboard {...baseFretboardProps} chordTonePcs={new Set()} chordSymbol="silent" />
+      <Fretboard {...baseFretboardProps} chordOverlay={overlay} chordSymbol="I" />
     );
-    expect(container.querySelector('.chord-tone-halo')).toBeNull();
+    const overlayGroup = container.querySelector('.chord-overlay');
+    expect(overlayGroup).not.toBeNull();
+    expect(overlayGroup?.querySelector('[data-overlay-tier="chord-root"]')).not.toBeNull();
+    expect(overlayGroup?.querySelector('[data-overlay-tier="chord-tone"]')).not.toBeNull();
   });
 
-  it('chordTonePcs={0,4,7}이면 halo group + 다수 circle 렌더', () => {
+  it('chord-root layer는 root pc인 노트 위치에만', () => {
+    const overlay: ChordOverlay = { root: 0, tones: new Set() };
     const { container } = render(
-      <Fretboard
-        {...baseFretboardProps}
-        chordTonePcs={new Set([0, 4, 7])}
-        chordSymbol="I"
-      />
+      <Fretboard {...baseFretboardProps} chordOverlay={overlay} chordSymbol="I" />
     );
-    const halo = container.querySelector('.chord-tone-halo');
-    expect(halo).toBeInTheDocument();
-    // 22프렛 × 6줄 → PC 0, 4, 7 각각 여러 번 등장. 최소 12개 이상 보장.
-    const haloCircles = halo!.querySelectorAll('circle');
-    expect(haloCircles.length).toBeGreaterThan(10);
+    const rootCircles = container.querySelectorAll(
+      '[data-overlay-tier="chord-root"] circle',
+    );
+    const expected = baseFretboardProps.notes.filter((n) => n.pitchClass === 0).length;
+    expect(rootCircles.length).toBe(expected);
   });
 
-  it('halo group은 aria-hidden="true"로 스크린리더에서 숨겨진다', () => {
+  it('aria-hidden=true (장식 레이어)', () => {
+    const overlay: ChordOverlay = { root: 0, tones: new Set([4, 7]) };
     const { container } = render(
-      <Fretboard
-        {...baseFretboardProps}
-        chordTonePcs={new Set([0, 4, 7])}
-        chordSymbol="I"
-      />
+      <Fretboard {...baseFretboardProps} chordOverlay={overlay} chordSymbol="I" />
     );
-    const halo = container.querySelector('.chord-tone-halo');
-    expect(halo).toHaveAttribute('aria-hidden', 'true');
-  });
-
-  it('chordSymbol이 다른 값으로 바뀌면 halo group이 여전히 존재하고 circle이 유효하다', () => {
-    const { container, rerender } = render(
-      <Fretboard
-        {...baseFretboardProps}
-        chordTonePcs={new Set([0])}
-        chordSymbol="I"
-      />
-    );
-    expect(container.querySelector('.chord-tone-halo')).toBeInTheDocument();
-
-    // IV 코드(F major) — PC 5=F, 9=A, 0=C. PC 5,9는 major 스케일에 포함.
-    rerender(
-      <Fretboard
-        {...baseFretboardProps}
-        chordTonePcs={new Set([5, 9, 0])}
-        chordSymbol="IV"
-      />
-    );
-    const haloIV = container.querySelector('.chord-tone-halo');
-    expect(haloIV).toBeInTheDocument();
-    // PC 5,9,0은 major 스케일에 포함되므로 circle이 하나 이상 존재.
-    expect(haloIV!.querySelectorAll('circle').length).toBeGreaterThan(0);
-    // halo circle은 stroke 토큰 + fill none이어야 한다.
-    const firstCircle = haloIV!.querySelector('circle');
-    expect(firstCircle).toHaveAttribute('stroke', 'var(--color-scale-chord)');
-    expect(firstCircle).toHaveAttribute('fill', 'none');
+    expect(container.querySelector('.chord-overlay')?.getAttribute('aria-hidden')).toBe('true');
   });
 });

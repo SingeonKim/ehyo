@@ -1,32 +1,35 @@
 import type { Metadata } from 'next';
 
-import { FretboardClient } from '@/components/fretboard/FretboardClient';
+import { FretboardControls } from '@/components/fretboard/FretboardControls';
+import { FretboardSurface } from '@/components/fretboard/FretboardSurface';
 import { ProgressionCatalog } from '@/components/jam/ProgressionCatalog';
-import { MetronomeClient } from '@/components/metronome/MetronomeClient';
 
 /*
- * Jam — 통합 뷰. 메트로놈과 지판을 한 페이지에 놓는다.
+ * Jam — 지판 + 배킹 카탈로그 통합 뷰.
  *
- * 설계 판단:
- *   두 Client를 그대로 쌓는 "두 세션을 한 자리에" 방식. 각 컴포넌트의 전체
- *   기능을 유지하되 시각적 구분자로 분리. 복잡해 보일 수 있지만 한번 설정
- *   후 연주 중에는 거의 건드리지 않는 사용 패턴이라 실 혼잡도는 낮다.
+ * sticky 구조:
+ *   FretboardSurface 섹션을 page level의 직속 자식으로 두고 lg: 이상에서
+ *   sticky로 고정. 부모 스크롤 컨테이너가 main(layout)이라 카탈로그까지 내려가도
+ *   Surface가 헤더 바로 아래에 계속 붙어있다.
  *
- *   메트로놈 간이 제어는 이미 헤더 Dock에 상시 존재하므로, /jam에서는
- *   "메트로놈 페이지 풀 컨트롤 + 지판 풀 컨트롤" 조합으로 연습 워크벤치를 완성.
+ *   FretboardControls는 sticky 영역 밖에 별도 형제로 배치 — Surface만 sticky고
+ *   컨트롤은 함께 스크롤된다(사용자 의도: 프랫영역 고정, 세팅 영역 제외).
  *
- * 키보드 단축키는 MetronomeClient가 window-level로 등록하므로 /jam에서도
- * 그대로 작동 (Space, ↑↓, Shift+↑↓, T).
+ *   모바일(<lg)에서는 sticky 해제. 화면 폭이 좁아 Surface가 화면 절반을 잡으면
+ *   카탈로그가 가려지므로 일반 흐름.
+ *
+ * 헤더 메트로놈은 (practice)/layout.tsx의 MetronomeDock이 담당. 본문에는
+ * 메트로놈 풀 컨트롤 섹션이 없다.
  */
 
 export const metadata: Metadata = {
   title: 'Jam',
-  description: '메트로놈과 기타 지판을 한 페이지에. 실제 연습 워크벤치.',
+  description: '지판과 배킹 트랙이 한 화면에. 코드 진행 따라 chord overlay가 매 마디 갱신.',
 };
 
 export default function JamPage() {
   return (
-    <section className="space-y-16 py-8">
+    <section className="space-y-8 py-8">
       <header className="mb-4">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
           Practice / Jam
@@ -35,30 +38,28 @@ export default function JamPage() {
           <span className="text-accent-brass">Practice</span>, together.
         </h1>
         <p className="mt-4 max-w-xl font-mono text-sm text-ink-secondary">
-          메트로놈과 지판이 한 화면에. 헤더 Dock으로 다른 페이지에서도 계속 재생.
+          지판과 배킹 트랙이 한 자리에. 헤더 Dock으로 다른 페이지에서도 메트로놈 계속.
         </p>
       </header>
 
-      <section aria-label="Metronome 영역">
-        <h2 className="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
-          § Metronome
-        </h2>
-        <MetronomeClient />
-      </section>
-
-      <div className="border-t border-ink-muted/15" aria-hidden="true" />
-
-      <section aria-label="Fretboard 영역">
-        <h2 className="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
+      {/* sticky 섹션 — Surface만 고정. 카탈로그까지 스크롤해도 헤더 아래에 유지.
+          z-10: 카탈로그 내부 일부 요소(예: ChordDisplayModeToggle active 버튼의
+          z-[1] stacking)가 sticky fretboard 위로 떠 보이지 않도록 우선순위 확보.
+          헤더(layout.tsx)는 top-0 + z-10이지만 위치가 안 겹쳐 충돌 없음. */}
+      <section
+        aria-label="Fretboard 영역"
+        className="lg:sticky lg:top-[var(--header-height)] lg:z-10 bg-bg-base"
+      >
+        <h2 className="mb-3 font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
           § Fretboard
         </h2>
-        <FretboardClient />
+        <FretboardSurface />
       </section>
+
+      <FretboardControls />
 
       <div className="border-t border-ink-muted/15" aria-hidden="true" />
 
-      {/* Phase 5 Day 4 — 백엔드 연결 확인용 프리뷰. Phase 5 후반에 각 카드가
-          배킹 트랙 재생 버튼을 얻는다. */}
       <ProgressionCatalog />
     </section>
   );

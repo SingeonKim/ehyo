@@ -22,11 +22,12 @@ export interface GuitarVoice {
   dispose(): void;
 }
 
-export function createGuitarVoice(): GuitarVoice {
+/** destination이 주어지면 그 노드로 연결(엔진 master gain). 없으면 ctx.destination. */
+export function createGuitarVoice(destination?: AudioNode): GuitarVoice {
   const ctx = getAudioContext();
   const gain = ctx.createGain();
   gain.gain.value = 1.0;
-  gain.connect(ctx.destination);
+  gain.connect(destination ?? ctx.destination);
 
   return {
     strum(direction, midiNotes, preset, durationSec, time, velocity = 0.6) {

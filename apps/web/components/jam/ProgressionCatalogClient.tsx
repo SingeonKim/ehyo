@@ -4,15 +4,28 @@
  * 배킹 트랙 카탈로그 Client subtree.
  *
  * Server 컴포넌트(ProgressionCatalog)가 fetch한 templates를 props로 받아
- * 카테고리별 그룹화 → 카드 그리드 렌더링. 각 카드에 Play 버튼.
- * Key selector는 카탈로그 상단에 둠.
+ * 카테고리별 그룹화 → 카드 그리드 렌더링.
+ *
+ * Sprint 2-6 변경:
+ * - 마디 strip을 slice(0, 8) 잘라내지 않고 모든 step 노출.
+ * - 칩을 ul/li 구조로 만들어 현재 재생 중인 마디에 aria-current="true"를 부여하고
+ *   accent-brass 스타일로 강조 (배킹 엔진 onBar → store.backingCurrentChord 구독).
+ * - 카탈로그 헤더에 ChordDisplayModeToggle을 두고, 모든 칩 텍스트를
+ *   displayChord(symbol, backingKey, mode)로 정규화 (소문자 i7 → Im7, 절대 표기 등).
+ * - 카드 내부 layout: 이름/BPM 표기 → 마디 strip → 컨트롤(BPM·scale·재생)을
+ *   항상 별도 row로 분리. 진행 길이에 따라 chips와 컨트롤이 한 줄에 붙는 일이
+ *   없도록 flex-wrap row를 깨고 형제 div로 정렬.
  */
 
 import { clsx } from 'clsx';
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
+import { useAppStore } from '@/lib/store/app-store';
+import { displayChord } from '@/lib/theory/chord-display';
 
+import { BackingVolumeSlider } from './BackingVolumeSlider';
 import { BpmSlider } from './BpmSlider';
+import { ChordDisplayModeToggle } from './ChordDisplayModeToggle';
 import { KeySelector } from './KeySelector';
 import { ProgressionPlayButton } from './ProgressionPlayButton';
 import { UseRecommendedScaleButton } from './UseRecommendedScaleButton';
@@ -39,15 +52,26 @@ export function ProgressionCatalogClient({
   templates: ProgressionTemplate[];
 }) {
   const groups = groupByCategory(templates);
+  // 칩 라벨이 키 적용/도수 모드를 따라가야 하므로 store 셀렉터로 직접 구독.
+  // selector를 잘게 쪼개 불필요한 리렌더 회피 (chordDisplayMode 토글이 카드 11개에 전파될 때만 재렌더).
+  // Sprint 2-6 후속(v9): backing key는 fretboard.root로 통합 — 단일 소스.
+  const root = useAppStore((s) => s.fretboard.root);
+  const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
+  const backingCurrentBarIndex = useAppStore(
+    (s) => s.backing.backingCurrentChord?.barIndex ?? null,
+  );
+  const chordDisplayMode = useAppStore((s) => s.ui.chordDisplayMode);
 
   return (
     <section aria-label="코드 진행 카탈로그" className="space-y-6">
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h2 className="font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
           § Backing Catalog
         </h2>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <ChordDisplayModeToggle />
           <KeySelector />
+          <BackingVolumeSlider />
           <span className="font-mono text-[0.65rem] text-ink-muted">
             {templates.length} progressions
           </span>
@@ -66,42 +90,59 @@ export function ProgressionCatalogClient({
               {CATEGORY_LABELS[category] ?? category}
             </p>
             <ul className="grid gap-1.5 sm:grid-cols-2">
-              {items.map((t) => (
-                <li
-                  key={t.slug}
-                  className="border border-ink-muted/15 bg-bg-elevated px-3 py-2.5"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <span className="font-mono text-sm text-ink-primary">
-                      {t.name}
-                    </span>
-                    <span className="font-mono text-[0.65rem] tabular-nums text-ink-muted">
-                      {t.default_bpm} bpm · {t.bars} bars
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1 font-mono text-[0.65rem] text-ink-muted">
-                      {t.progression.slice(0, 8).map((step, idx) => (
-                        <span
-                          key={idx}
-                          className="border border-ink-muted/15 px-1.5 py-[1px] text-ink-secondary"
-                        >
-                          {step.chord}
-                        </span>
-                      ))}
-                      {t.progression.length > 8 && (
-                        <span className="px-1.5 py-[1px] text-ink-muted">…</span>
-                      )}
+              {items.map((t) => {
+                const isPlayingThisCard = backingPlayingSlug === t.slug;
+                const currentBarIdx = isPlayingThisCard
+                  ? backingCurrentBarIndex
+                  : null;
+                return (
+                  <li
+                    key={t.slug}
+                    className="space-y-2 border border-ink-muted/15 bg-bg-elevated px-3 py-2.5"
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-mono text-sm text-ink-primary">
+                        {t.name}
+                      </span>
+                      <span className="font-mono text-[0.65rem] tabular-nums text-ink-muted">
+                        {t.default_bpm} bpm · {t.bars} bars
+                      </span>
                     </div>
-                    {/* BpmSlider + Apply scale + PlayButton: 카드 우측 컨트롤 영역 */}
+                    {/* 마디 strip — 항상 별도 row. 컨트롤과 같은 줄에 붙지 않게 */}
+                    <ul className="flex flex-wrap gap-1 font-mono text-xs text-ink-muted">
+                      {t.progression.map((step, idx) => {
+                        const isCurrent = currentBarIdx === idx;
+                        return (
+                          <li
+                            key={idx}
+                            aria-current={isCurrent ? 'true' : undefined}
+                            className={clsx(
+                              'border px-1.5 py-[1px] tabular-nums transition-colors duration-75',
+                              isCurrent
+                                ? 'border-accent-brass bg-accent-brass/10 font-bold text-accent-brass'
+                                : 'border-ink-muted/15 text-ink-secondary',
+                            )}
+                          >
+                            {displayChord(
+                              step.chord,
+                              root,
+                              chordDisplayMode,
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {/* 컨트롤 row — BPM은 좌측에서 시작, PlayButton만 ml-auto로 우측 */}
                     <div className="flex flex-wrap items-center gap-2">
                       <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
                       <UseRecommendedScaleButton template={t} />
-                      <ProgressionPlayButton template={t} />
+                      <div className="ml-auto">
+                        <ProgressionPlayButton template={t} />
+                      </div>
                     </div>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}

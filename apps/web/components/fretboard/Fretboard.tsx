@@ -1,3 +1,4 @@
+import type { ChordOverlay } from '@/lib/theory/chord-voicing';
 import { INLAY_POSITIONS, type NoteMark, type OpenStringLabel } from '@/lib/theory/fretboard';
 import type { FretSpacing, Handedness, LabelMode } from '@/lib/theory/types';
 
@@ -28,14 +29,14 @@ export interface FretboardProps {
   showFretNumbers?: boolean;
   className?: string;
   /**
-   * 현재 코드 톤 피치 클래스 집합 (배킹 트랙 동기화).
-   * undefined이면 halo를 전혀 그리지 않는다. 빈 Set이면 마찬가지.
-   * 값이 있으면 해당 PC를 가진 모든 노트 위에 반투명 ring을 별도 SVG 레이어로 추가.
+   * 현재 코드 오버레이 (chord-root + chord-tone 분리).
+   * undefined이면 overlay 레이어를 그리지 않는다.
+   * root는 빨강 ring, tones는 파랑 ring으로 별도 SVG 레이어에 그린다.
    */
-  chordTonePcs?: ReadonlySet<number>;
+  chordOverlay?: ChordOverlay;
   /**
    * 현재 코드 심볼 문자열 (예: "I", "IV", "V7").
-   * halo SVG group의 key로 사용되어 chordSymbol이 바뀌면
+   * overlay SVG group의 key로 사용되어 chordSymbol이 바뀌면
    * group이 re-mount → CSS animation이 0%에서 재시작된다.
    */
   chordSymbol?: string | null;
@@ -94,7 +95,7 @@ export function Fretboard({
   labelMode,
   showFretNumbers = true,
   className,
-  chordTonePcs,
+  chordOverlay,
   chordSymbol,
 }: FretboardProps) {
   const fretLines = computeFretLines(frets, fretSpacing);
@@ -246,30 +247,49 @@ export function Fretboard({
         />
       ))}
 
-      {/* ── 코드 톤 halo ring — 노트 마커보다 먼저(아래 레이어)에 그려서 노트 원이 위에 남는다 */}
-      {chordTonePcs && chordTonePcs.size > 0 && (
+      {/* ── 코드 오버레이 — chord-root + chord-tone 두 layer ───────────
+          노트 마커보다 먼저(아래 레이어)에 그려서 노트 원이 위에 남는다.
+          chord-root는 빨강 ring(stroke 2.5), chord-tone은 파랑 ring(stroke 2). */}
+      {chordOverlay && (chordOverlay.root !== null || chordOverlay.tones.size > 0) && (
         <g
           key={chordSymbol ?? 'idle-chord'}
-          className="chord-tone-halo"
+          className="chord-overlay"
           aria-hidden="true"
         >
-          {notes
-            .filter((n) => chordTonePcs.has(n.pitchClass))
-            .map((n) => {
-              const cx = mirrorX(fretCenterX(n.fret));
-              const cy = stringY(n.string);
-              return (
-                <circle
-                  key={`halo-${n.string}-${n.fret}`}
-                  cx={cx}
-                  cy={cy}
-                  r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
-                  fill="none"
-                  stroke="var(--color-scale-chord)"
-                  strokeWidth={2}
-                />
-              );
-            })}
+          {chordOverlay.root !== null && (
+            <g data-overlay-tier="chord-root">
+              {notes
+                .filter((n) => n.pitchClass === chordOverlay.root)
+                .map((n) => (
+                  <circle
+                    key={`overlay-root-${n.string}-${n.fret}`}
+                    cx={mirrorX(fretCenterX(n.fret))}
+                    cy={stringY(n.string)}
+                    r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                    fill="none"
+                    stroke="var(--color-chord-overlay-root)"
+                    strokeWidth={2.5}
+                  />
+                ))}
+            </g>
+          )}
+          {chordOverlay.tones.size > 0 && (
+            <g data-overlay-tier="chord-tone">
+              {notes
+                .filter((n) => chordOverlay.tones.has(n.pitchClass))
+                .map((n) => (
+                  <circle
+                    key={`overlay-tone-${n.string}-${n.fret}`}
+                    cx={mirrorX(fretCenterX(n.fret))}
+                    cy={stringY(n.string)}
+                    r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                    fill="none"
+                    stroke="var(--color-chord-overlay-tone)"
+                    strokeWidth={2}
+                  />
+                ))}
+            </g>
+          )}
         </g>
       )}
 
@@ -286,7 +306,11 @@ export function Fretboard({
           labelMode={labelMode}
           stringNumber={n.string}
           fret={n.fret}
-          isChordTone={chordTonePcs?.has(n.pitchClass) ?? false}
+          isChordTone={
+            chordOverlay
+              ? n.pitchClass === chordOverlay.root || chordOverlay.tones.has(n.pitchClass)
+              : false
+          }
         />
       ))}
     </svg>

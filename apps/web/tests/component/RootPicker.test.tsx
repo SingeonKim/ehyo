@@ -50,44 +50,22 @@ describe('RootPicker — 기본 상태', () => {
   });
 });
 
-describe('RootPicker — syncedToBacking={true}', () => {
-  it('라벨이 "Root · Synced"로 변경된다', () => {
-    render(<RootPicker syncedToBacking={true} />);
-    expect(screen.getByText('Root · Synced')).toBeInTheDocument();
-  });
-
-  it('12개 root 버튼 모두 disabled', () => {
-    render(<RootPicker syncedToBacking={true} />);
-    const rootGroup = screen.getByRole('radiogroup', { name: /root · synced/i });
-    const rootButtons = within(rootGroup).getAllByRole('radio');
-    expect(rootButtons).toHaveLength(12);
-    rootButtons.forEach((b) => expect(b).toBeDisabled());
-  });
-
-  it('disabled 버튼 클릭 시 store.fretboard.root 변화 없음', () => {
-    const before = useAppStore.getState().fretboard.root; // 0
-    render(<RootPicker syncedToBacking={true} />);
-    const rootGroup = screen.getByRole('radiogroup', { name: /root · synced/i });
-    const rootButtons = within(rootGroup).getAllByRole('radio');
-    // pc=5(F) 버튼을 강제 클릭 시도
-    fireEvent.click(rootButtons[5]!);
-    expect(useAppStore.getState().fretboard.root).toBe(before);
-  });
-
-  it('accidental chips는 여전히 활성 (별도 radiogroup)', () => {
-    render(<RootPicker syncedToBacking={true} />);
-    const accidentalGroup = screen.getByRole('radiogroup', { name: '이명동음 표기 모드' });
-    const chips = within(accidentalGroup).getAllByRole('radio');
-    // Auto, ♯, ♭ 총 3개
-    expect(chips).toHaveLength(3);
-    chips.forEach((chip) => expect(chip).not.toBeDisabled());
-  });
-
-  it('syncedToBacking={false}로 되돌리면 root 버튼 다시 활성', () => {
-    const { rerender } = render(<RootPicker syncedToBacking={true} />);
-    rerender(<RootPicker syncedToBacking={false} />);
+describe('RootPicker — root 변경 동작', () => {
+  it('root 버튼 클릭 시 store.fretboard.root 갱신', () => {
+    render(<RootPicker />);
     const rootGroup = screen.getByRole('radiogroup', { name: /root/i });
     const rootButtons = within(rootGroup).getAllByRole('radio');
-    rootButtons.forEach((b) => expect(b).not.toBeDisabled());
+    // pc=5(F) 버튼 클릭
+    fireEvent.click(rootButtons[5]!);
+    expect(useAppStore.getState().fretboard.root).toBe(5);
+  });
+
+  it('accidental chips는 별도 radiogroup으로 root 변경과 독립', () => {
+    render(<RootPicker />);
+    const accidentalGroup = screen.getByRole('radiogroup', { name: '이명동음 표기 모드' });
+    const chips = within(accidentalGroup).getAllByRole('radio');
+    // Auto, ♯, ♭ 총 3개, 모두 활성
+    expect(chips).toHaveLength(3);
+    chips.forEach((chip) => expect(chip).not.toBeDisabled());
   });
 });

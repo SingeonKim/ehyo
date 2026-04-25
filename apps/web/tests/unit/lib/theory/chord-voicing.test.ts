@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_OCTAVE,
-  chordPitchClassSet,
   chordSymbolToMidi,
+  getChordOverlay,
   midiToFrequency,
   voicingToMidi,
 } from '@/lib/theory/chord-voicing';
@@ -72,23 +72,29 @@ describe('midiToFrequency', () => {
   });
 });
 
-describe('chordPitchClassSet', () => {
-  it('I7 in C → {0,4,7,10}', () => {
-    const result = chordPitchClassSet('I7', 0 as PitchClass);
-    expect(result).toEqual(new Set([0, 4, 7, 10]));
+describe('getChordOverlay', () => {
+  it('I in C → root=0, tones={4,7}', () => {
+    const overlay = getChordOverlay('I', 0 as PitchClass);
+    expect(overlay.root).toBe(0);
+    expect([...overlay.tones].sort()).toEqual([4, 7]);
   });
 
-  it('IV in G (key=7) → C major chord {0,4,7}', () => {
-    const result = chordPitchClassSet('IV', 7 as PitchClass);
-    expect(result).toEqual(new Set([0, 4, 7]));
+  it('V7 in C → root=7, tones={11,2,5}', () => {
+    const overlay = getChordOverlay('V7', 0 as PitchClass);
+    expect(overlay.root).toBe(7);
+    expect([...overlay.tones].sort((a, b) => a - b)).toEqual([2, 5, 11]);
   });
 
-  it('파싱 실패 시 null', () => {
-    expect(chordPitchClassSet('XYZ', 0 as PitchClass)).toBeNull();
+  it('IV in G (key=7) → root=0, tones={4,7}', () => {
+    // G 키의 IV = C → root pc=0, tones={E=4, G=7}
+    const overlay = getChordOverlay('IV', 7 as PitchClass);
+    expect(overlay.root).toBe(0);
+    expect([...overlay.tones].sort()).toEqual([4, 7]);
   });
 
-  it('Set 반환 — 동일 PC가 한 번만', () => {
-    const result = chordPitchClassSet('I', 0 as PitchClass)!;
-    expect(result.size).toBe(3);
+  it('파싱 실패 → root=null, tones=empty', () => {
+    const overlay = getChordOverlay('???', 0 as PitchClass);
+    expect(overlay.root).toBeNull();
+    expect(overlay.tones.size).toBe(0);
   });
 });

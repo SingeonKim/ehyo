@@ -36,11 +36,15 @@ export interface DrumVoice {
   dispose(): void;
 }
 
-export function createDrumVoice(): DrumVoice {
+/**
+ * destination이 주어지면 그 노드로 연결(엔진의 master gain). 없으면 ctx.destination
+ * 직접 연결로 폴백 — voice 자체가 다른 컨텍스트에서 재사용 가능하도록.
+ */
+export function createDrumVoice(destination?: AudioNode): DrumVoice {
   const ctx = getAudioContext();
   const gain = ctx.createGain();
   gain.gain.value = 1.0;
-  gain.connect(ctx.destination);
+  gain.connect(destination ?? ctx.destination);
 
   return {
     trigger(step, kit, time, velocity = 0.8) {

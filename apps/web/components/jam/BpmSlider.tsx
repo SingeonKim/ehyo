@@ -70,7 +70,7 @@ export function BpmSlider({
   };
 
   return (
-    <label className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
+    <label className="flex h-7 items-center gap-2 border border-ink-muted/20 px-2 font-mono text-[0.65rem] uppercase tracking-wider text-ink-muted">
       <span>BPM</span>
       <input
         type="range"
@@ -79,11 +79,11 @@ export function BpmSlider({
         step={1}
         value={local}
         onChange={onChange}
-        className="w-24 accent-accent-brass"
+        className="h-1 w-20 accent-accent-brass"
         aria-label={`BPM for this progression, currently ${local}`}
       />
       {/* tabular-nums: 숫자 너비 고정 — 슬라이더 레이아웃 흔들림 방지 */}
-      <span className="w-8 text-right tabular-nums text-ink-primary">{local}</span>
+      <span className="w-7 text-right tabular-nums text-ink-primary">{local}</span>
     </label>
   );
 }
