@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_OCTAVE,
+  chordPitchClassSet,
   chordSymbolToMidi,
   midiToFrequency,
   voicingToMidi,
@@ -68,5 +69,26 @@ describe('midiToFrequency', () => {
 
   it('A5 (MIDI 81) === 880 Hz', () => {
     expect(midiToFrequency(81)).toBeCloseTo(880, 5);
+  });
+});
+
+describe('chordPitchClassSet', () => {
+  it('I7 in C → {0,4,7,10}', () => {
+    const result = chordPitchClassSet('I7', 0 as PitchClass);
+    expect(result).toEqual(new Set([0, 4, 7, 10]));
+  });
+
+  it('IV in G (key=7) → C major chord {0,4,7}', () => {
+    const result = chordPitchClassSet('IV', 7 as PitchClass);
+    expect(result).toEqual(new Set([0, 4, 7]));
+  });
+
+  it('파싱 실패 시 null', () => {
+    expect(chordPitchClassSet('XYZ', 0 as PitchClass)).toBeNull();
+  });
+
+  it('Set 반환 — 동일 PC가 한 번만', () => {
+    const result = chordPitchClassSet('I', 0 as PitchClass)!;
+    expect(result.size).toBe(3);
   });
 });
