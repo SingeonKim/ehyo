@@ -69,8 +69,17 @@ export interface BackingEngine {
    * 재생 시작. initialBpm이 유효한 양수면 그 값으로 시작, 아니면 template.default_bpm.
    * 호출자가 store의 bpmOverrides[slug]를 읽어 전달하는 bridge 패턴으로
    * 엔진 자체는 store를 import하지 않는다.
+   *
+   * startBarIndex (Sprint 2-7 후속 click-to-seek):
+   *   유효한 [0, template.bars) 정수면 해당 마디부터 시작. 그 외(undefined / 음수 /
+   *   범위 밖 / NaN)는 무시하고 0번 마디부터.
    */
-  start(template: ProgressionTemplate, keyRoot: PitchClass, initialBpm?: number): Promise<void>;
+  start(
+    template: ProgressionTemplate,
+    keyRoot: PitchClass,
+    initialBpm?: number,
+    startBarIndex?: number,
+  ): Promise<void>;
   /**
    * 재생 중 Key를 교체. 현재 바의 소리는 유지, 다음 바부터 새 Key로 전조.
    * 재생 중이 아니면 currentKeyRoot만 갱신.
@@ -170,10 +179,20 @@ function createEngine(): BackingEngine {
     fadeOutVoices();
   };
 
-  const start: BackingEngine['start'] = async (template, keyRoot, initialBpm) => {
+  const start: BackingEngine['start'] = async (template, keyRoot, initialBpm, startBarIndex) => {
     // 다른 카드 ▶ 눌러도 이전 세션 자동 teardown
     hardStop();
     setState({ status: 'loading', template });
+
+    // startBarIndex 검증 — 음수·범위 밖·NaN·정수 아님 모두 0으로 fallback.
+    // 유효해도 progression이 비어있을 수 없다는 전제(template.bars >= 1)는 백엔드 시드에서 보장.
+    const startOffset =
+      typeof startBarIndex === 'number' &&
+      Number.isInteger(startBarIndex) &&
+      startBarIndex >= 0 &&
+      startBarIndex < template.bars
+        ? startBarIndex
+        : 0;
 
     const ctx = await resumeAudioContext();
     if (!ctx) {
@@ -218,7 +237,9 @@ function createEngine(): BackingEngine {
       // ── 1. 오디오 예약 블록 (동기) ──────────────────────────────────────────
       // 4.2박 회귀 차단: 이 블록 안에서는 setState 절대 금지.
       // setState는 아래 setTimeout에서 eventTime 기준 지연 후 실행.
-      const idx = barIndexAbs % tpl.bars;
+      // click-to-seek: barIndexAbs는 0부터 증가하지만 startOffset만큼 이동시켜
+      // 사용자가 클릭한 마디부터 진행이 시작되도록 한다.
+      const idx = (barIndexAbs + startOffset) % tpl.bars;
       const step = tpl.progression[idx];
       if (!step) return;
 
@@ -269,13 +290,14 @@ function createEngine(): BackingEngine {
       pendingStateUpdates.add(id);
     });
 
-    // 초기 playing 상태 즉시 설정 (첫 onBar 콜백 전에 UI가 playing 상태를 표시)
+    // 초기 playing 상태 즉시 설정 (첫 onBar 콜백 전에 UI가 playing 상태를 표시).
+    // startOffset이 있으면 해당 마디 코드를 첫 표시로 사용 — UI 깜빡임 방지.
     setState({
       status: 'playing',
       template,
       keyRoot,
-      barIndex: 0,
-      chordSymbol: template.progression[0]?.chord ?? '',
+      barIndex: startOffset,
+      chordSymbol: template.progression[startOffset]?.chord ?? '',
       currentBpm: currentBpm,
     });
   };
