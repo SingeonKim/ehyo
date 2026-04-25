@@ -246,3 +246,161 @@ describe('persist migrate v7 → v8', () => {
     expect(migrated.ui.chordDisplayMode).toBe('absolute');
   });
 });
+
+describe('persist v10 → v11 migration', () => {
+  it('v10 state에 backingPlayingCategory: null 추가', () => {
+    const v10 = {
+      fretboard: { root: 0, scale: 'major', highlightsByScale: {}, accidentalMode: 'auto' },
+      backing: {
+        backingPlayingSlug: null,
+        backingCurrentChord: null,
+        bpmOverrides: {},
+        volume: 0.5,
+      },
+      ui: { theme: 'dark', chordDisplayMode: 'roman' },
+    };
+    const result = __migrate(v10, 10) as { backing: { backingPlayingCategory: unknown } };
+    expect(result.backing.backingPlayingCategory).toBeNull();
+  });
+
+  it('v11 이미 적용된 state는 멱등 — 기존 category 보존', () => {
+    const v11 = {
+      fretboard: { root: 0, scale: 'major', highlightsByScale: {}, accidentalMode: 'auto' },
+      backing: {
+        backingPlayingSlug: 'pop-axis',
+        backingPlayingCategory: 'pop',
+        backingCurrentChord: null,
+        bpmOverrides: {},
+        volume: 0.5,
+      },
+      ui: { theme: 'dark', chordDisplayMode: 'roman' },
+    };
+    const result = __migrate(v11, 11) as { backing: { backingPlayingCategory: unknown } };
+    expect(result.backing.backingPlayingCategory).toBe('pop');
+  });
+});
+
+describe('_setBackingPlayingTemplate', () => {
+  it('template이 주어지면 slug + category 동시 set', () => {
+    useAppStore.getState()._setBackingPlayingTemplate({
+      slug: 'jazz-251',
+      category: 'jazz',
+    } as never);
+    const s = useAppStore.getState();
+    expect(s.backing.backingPlayingSlug).toBe('jazz-251');
+    expect(s.backing.backingPlayingCategory).toBe('jazz');
+  });
+
+  it('null이면 slug + category 둘 다 null', () => {
+    useAppStore.getState()._setBackingPlayingTemplate(null);
+    const s = useAppStore.getState();
+    expect(s.backing.backingPlayingSlug).toBeNull();
+    expect(s.backing.backingPlayingCategory).toBeNull();
+  });
+
+  it('알 수 없는 category는 pop으로 fallback', () => {
+    useAppStore.getState()._setBackingPlayingTemplate({
+      slug: 'weird',
+      category: 'unknown-genre',
+    } as never);
+    expect(useAppStore.getState().backing.backingPlayingCategory).toBe('pop');
+  });
+
+  it('재생 시작 시 기존 selection을 clear한다', () => {
+    // 정지 상태에서 selection 셋업
+    useAppStore.getState()._setBackingPlayingTemplate(null);
+    useAppStore.getState().setBackingSelectedBar(
+      {
+        slug: 'pop-axis',
+        category: 'pop',
+        progression: [{ chord: 'I', durationBeats: 4 }],
+      } as never,
+      0,
+    );
+    expect(useAppStore.getState().backing.backingSelectedSlug).toBe('pop-axis');
+
+    // 재생 시작 → selection은 자동 clear
+    useAppStore.getState()._setBackingPlayingTemplate({
+      slug: 'pop-axis',
+      category: 'pop',
+    } as never);
+    const s = useAppStore.getState();
+    expect(s.backing.backingSelectedSlug).toBeNull();
+    expect(s.backing.backingSelectedBarIndex).toBeNull();
+  });
+});
+
+describe('setBackingSelectedBar', () => {
+  it('정지 상태에서 set: selection + chord context 모두 채움', () => {
+    // 깨끗한 정지 상태
+    useAppStore.getState()._setBackingPlayingTemplate(null);
+    useAppStore.getState()._setBackingCurrentChord(null);
+
+    useAppStore.getState().setBackingSelectedBar(
+      {
+        slug: 'jazz-251',
+        category: 'jazz',
+        progression: [
+          { chord: 'iim7', durationBeats: 4 },
+          { chord: 'V7', durationBeats: 4 },
+          { chord: 'IM7', durationBeats: 4 },
+        ],
+      } as never,
+      1,
+    );
+    const s = useAppStore.getState();
+    expect(s.backing.backingSelectedSlug).toBe('jazz-251');
+    expect(s.backing.backingSelectedBarIndex).toBe(1);
+    expect(s.backing.backingCurrentChord).toEqual({ symbol: 'V7', barIndex: 1 });
+    expect(s.backing.backingPlayingCategory).toBe('jazz');
+  });
+
+  it('재생 중 set: selection만 갱신, chord context 건드리지 않음', () => {
+    // 재생 중 시뮬레이션 — 엔진이 chord context를 set한 상태
+    useAppStore.getState()._setBackingPlayingTemplate({
+      slug: 'pop-axis',
+      category: 'pop',
+    } as never);
+    useAppStore.getState()._setBackingCurrentChord({
+      symbol: 'I',
+      barIndex: 0,
+    });
+
+    useAppStore.getState().setBackingSelectedBar(
+      {
+        slug: 'jazz-251',
+        category: 'jazz',
+        progression: [{ chord: 'iim7', durationBeats: 4 }],
+      } as never,
+      0,
+    );
+    const s = useAppStore.getState();
+    expect(s.backing.backingSelectedSlug).toBe('jazz-251');
+    expect(s.backing.backingSelectedBarIndex).toBe(0);
+    // chord context는 엔진 set 그대로
+    expect(s.backing.backingCurrentChord).toEqual({ symbol: 'I', barIndex: 0 });
+    expect(s.backing.backingPlayingCategory).toBe('pop');
+  });
+
+  it('clear (null, null): 정지 상태면 chord context도 함께 해제', () => {
+    // 정지 상태에서 selection 먼저 set
+    useAppStore.getState()._setBackingPlayingTemplate(null);
+    useAppStore.getState().setBackingSelectedBar(
+      {
+        slug: 'pop-axis',
+        category: 'pop',
+        progression: [{ chord: 'I', durationBeats: 4 }],
+      } as never,
+      0,
+    );
+    expect(useAppStore.getState().backing.backingCurrentChord).not.toBeNull();
+
+    // clear
+    useAppStore.getState().setBackingSelectedBar(null, null);
+    const s = useAppStore.getState();
+    expect(s.backing.backingSelectedSlug).toBeNull();
+    expect(s.backing.backingSelectedBarIndex).toBeNull();
+    expect(s.backing.backingCurrentChord).toBeNull();
+    expect(s.backing.backingPlayingCategory).toBeNull();
+  });
+});

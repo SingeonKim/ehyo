@@ -1,6 +1,6 @@
-import type { ChordOverlay } from '@/lib/theory/chord-voicing';
-import { INLAY_POSITIONS, type NoteMark, type OpenStringLabel } from '@/lib/theory/fretboard';
-import type { FretSpacing, Handedness, LabelMode } from '@/lib/theory/types';
+import type { AppropriateNotes } from '@/lib/theory/chord-voicing';
+import { INLAY_POSITIONS, type GhostNote, type NoteMark, type OpenStringLabel } from '@/lib/theory/fretboard';
+import type { FretSpacing, Handedness, LabelMode, PitchClass } from '@/lib/theory/types';
 
 import { FretboardNote } from './FretboardNote';
 import { OpenStringMarker } from './OpenStringMarker';
@@ -33,13 +33,19 @@ export interface FretboardProps {
    * undefined이면 overlay 레이어를 그리지 않는다.
    * root는 빨강 ring, tones는 파랑 ring으로 별도 SVG 레이어에 그린다.
    */
-  chordOverlay?: ChordOverlay;
+  appropriateNotes?: AppropriateNotes;
   /**
    * 현재 코드 심볼 문자열 (예: "I", "IV", "V7").
    * overlay SVG group의 key로 사용되어 chordSymbol이 바뀌면
    * group이 re-mount → CSS animation이 0%에서 재시작된다.
    */
   chordSymbol?: string | null;
+  /**
+   * 스케일 밖이지만 chord/color tone으로 표시할 위치 목록. FretboardSurface가
+   * getGhostFretboardPositions로 산출해 prop으로 전달. undefined/빈 배열이면
+   * ghost 레이어 미렌더.
+   */
+  ghostNotes?: readonly GhostNote[];
 }
 
 // ─── 기하 상수 ──────────────────────────────
@@ -95,8 +101,9 @@ export function Fretboard({
   labelMode,
   showFretNumbers = true,
   className,
-  chordOverlay,
+  appropriateNotes,
   chordSymbol,
+  ghostNotes,
 }: FretboardProps) {
   const fretLines = computeFretLines(frets, fretSpacing);
   const lastFretX = fretLines[frets] ?? PAD_LEFT;
@@ -126,6 +133,18 @@ export function Fretboard({
     const left = fretLines[fret - 1] ?? PAD_LEFT;
     const right = fretLines[fret] ?? PAD_LEFT;
     return Math.max(right - left, UNIFORM_FRET_WIDTH * 0.5);
+  };
+
+  // scale 안(notes) + 스케일 밖(ghostNotes) 모두에서 pitch class 매칭 위치를 합쳐 반환.
+  // chord-root/chord-tone ring이 out-of-scale 위치(ghost marker 자리)에도 그려지도록.
+  const ringPositions = (pc: PitchClass): Array<{ string: number; fret: number }> => {
+    const inScale = notes
+      .filter((n) => n.pitchClass === pc)
+      .map((n) => ({ string: n.string, fret: n.fret }));
+    const outOfScale = (ghostNotes ?? [])
+      .filter((g) => g.pitchClass === pc)
+      .map((g) => ({ string: g.string, fret: g.fret }));
+    return [...inScale, ...outOfScale];
   };
 
   return (
@@ -247,47 +266,97 @@ export function Fretboard({
         />
       ))}
 
+      {/* ── Ghost markers — Sprint 2-7 ─────────────────────
+          out-of-scale 위치(스케일 밖이지만 chord/color tone에 포함된 음)에 그리는
+          outline-only 점. chord-tone/color-tone ring이 그 위에 그려진다.
+          스케일 음(notes)과 시각적으로 구분되도록 회색 + 0.35 opacity. */}
+      {ghostNotes && ghostNotes.length > 0 && (
+        <g
+          data-overlay-tier="ghost"
+          aria-hidden="true"
+          opacity={0.22}
+        >
+          {ghostNotes.map((g) => (
+            <circle
+              key={`ghost-${g.string}-${g.fret}`}
+              cx={mirrorX(fretCenterX(g.fret))}
+              cy={stringY(g.string)}
+              r={UNIFORM_FRET_WIDTH * 0.19}
+              fill="none"
+              stroke="var(--color-fretboard-ghost)"
+              strokeWidth={1}
+            />
+          ))}
+        </g>
+      )}
+
+      {/* ── 색채음 layer — Sprint 2-7 ────────────────────
+          chord-overlay와 분리해 pulse 애니메이션 없음(정지). 코드톤(sky-blue·pulse)
+          과의 시각 위계는 (1) 색상 카테고리 자체를 다르게(off-white) 분리하고
+          (2) stroke 두께(1.5 vs 2)와 (3) opacity(0.38 vs 1.0)로 확보. ring 반지름은
+          chord-tone과 동일(HALO_RADIUS_RATIO)하게 유지해 같은 위치에서 ring이
+          chord-tone과 흔들림 없이 정렬되도록 한다. */}
+      {appropriateNotes && appropriateNotes.colorTones.size > 0 && (
+        <g
+          data-overlay-tier="color-tone"
+          aria-hidden="true"
+          opacity={0.38}
+        >
+          {[...appropriateNotes.colorTones].flatMap((pc) =>
+            ringPositions(pc).map((p) => (
+              <circle
+                key={`overlay-color-${pc}-${p.string}-${p.fret}`}
+                cx={mirrorX(fretCenterX(p.fret))}
+                cy={stringY(p.string)}
+                r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                fill="none"
+                stroke="var(--color-chord-overlay-color)"
+                strokeWidth={1.5}
+              />
+            )),
+          )}
+        </g>
+      )}
+
       {/* ── 코드 오버레이 — chord-root + chord-tone 두 layer ───────────
           노트 마커보다 먼저(아래 레이어)에 그려서 노트 원이 위에 남는다.
           chord-root는 빨강 ring(stroke 2.5), chord-tone은 파랑 ring(stroke 2). */}
-      {chordOverlay && (chordOverlay.root !== null || chordOverlay.tones.size > 0) && (
+      {appropriateNotes && (appropriateNotes.chordRoot !== null || appropriateNotes.chordTones.size > 0) && (
         <g
           key={chordSymbol ?? 'idle-chord'}
           className="chord-overlay"
           aria-hidden="true"
         >
-          {chordOverlay.root !== null && (
+          {appropriateNotes.chordRoot !== null && (
             <g data-overlay-tier="chord-root">
-              {notes
-                .filter((n) => n.pitchClass === chordOverlay.root)
-                .map((n) => (
-                  <circle
-                    key={`overlay-root-${n.string}-${n.fret}`}
-                    cx={mirrorX(fretCenterX(n.fret))}
-                    cy={stringY(n.string)}
-                    r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
-                    fill="none"
-                    stroke="var(--color-chord-overlay-root)"
-                    strokeWidth={2.5}
-                  />
-                ))}
+              {ringPositions(appropriateNotes.chordRoot).map((p) => (
+                <circle
+                  key={`overlay-root-${p.string}-${p.fret}`}
+                  cx={mirrorX(fretCenterX(p.fret))}
+                  cy={stringY(p.string)}
+                  r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                  fill="none"
+                  stroke="var(--color-chord-overlay-root)"
+                  strokeWidth={2.5}
+                />
+              ))}
             </g>
           )}
-          {chordOverlay.tones.size > 0 && (
+          {appropriateNotes.chordTones.size > 0 && (
             <g data-overlay-tier="chord-tone">
-              {notes
-                .filter((n) => chordOverlay.tones.has(n.pitchClass))
-                .map((n) => (
+              {[...appropriateNotes.chordTones].flatMap((pc) =>
+                ringPositions(pc).map((p) => (
                   <circle
-                    key={`overlay-tone-${n.string}-${n.fret}`}
-                    cx={mirrorX(fretCenterX(n.fret))}
-                    cy={stringY(n.string)}
+                    key={`overlay-tone-${pc}-${p.string}-${p.fret}`}
+                    cx={mirrorX(fretCenterX(p.fret))}
+                    cy={stringY(p.string)}
                     r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
                     fill="none"
                     stroke="var(--color-chord-overlay-tone)"
                     strokeWidth={2}
                   />
-                ))}
+                )),
+              )}
             </g>
           )}
         </g>
@@ -307,8 +376,10 @@ export function Fretboard({
           stringNumber={n.string}
           fret={n.fret}
           isChordTone={
-            chordOverlay
-              ? n.pitchClass === chordOverlay.root || chordOverlay.tones.has(n.pitchClass)
+            appropriateNotes
+              ? n.pitchClass === appropriateNotes.chordRoot ||
+                appropriateNotes.chordTones.has(n.pitchClass) ||
+                appropriateNotes.colorTones.has(n.pitchClass)
               : false
           }
         />

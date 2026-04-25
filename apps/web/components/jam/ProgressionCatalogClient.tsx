@@ -21,14 +21,11 @@ import { clsx } from 'clsx';
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 import { useAppStore } from '@/lib/store/app-store';
-import { displayChord } from '@/lib/theory/chord-display';
 
 import { BackingVolumeSlider } from './BackingVolumeSlider';
-import { BpmSlider } from './BpmSlider';
 import { ChordDisplayModeToggle } from './ChordDisplayModeToggle';
 import { KeySelector } from './KeySelector';
-import { ProgressionPlayButton } from './ProgressionPlayButton';
-import { UseRecommendedScaleButton } from './UseRecommendedScaleButton';
+import { ProgressionCard } from './ProgressionCard';
 
 const CATEGORY_LABELS: Record<string, string> = {
   blues: 'Blues',
@@ -96,51 +93,14 @@ export function ProgressionCatalogClient({
                   ? backingCurrentBarIndex
                   : null;
                 return (
-                  <li
+                  <ProgressionCard
                     key={t.slug}
-                    className="space-y-2 border border-ink-muted/15 bg-bg-elevated px-3 py-2.5"
-                  >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="font-mono text-sm text-ink-primary">
-                        {t.name}
-                      </span>
-                      <span className="font-mono text-[0.65rem] tabular-nums text-ink-muted">
-                        {t.default_bpm} bpm · {t.bars} bars
-                      </span>
-                    </div>
-                    {/* 마디 strip — 항상 별도 row. 컨트롤과 같은 줄에 붙지 않게 */}
-                    <ul className="flex flex-wrap gap-1 font-mono text-xs text-ink-muted">
-                      {t.progression.map((step, idx) => {
-                        const isCurrent = currentBarIdx === idx;
-                        return (
-                          <li
-                            key={idx}
-                            aria-current={isCurrent ? 'true' : undefined}
-                            className={clsx(
-                              'border px-1.5 py-[1px] tabular-nums transition-colors duration-75',
-                              isCurrent
-                                ? 'border-accent-brass bg-accent-brass/10 font-bold text-accent-brass'
-                                : 'border-ink-muted/15 text-ink-secondary',
-                            )}
-                          >
-                            {displayChord(
-                              step.chord,
-                              root,
-                              chordDisplayMode,
-                            )}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                    {/* 컨트롤 row — BPM은 좌측에서 시작, PlayButton만 ml-auto로 우측 */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
-                      <UseRecommendedScaleButton template={t} />
-                      <div className="ml-auto">
-                        <ProgressionPlayButton template={t} />
-                      </div>
-                    </div>
-                  </li>
+                    template={t}
+                    root={root}
+                    chordDisplayMode={chordDisplayMode}
+                    isPlayingThisCard={isPlayingThisCard}
+                    currentBarIdx={currentBarIdx}
+                  />
                 );
               })}
             </ul>

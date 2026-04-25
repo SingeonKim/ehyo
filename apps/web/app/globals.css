@@ -66,10 +66,21 @@
   --header-height: 56px;
 
   /* ── Chord overlay (Sprint 2-6) ─────────────────
-     scale-root/scale-chord와 색이 동일하지만 의미 분리를 위해 alias.
-     Sprint 2-7에서 chord-tension, chord-color 추가 예정. */
+     scale-root/scale-chord와 색이 동일하지만 의미 분리를 위해 alias. */
   --color-chord-overlay-root: var(--color-scale-root);
   --color-chord-overlay-tone: var(--color-scale-chord);
+
+  /* Sprint 2-7 후속(2026-04-26) — color-tone(텐션·색채음) 전용 색.
+     초기엔 chord-overlay-tone과 동일 파랑을 opacity 차등으로 차이 줬으나, 같은 hue로
+     인해 chord-tone과 시각 위계 구분이 약했다. 흰색 계열(ink-primary cream)로
+     hue 자체를 분리 — chord-tone(sky blue) vs color-tone(off-white)로 색상 카테고리
+     자체가 다르다. opacity는 동일(0.38) 유지. */
+  --color-chord-overlay-color: var(--color-ink-primary);
+
+  /* Sprint 2-7 — out-of-scale 위치의 ghost marker (점) 색.
+     현재 ink-muted(#6E6558)와 동일 값이지만 ghost marker 의미 전용으로 분리.
+     향후 ghost 색만 독립 조정 시 이 토큰을 변경. ink-muted 자체는 건드리지 않는다. */
+  --color-fretboard-ghost: var(--color-ink-muted);
 }
 
 /* ── Base resets ───────────────────────────────── */

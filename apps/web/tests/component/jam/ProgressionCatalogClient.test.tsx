@@ -67,13 +67,16 @@ describe('ProgressionCatalogClient', () => {
     }));
     render(<ProgressionCatalogClient templates={[blues12]} />);
     const card = screen.getByText('12-Bar Blues (Test)').closest('li')!;
-    // 카드 내부에 ul.flex-wrap 안의 li 만 추출 — chord 진행 칩
-    const chipList = card.querySelector('ul.flex-wrap');
-    expect(chipList).not.toBeNull();
-    const chips = Array.from(chipList!.querySelectorAll(':scope > li'));
-    expect(chips).toHaveLength(12);
-    expect(chips[2]).toHaveAttribute('aria-current', 'true');
-    chips.forEach((chip, idx) => {
+    // Sprint 2-7 후속(8 chunk): 12 bars는 [8, 4]로 분할돼 ul.flex-wrap이 2개.
+    // 모든 row의 li > button을 합쳐 12개 칩이 되는지 검증.
+    const chipLists = card.querySelectorAll('ul.flex-wrap');
+    expect(chipLists.length).toBeGreaterThan(0);
+    const chipButtons = Array.from(
+      card.querySelectorAll('ul.flex-wrap > li > button'),
+    );
+    expect(chipButtons).toHaveLength(12);
+    expect(chipButtons[2]).toHaveAttribute('aria-current', 'true');
+    chipButtons.forEach((chip, idx) => {
       if (idx !== 2) {
         expect(chip).not.toHaveAttribute('aria-current', 'true');
       }

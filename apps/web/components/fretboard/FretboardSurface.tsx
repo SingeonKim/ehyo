@@ -4,14 +4,20 @@ import { useMemo } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
-import { getChordOverlay, type ChordOverlay } from '@/lib/theory/chord-voicing';
+import {
+  getAppropriateNotes,
+  type AppropriateNotes,
+} from '@/lib/theory/chord-voicing';
 import {
   STANDARD_TUNING,
   getFretboardNotes,
+  getGhostFretboardPositions,
   getOpenStringLabels,
+  type GhostNote,
 } from '@/lib/theory/fretboard';
 import { shouldUseFlats } from '@/lib/theory/notes';
 import { resolveScaleHighlights } from '@/lib/theory/scales';
+import type { PitchClass } from '@/lib/theory/types';
 
 import { Fretboard } from './Fretboard';
 
@@ -28,6 +34,9 @@ import { Fretboard } from './Fretboard';
  *
  * sticky 클래스는 호출자가 wrapping 컨테이너에 적용. Surface 자체는 sticky를
  * 갖지 않는다.
+ *
+ * Sprint 2-7: backing 재생 중 currentChordSymbol/category로 getAppropriateNotes
+ * 호출. 스케일 밖 chord/color tone은 ghostNotes로 분리해 별도 SVG 그룹 렌더.
  */
 
 export function FretboardSurface() {
@@ -42,22 +51,39 @@ export function FretboardSurface() {
   const highlightsOverride = useAppStore((s) => s.fretboard.highlightsByScale[scale]);
   const accidentalMode = useAppStore((s) => s.fretboard.accidentalMode);
 
-  // Sprint 2-6 후속(v9): backing key가 fretboard.root로 통합됐다.
-  // 이전엔 isBackingActive 분기로 backingKey를 effectiveRoot로 썼으나,
-  // 이제 root 하나만 사용. backingPlayingSlug 구독은 chordOverlay 활성 분기용으로만 유지.
-  const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
+  // chordSymbol prop은 chord 변경 감지용 key로 계속 사용 — Sprint 2-6 overlay 애니메이션
+  // 재시작 트리거.
+  //
+  // Sprint 2-7 후속: chord 컨텍스트가 채워져 있으면(playing이든 정지 상태에서
+  //   사용자가 마디를 클릭한 selection preview든) 동일하게 하이라이팅한다.
+  //   따라서 backingPlayingSlug 게이트는 제거 — 정지 상태에서도 selection 기반
+  //   chord context가 들어오면 ghost notes가 그려져야 한다.
   const currentChordSymbol = useAppStore(
     (s) => s.backing.backingCurrentChord?.symbol ?? null,
   );
+  const backingPlayingCategory = useAppStore(
+    (s) => s.backing.backingPlayingCategory,
+  );
 
-  const isBackingActive = backingPlayingSlug !== null;
-
-  const chordOverlay = useMemo<ChordOverlay | undefined>(() => {
-    if (!isBackingActive || !currentChordSymbol) return undefined;
-    const overlay = getChordOverlay(currentChordSymbol, root);
-    if (overlay.root === null && overlay.tones.size === 0) return undefined;
-    return overlay;
-  }, [isBackingActive, currentChordSymbol, root]);
+  const appropriateNotes = useMemo<AppropriateNotes | undefined>(() => {
+    if (!currentChordSymbol || !backingPlayingCategory) {
+      return undefined;
+    }
+    const result = getAppropriateNotes(
+      currentChordSymbol,
+      root,
+      backingPlayingCategory,
+    );
+    // 모든 필드 비어있으면 undefined로 통일 — Fretboard에서 group 미렌더 분기를 단순화.
+    if (
+      result.chordRoot === null &&
+      result.chordTones.size === 0 &&
+      result.colorTones.size === 0
+    ) {
+      return undefined;
+    }
+    return result;
+  }, [currentChordSymbol, root, backingPlayingCategory]);
 
   const useFlats = shouldUseFlats(root, accidentalMode);
 
@@ -72,6 +98,33 @@ export function FretboardSurface() {
       useFlats,
     });
   }, [root, scale, frets, highlightsOverride, useFlats]);
+
+  const ghostNotes = useMemo<readonly GhostNote[]>(() => {
+    if (!appropriateNotes) return [];
+    // chord/color tones 중 스케일 밖 pitch class만 추출.
+    // notes 배열은 이미 스케일 멤버십 필터를 거쳐 있으므로 거기서 in-scale set을 만든다.
+    const inScalePcs = new Set<PitchClass>(notes.map((n) => n.pitchClass));
+    const outOfScalePcs = new Set<PitchClass>();
+    if (
+      appropriateNotes.chordRoot !== null &&
+      !inScalePcs.has(appropriateNotes.chordRoot)
+    ) {
+      outOfScalePcs.add(appropriateNotes.chordRoot);
+    }
+    for (const pc of appropriateNotes.chordTones) {
+      if (!inScalePcs.has(pc)) outOfScalePcs.add(pc);
+    }
+    for (const pc of appropriateNotes.colorTones) {
+      if (!inScalePcs.has(pc)) outOfScalePcs.add(pc);
+    }
+    if (outOfScalePcs.size === 0) return [];
+    return getGhostFretboardPositions({
+      tuning: STANDARD_TUNING,
+      frets,
+      pitchClasses: outOfScalePcs,
+      useFlats,
+    });
+  }, [appropriateNotes, notes, frets, useFlats]);
 
   const openStrings = useMemo(
     () => getOpenStringLabels(STANDARD_TUNING, useFlats),
@@ -97,8 +150,9 @@ export function FretboardSurface() {
         handedness={handedness}
         fretSpacing={fretSpacing}
         labelMode={labelMode}
-        chordOverlay={chordOverlay}
+        appropriateNotes={appropriateNotes}
         chordSymbol={currentChordSymbol}
+        ghostNotes={ghostNotes}
       />
     </div>
   );

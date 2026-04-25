@@ -13,6 +13,8 @@ import type {
 } from '@/lib/theory/types';
 import { SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
 import type { ChordDisplayMode } from '@/lib/theory/chord-display';
+import { GENRE_RULES, type ProgressionCategory } from '@/lib/theory/genre-rules';
+import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -85,6 +87,8 @@ export interface UiState {
 export interface BackingSliceState {
   /** 런타임. 재생 중인 template.slug 또는 null. */
   backingPlayingSlug: string | null;
+  /** 런타임. 재생 중인 template.category. backingPlayingSlug와 항상 동기화. */
+  backingPlayingCategory: ProgressionCategory | null;
   /** 런타임. 엔진이 퍼블리시하는 현재 코드. */
   backingCurrentChord: { symbol: string; barIndex: number } | null;
   /** 영속. 카드 slug → 사용자가 설정한 BPM. 없으면 template.default_bpm 사용. */
@@ -94,6 +98,10 @@ export interface BackingSliceState {
    * 엔진은 store 브리지에서 이 값을 구독해 master gain에 적용한다.
    */
   volume: number;
+  /** 런타임. 사용자가 카드 마디를 클릭해서 선택한 슬러그. 정지 상태에서만 유효. */
+  backingSelectedSlug: string | null;
+  /** 런타임. 선택된 마디 인덱스. backingSelectedSlug와 항상 쌍으로 변경. */
+  backingSelectedBarIndex: number | null;
 }
 
 // ─── 루트 state + 액션 ────────────────────────────────────
@@ -130,8 +138,8 @@ export interface AppState {
   resetHighlights: (scale: ScaleKey) => void;
 
   // 배킹 액션
-  /** engine subscriber 전용 — UI에서 호출 금지. */
-  _setBackingPlaying: (slug: string | null) => void;
+  /** engine subscriber 전용 — UI에서 호출 금지. slug + category 동시 set. */
+  _setBackingPlayingTemplate: (template: ProgressionTemplate | null) => void;
   /** engine subscriber 전용 — UI에서 호출 금지. */
   _setBackingCurrentChord: (
     c: { symbol: string; barIndex: number } | null,
@@ -142,6 +150,20 @@ export interface AppState {
   clearBackingBpm: (slug: string) => void;
   /** 배킹 마스터 볼륨 변경 (0~1). 엔진 브리지가 setVolume을 자동 호출. */
   setBackingVolume: (v: number) => void;
+  /**
+   * 사용자 마디 선택 토글.
+   *  - template + barIndex 양쪽 non-null: 선택 적용. 정지 상태면 chord 컨텍스트
+   *    (backingCurrentChord + backingPlayingCategory)도 함께 set해서 fretboard
+   *    하이라이팅이 동기화. 재생 중이면 chord 컨텍스트는 엔진이 관리하므로
+   *    selectedSlug + selectedBarIndex만 갱신.
+   *  - 둘 중 하나라도 null: 선택 해제. 정지 상태면 chord 컨텍스트도 함께 해제.
+   *
+   * 다른 카드를 선택하거나 같은 마디 재클릭으로 토글 해제할 때 사용.
+   */
+  setBackingSelectedBar: (
+    template: ProgressionTemplate | null,
+    barIndex: number | null,
+  ) => void;
 
   // UI 액션
   /** 카탈로그 코드 표기 모드 전환. 'roman' ↔ 'absolute'. */
@@ -192,10 +214,13 @@ const DEFAULT_UI: UiState = {
 
 const DEFAULT_BACKING: BackingSliceState = {
   backingPlayingSlug: null,
+  backingPlayingCategory: null,
   backingCurrentChord: null,
   bpmOverrides: {},
   // 메트로놈 볼륨(0.5)과 동일한 시작점. 사용자가 슬라이더로 조정 가능.
   volume: 0.5,
+  backingSelectedSlug: null,
+  backingSelectedBarIndex: null,
 };
 
 // BPM 클램프 유틸 — planning 1.3 M1 요건: 20~300
@@ -280,6 +305,15 @@ function migrate(persistedState: unknown, version: number): unknown {
     const v = backing.volume;
     if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 1) {
       backing.volume = 0.5;
+    }
+    s.backing = backing;
+  }
+  // v10 → v11: backing.backingPlayingCategory 추가. 런타임 필드라 기본 null.
+  //   엔진은 start 시 _setBackingPlayingTemplate으로 채운다.
+  if (version < 11) {
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    if (!('backingPlayingCategory' in backing)) {
+      backing.backingPlayingCategory = null;
     }
     s.backing = backing;
   }
@@ -419,9 +453,23 @@ export const useAppStore = create<AppState>()(
           delete s.fretboard.highlightsByScale[scale];
         }),
 
-      _setBackingPlaying: (slug) =>
+      _setBackingPlayingTemplate: (template) =>
         set((s) => {
-          s.backing.backingPlayingSlug = slug;
+          if (!template) {
+            s.backing.backingPlayingSlug = null;
+            s.backing.backingPlayingCategory = null;
+            return;
+          }
+          s.backing.backingPlayingSlug = template.slug ?? null;
+          const cat = template.category as string | undefined;
+          // 알 수 없는 category는 pop fallback — presets.ts getPreset과 동일 패턴.
+          s.backing.backingPlayingCategory =
+            cat && cat in GENRE_RULES
+              ? (cat as ProgressionCategory)
+              : 'pop';
+          // 재생 시작 → selection은 엔진이 인계받았으므로 clear
+          s.backing.backingSelectedSlug = null;
+          s.backing.backingSelectedBarIndex = null;
         }),
 
       _setBackingCurrentChord: (c) =>
@@ -448,6 +496,43 @@ export const useAppStore = create<AppState>()(
           s.backing.volume = Math.max(0, Math.min(1, v));
         }),
 
+      setBackingSelectedBar: (template, barIndex) =>
+        set((s) => {
+          const isPlaying = s.backing.backingPlayingSlug !== null;
+
+          if (!template || barIndex === null) {
+            // 선택 해제
+            s.backing.backingSelectedSlug = null;
+            s.backing.backingSelectedBarIndex = null;
+            if (!isPlaying) {
+              // 정지 상태에서는 chord 컨텍스트도 우리가 set 했으므로 같이 해제
+              s.backing.backingCurrentChord = null;
+              s.backing.backingPlayingCategory = null;
+            }
+            return;
+          }
+
+          s.backing.backingSelectedSlug = template.slug ?? null;
+          s.backing.backingSelectedBarIndex = barIndex;
+
+          if (!isPlaying) {
+            // 정지 상태 — chord 컨텍스트를 직접 채워 fretboard 하이라이팅 트리거
+            const step = template.progression[barIndex];
+            if (step) {
+              s.backing.backingCurrentChord = {
+                symbol: step.chord,
+                barIndex,
+              };
+              const cat = template.category as string | undefined;
+              s.backing.backingPlayingCategory =
+                cat && cat in GENRE_RULES
+                  ? (cat as ProgressionCategory)
+                  : 'pop';
+            }
+          }
+          // 재생 중이면 backingCurrentChord와 category는 엔진 책임 — 건드리지 않음
+        }),
+
       setChordDisplayMode: (mode) =>
         set((s) => {
           // 카탈로그 칩/재생 라벨 모두 ui.chordDisplayMode를 구독하므로
@@ -458,7 +543,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 10,
+      version: 11,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -469,6 +554,7 @@ export const useAppStore = create<AppState>()(
       // v7 → v8: ui.chordDisplayMode 추가 (Sprint 2-6 카탈로그 표기 토글).
       // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합 (Key 동기화).
       // v9 → v10: backing.volume 추가 — 배킹 마스터 볼륨.
+      // v10 → v11: backing.backingPlayingCategory 추가 (Sprint 2-7 스마트 하이라이팅).
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
