@@ -16,11 +16,12 @@
  *   - 같은 마디 재클릭 시 토글 해제 (selectedBarIdx → null).
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 import { clsx } from 'clsx';
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
+import { useAppStore } from '@/lib/store/app-store';
 import { displayChord } from '@/lib/theory/chord-display';
 import type { ChordDisplayMode } from '@/lib/theory/chord-display';
 import type { PitchClass } from '@/lib/theory/types';
@@ -53,8 +54,16 @@ export function ProgressionCard({
   isPlayingThisCard: boolean;
   currentBarIdx: number | null;
 }) {
-  // 클릭한 마디. 정지 상태일 때만 시각화. 같은 마디 재클릭 시 토글 해제.
-  const [selectedBarIdx, setSelectedBarIdx] = useState<number | null>(null);
+  // 클릭한 마디 — store에서 구독. 다른 카드를 클릭하면 이 카드의 selection은
+  // 자동으로 사라진다 (slug 매치 안 하므로). 정지 상태에서는 fretboard 하이라이팅도
+  // 동기화 (store action에서 chord context를 함께 set).
+  const selectedSlug = useAppStore((s) => s.backing.backingSelectedSlug);
+  const selectedBarIdxStore = useAppStore(
+    (s) => s.backing.backingSelectedBarIndex,
+  );
+  const setSelectedBar = useAppStore((s) => s.setBackingSelectedBar);
+  const myselectedBarIdx =
+    selectedSlug === t.slug ? selectedBarIdxStore : null;
 
   const rows = useMemo(
     () => splitIntoBarRows(t.progression),
@@ -62,7 +71,11 @@ export function ProgressionCard({
   );
 
   const onBarClick = (absoluteIdx: number) => {
-    setSelectedBarIdx((prev) => (prev === absoluteIdx ? null : absoluteIdx));
+    if (myselectedBarIdx === absoluteIdx) {
+      setSelectedBar(null, null); // 같은 마디 재클릭 → 토글 해제
+    } else {
+      setSelectedBar(t, absoluteIdx);
+    }
   };
 
   return (
@@ -91,7 +104,7 @@ export function ProgressionCard({
                 const isPlayingHighlight =
                   isPlayingThisCard && currentBarIdx === absoluteIdx;
                 const isSelectedHighlight =
-                  !isPlayingThisCard && selectedBarIdx === absoluteIdx;
+                  !isPlayingThisCard && myselectedBarIdx === absoluteIdx;
                 const isHighlighted =
                   isPlayingHighlight || isSelectedHighlight;
                 return (
@@ -134,7 +147,7 @@ export function ProgressionCard({
         <div className="ml-auto">
           <ProgressionPlayButton
             template={t}
-            startBarIndex={selectedBarIdx ?? undefined}
+            startBarIndex={myselectedBarIdx ?? undefined}
           />
         </div>
       </div>

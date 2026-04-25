@@ -53,17 +53,20 @@ export function FretboardSurface() {
 
   // chordSymbol prop은 chord 변경 감지용 key로 계속 사용 — Sprint 2-6 overlay 애니메이션
   // 재시작 트리거.
+  //
+  // Sprint 2-7 후속: chord 컨텍스트가 채워져 있으면(playing이든 정지 상태에서
+  //   사용자가 마디를 클릭한 selection preview든) 동일하게 하이라이팅한다.
+  //   따라서 backingPlayingSlug 게이트는 제거 — 정지 상태에서도 selection 기반
+  //   chord context가 들어오면 ghost notes가 그려져야 한다.
   const currentChordSymbol = useAppStore(
     (s) => s.backing.backingCurrentChord?.symbol ?? null,
   );
-  const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
   const backingPlayingCategory = useAppStore(
     (s) => s.backing.backingPlayingCategory,
   );
-  const isBackingActive = backingPlayingSlug !== null;
 
   const appropriateNotes = useMemo<AppropriateNotes | undefined>(() => {
-    if (!isBackingActive || !currentChordSymbol || !backingPlayingCategory) {
+    if (!currentChordSymbol || !backingPlayingCategory) {
       return undefined;
     }
     const result = getAppropriateNotes(
@@ -80,7 +83,7 @@ export function FretboardSurface() {
       return undefined;
     }
     return result;
-  }, [isBackingActive, currentChordSymbol, root, backingPlayingCategory]);
+  }, [currentChordSymbol, root, backingPlayingCategory]);
 
   const useFlats = shouldUseFlats(root, accidentalMode);
 
