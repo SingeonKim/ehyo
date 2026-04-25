@@ -118,6 +118,14 @@ colorTones = chord_extensions[quality]        ← Part A (음악 이론 표준)
 | minor | ♭9 (V7 alt, 1) | (없음) | (없음) |
 | modal | (없음) | (없음) | (없음) |
 
+##### Bossa V7 — natural 9 vs ♭9 동시 표시 (의도)
+
+bossa는 Part B에 ♭9·♯11(`[1, 6]`)을, Part A는 natural 9·♯11·13(`[2, 6, 9]`)을 갖는다. 둘이 union되어 bossa V7에서 **♭9와 9가 동시에 colorTones에 등장**한다.
+
+이는 의도된 동작 — Jobim 화성의 특징 중 하나가 V7 위에서 멜로디가 ♭9와 natural 9 사이를 넘나드는 모호성이다(예: "Desafinado", "Insensatez"의 V 마디). 사용자가 즉흥 시 둘 중 어느 음을 선택해도 양식적으로 정당하므로 둘 다 색채음으로 표시한다.
+
+향후 "스타일 strict 모드" 토글이 들어오면 Part A를 replace하는 override 룰을 도입할 수 있으나, Sprint 2-7 범위 외.
+
 #### Part C — 키 단위 universal 색채음
 
 `lib/theory/genre-rules.ts` — `universal` 필드 (키 root 기준 반음).
