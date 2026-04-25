@@ -12,7 +12,11 @@
  * 메시지 프로토콜:
  *   main → worker: { type: 'start', intervalMs } / { type: 'stop' }
  *   worker → main: { type: 'tick' } — 스케줄러가 lookahead 범위 검사 수행하라는 신호
+ *
+ * export {}는 TypeScript에서 이 파일을 모듈 스코프로 취급하게 만드는 관용구.
+ * 없으면 intervalId가 전역 선언으로 인식되어 TS2451 에러 발생.
  */
+export {};
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
