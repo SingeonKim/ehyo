@@ -23,11 +23,13 @@ import type { PitchClass } from '@/lib/theory/types';
 
 import { resumeAudioContext } from '../context';
 import { bindToneToSharedContext, getTone } from '../tone-bridge';
-import { BACKBEAT_PATTERN } from './patterns/backbeat';
-import type { BeatStep } from './patterns/types';
+// TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont
+// import { BACKBEAT_PATTERN } from './patterns/backbeat';
+// import type { BeatStep } from './patterns/types';
 import { createBassVoice, type BassVoice } from './voices/bass';
 import { createDrumVoice, type DrumVoice } from './voices/drums';
-import { createKeysVoice, type KeysVoice } from './voices/keys';
+// TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont — keys replaced by guitar
+// import { createKeysVoice, type KeysVoice } from './voices/keys';
 
 export type BackingState =
   | { status: 'idle' }
@@ -60,7 +62,8 @@ function createEngine(): BackingEngine {
 
   let drums: DrumVoice | null = null;
   let bass: BassVoice | null = null;
-  let keys: KeysVoice | null = null;
+  // TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont — keys replaced by guitar
+  // let keys: KeysVoice | null = null;
 
   let scheduleId: number | null = null;
   let barIndex = 0;
@@ -76,14 +79,16 @@ function createEngine(): BackingEngine {
   const ensureVoices = () => {
     if (!drums) drums = createDrumVoice();
     if (!bass) bass = createBassVoice();
-    if (!keys) keys = createKeysVoice();
-    return { drums, bass, keys };
+    // TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont — guitar voice 추가
+    // if (!keys) keys = createKeysVoice();
+    return { drums, bass };
   };
 
   const stopVoices = () => {
-    drums?.stop();
-    bass?.stop();
-    keys?.stop();
+    // TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont — fadeOut으로 교체
+    // drums?.stop();
+    // bass?.stop();
+    // keys?.stop();
   };
 
   const clearSchedule = () => {
@@ -133,8 +138,10 @@ function createEngine(): BackingEngine {
     currentKeyRoot = keyRoot;
     currentTemplate = template;
 
-    // 콜백은 currentKeyRoot·currentTemplate ref를 읽는다 — setKey로 런타임 교체 가능.
-    const callback = (time: number) => {
+    // TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont
+    // 아래 콜백은 BACKBEAT_PATTERN·keys·BeatStep 참조가 있어 임시 stub.
+    // Task 7에서 WebAudioFont preset 기반으로 전체 재작성.
+    const callback = (_time: number) => {
       const tpl = currentTemplate;
       if (!tpl) return;
       const idx = barIndex % tpl.bars;
@@ -147,11 +154,9 @@ function createEngine(): BackingEngine {
       const symbol = step.chord;
       const midi = chordSymbolToMidi(symbol, currentKeyRoot);
       if (!midi) {
-        // 파싱 실패 — 어떤 voice도 trigger하지 않는다. 드럼만 치고 코드 없는 상황 방지.
         console.warn(
           `[backing] unparseable chord symbol "${symbol}" at bar ${idx}; skipping`,
         );
-        // 상태는 갱신해서 UI가 진행 표시는 유지. chordSymbol은 그대로 노출.
         setState({
           status: 'playing',
           template: tpl,
@@ -163,21 +168,9 @@ function createEngine(): BackingEngine {
         return;
       }
 
-      const pattern = BACKBEAT_PATTERN;
-      const offset = (s: BeatStep) => time + Tone.Time(s.time).toSeconds();
-
-      // Drums
-      for (const s of pattern.drums.kick) voices.drums.trigger('kick', offset(s), s.velocity);
-      for (const s of pattern.drums.snare) voices.drums.trigger('snare', offset(s), s.velocity);
-      for (const s of pattern.drums.hat) voices.drums.trigger('hat', offset(s), s.velocity);
-
-      // Bass — 현재 코드 루트(midi[0])를 한 옥타브 다운.
-      const bassMidi = midi[0]! - 12;
-      for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, '4n', offset(s));
-
-      // Keys
-      for (const s of pattern.keys.steps) voices.keys.trigger(midi, s.duration, offset(s));
-
+      // TODO(sprint-2-4-task-7): WebAudioFont voice trigger 로직으로 교체
+      // 현재는 상태 갱신만 수행 (드럼/베이스/기타 트리거 없음)
+      void voices; // 미사용 변수 경고 억제
       setState({
         status: 'playing',
         template: tpl,
@@ -216,10 +209,11 @@ function createEngine(): BackingEngine {
     hardStop();
     drums?.dispose();
     bass?.dispose();
-    keys?.dispose();
+    // TODO(sprint-2-4-task-7): rewrite engine for WebAudioFont — guitar.dispose() 추가
+    // keys?.dispose();
     drums = null;
     bass = null;
-    keys = null;
+    // keys = null;
     listeners.clear();
     state = { status: 'idle' };
   };

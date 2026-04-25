@@ -1,80 +1,58 @@
 /**
- * 합성 드럼 보이스 — Kick(MembraneSynth) + Snare(NoiseSynth) + Hi-hat(MetalSynth).
+ * GM 드럼킷 샘플 voice (Sprint 2-4).
+ * Sprint 2-3의 합성 드럼(MembraneSynth/NoiseSynth/MetalSynth)을 대체.
  *
- * 외부 샘플 없이 Tone.js 내장 신스로 구성. 음색 파라미터는 spec §6.
- * Sprint 2-3 PoC 범위로, 카테고리별 분기는 없다.
+ * GM 채널 10 표준 노트 매핑: kick=36, snare=38, hat=42.
+ * 모든 카테고리에서 동일 매핑 사용 (Standard Kit 기준; Jazz Kit 등도 동일).
  *
- * 단일 AudioContext 원칙:
- *   getTone()을 통해 tone-bridge 경유로 Tone에 접근. 직접 import 금지.
+ * voice는 stateless: preset(LoadedInstrument)을 매 trigger마다 인자로 받음.
+ * 카드(카테고리) 전환 시 voice 객체 재사용, preset만 swap.
  *
- * stop() vs dispose():
- *   stop()은 envelope을 강제 종료(노드 유지) — start/stop 사이클에서 재사용.
- *   dispose()는 Web Audio 노드 해제 — 엔진 dispose 시에만.
+ * dry GainNode가 destination 사이에 끼워져 있어, hardStop 시 voice.fadeOut()이
+ * 10ms ramp로 audio를 끊는다 (WebAudioFont의 cancelQueue가 already-attacked
+ * note를 release하지 못하는 한계 보완).
  */
 
-import { getTone } from '../../tone-bridge';
+import { getAudioContext } from '../../context';
+import { getPlayer, type LoadedInstrument } from '../webaudiofont-bridge';
+
+const KICK_MIDI = 36;
+const SNARE_MIDI = 38;
+const HAT_MIDI = 42;
+
+const NOTE_DURATION_SEC = 0.3; // 퍼커션은 짧게
 
 export interface DrumVoice {
-  trigger(step: 'kick' | 'snare' | 'hat', time: number, velocity?: number): void;
-  stop(): void;
+  trigger(step: 'kick' | 'snare' | 'hat', preset: LoadedInstrument, time: number, velocity?: number): void;
+  /** 즉시 fade out — hardStop에서 already-attacked note 잔향 차단. */
+  fadeOut(): void;
   dispose(): void;
 }
 
-type SynthLike = {
-  toDestination(): SynthLike;
-  triggerAttackRelease(...args: unknown[]): void;
-  triggerRelease?(time?: number): void;
-  dispose(): void;
-};
-
 export function createDrumVoice(): DrumVoice {
-  const Tone = getTone();
-
-  const kick = new Tone.MembraneSynth({
-    pitchDecay: 0.05,
-    octaves: 6,
-    envelope: { attack: 0.001, decay: 0.3, sustain: 0, release: 0.1 },
-  }).toDestination() as unknown as SynthLike;
-
-  const snare = new Tone.NoiseSynth({
-    noise: { type: 'white' },
-    envelope: { attack: 0.001, decay: 0.2, sustain: 0 },
-  }).toDestination() as unknown as SynthLike;
-
-  // Hat: sustain:0 명시 — MetalSynth 기본 envelope sustain은 1이라 stop 시 잔향.
-  // frequency는 Signal이라 options에 못 넣음 — 인스턴스 생성 후 별도 설정.
-  const hat = new Tone.MetalSynth({
-    envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.01 },
-    harmonicity: 5.1,
-    modulationIndex: 32,
-    resonance: 4000,
-    octaves: 1.5,
-  }).toDestination() as unknown as SynthLike & {
-    frequency?: { value: number };
-  };
-  if (hat.frequency) hat.frequency.value = 250;
+  const ctx = getAudioContext();
+  const gain = ctx.createGain();
+  gain.gain.value = 1.0;
+  gain.connect(ctx.destination);
 
   return {
-    trigger(step, time, velocity = 0.8) {
-      if (step === 'kick') {
-        kick.triggerAttackRelease('C1', '8n', time, velocity);
-      } else if (step === 'snare') {
-        snare.triggerAttackRelease('16n', time, velocity);
-      } else {
-        hat.triggerAttackRelease('32n', time, velocity);
-      }
+    trigger(step, preset, time, velocity = 0.8) {
+      const midi = step === 'kick' ? KICK_MIDI : step === 'snare' ? SNARE_MIDI : HAT_MIDI;
+      getPlayer().queueWaveTable(ctx, gain, preset.patch, time, midi, NOTE_DURATION_SEC, velocity);
     },
-    stop() {
-      const Tone = getTone();
-      const now = Tone.now();
-      kick.triggerRelease?.(now);
-      snare.triggerRelease?.(now);
-      hat.triggerRelease?.(now);
+    fadeOut() {
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.01);
+      // 100ms 후 1.0 복구 — 다음 start 즉시 재사용 가능
+      setTimeout(() => {
+        gain.gain.cancelScheduledValues(ctx.currentTime);
+        gain.gain.setValueAtTime(1.0, ctx.currentTime);
+      }, 100);
     },
     dispose() {
-      kick.dispose();
-      snare.dispose();
-      hat.dispose();
+      gain.disconnect();
     },
   };
 }

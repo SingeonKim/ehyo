@@ -1,92 +1,87 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { createToneBridgeMock, resetToneBridgeMock } from '../voice-mock-helpers';
+import {
+  getPlayerInstance,
+  installPlayerMock,
+  makeAudioContextMock,
+  resetPlayerInstance,
+} from '../voice-mock-helpers';
 
-vi.mock('@/lib/audio/tone-bridge', () => createToneBridgeMock());
+let mockCtx: AudioContext;
+vi.mock('@/lib/audio/context', () => ({
+  getAudioContext: vi.fn(() => mockCtx),
+}));
 
-import { createDrumVoice } from '@/lib/audio/backing/voices/drums';
-
-async function getInternals() {
-  const mod = await import('@/lib/audio/tone-bridge');
-  return (mod as unknown as { __mockInternals: ReturnType<typeof createToneBridgeMock>['__mockInternals'] }).__mockInternals;
-}
-
-beforeEach(async () => {
-  const internals = await getInternals();
-  resetToneBridgeMock(internals);
+// webaudiofont-bridge의 getPlayer()가 globalThis.WebAudioFontPlayer 인스턴스를
+// 반환하도록, bridge 자체는 실제 구현 그대로 두고 globalThis만 mock으로 교체한다.
+// bridge 내부 캐시(_player)를 격리하기 위해 테스트마다 reset 함수도 호출.
+vi.mock('@/lib/audio/backing/webaudiofont-bridge', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/audio/backing/webaudiofont-bridge')>();
+  return actual;
 });
 
-describe('createDrumVoice', () => {
-  it('instantiates Membrane/Noise/Metal synths and routes to destination', async () => {
-    createDrumVoice();
-    const internals = await getInternals();
+import { __resetWebAudioFontBridgeForTests } from '@/lib/audio/backing/webaudiofont-bridge';
+import { createDrumVoice } from '@/lib/audio/backing/voices/drums';
 
-    expect(internals.MembraneSynth).toHaveBeenCalledOnce();
-    expect(internals.NoiseSynth).toHaveBeenCalledOnce();
-    expect(internals.MetalSynth).toHaveBeenCalledOnce();
-    expect(internals.membraneSynth.toDestination).toHaveBeenCalledOnce();
-    expect(internals.noiseSynth.toDestination).toHaveBeenCalledOnce();
-    expect(internals.metalSynth.toDestination).toHaveBeenCalledOnce();
+beforeEach(() => {
+  mockCtx = makeAudioContextMock();
+  installPlayerMock();
+  // bridge 싱글턴 player 캐시 초기화 (새 globalThis mock 인식)
+  __resetWebAudioFontBridgeForTests();
+  // installPlayerMock이 globalThis에 새 mock을 심었으므로 다시 주입
+  installPlayerMock();
+});
+
+afterEach(() => {
+  resetPlayerInstance();
+  vi.clearAllMocks();
+});
+
+describe('DrumVoice', () => {
+  it('trigger("kick", preset, time, velocity)는 queueWaveTable을 MIDI 36으로 호출', () => {
+    const voice = createDrumVoice();
+    const fakePreset = { patch: { fake: true }, url: 'x' };
+    voice.trigger('kick', fakePreset, 1.5, 0.7);
+
+    const player = getPlayerInstance();
+    expect(player.queueWaveTable).toHaveBeenCalledOnce();
+    const args = player.queueWaveTable.mock.calls[0]!;
+    expect(args[2]).toBe(fakePreset.patch);  // patch 객체
+    expect(args[3]).toBe(1.5);               // time
+    expect(args[4]).toBe(36);               // MIDI kick
+    expect(args[6]).toBe(0.7);               // velocity
   });
 
-  it('trigger("kick", t, v) calls kick synth triggerAttackRelease with time', async () => {
+  it('trigger("snare")는 MIDI 38', () => {
     const voice = createDrumVoice();
-    const internals = await getInternals();
-
-    voice.trigger('kick', 1.5, 0.7);
-
-    expect(internals.membraneSynth.triggerAttackRelease).toHaveBeenCalledOnce();
-    const call = internals.membraneSynth.triggerAttackRelease.mock.calls[0];
-    // (note, duration, time, velocity)
-    expect(call?.[2]).toBe(1.5);
-    expect(call?.[3]).toBe(0.7);
+    voice.trigger('snare', { patch: {}, url: '' }, 1.0);
+    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[4]).toBe(38);
   });
 
-  it('trigger("snare", t) uses default velocity 0.8', async () => {
+  it('trigger("hat")는 MIDI 42', () => {
     const voice = createDrumVoice();
-    const internals = await getInternals();
-
-    voice.trigger('snare', 2.0);
-
-    const call = internals.noiseSynth.triggerAttackRelease.mock.calls[0];
-    // (duration, time, velocity)
-    expect(call?.[1]).toBe(2.0);
-    expect(call?.[2]).toBe(0.8);
+    voice.trigger('hat', { patch: {}, url: '' }, 1.0);
+    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[4]).toBe(42);
   });
 
-  it('trigger("hat", t, v) calls hat synth with velocity', async () => {
+  it('default velocity 0.8', () => {
     const voice = createDrumVoice();
-    const internals = await getInternals();
-
-    voice.trigger('hat', 3.5, 0.5);
-
-    const call = internals.metalSynth.triggerAttackRelease.mock.calls[0];
-    expect(call?.[1]).toBe(3.5);
-    expect(call?.[2]).toBe(0.5);
+    voice.trigger('kick', { patch: {}, url: '' }, 1.0);
+    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[6]).toBe(0.8);
   });
 
-  it('stop() calls triggerRelease on all three synths and does not dispose', async () => {
+  it('dispose는 GainNode disconnect 호출', () => {
     const voice = createDrumVoice();
-    const internals = await getInternals();
-
-    voice.stop();
-
-    expect(internals.membraneSynth.triggerRelease).toHaveBeenCalled();
-    expect(internals.noiseSynth.triggerRelease).toHaveBeenCalled();
-    expect(internals.metalSynth.triggerRelease).toHaveBeenCalled();
-    expect(internals.membraneSynth.dispose).not.toHaveBeenCalled();
-    expect(internals.noiseSynth.dispose).not.toHaveBeenCalled();
-    expect(internals.metalSynth.dispose).not.toHaveBeenCalled();
-  });
-
-  it('dispose() disposes all three synths', async () => {
-    const voice = createDrumVoice();
-    const internals = await getInternals();
-
     voice.dispose();
+    const gainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(gainResult.disconnect).toHaveBeenCalled();
+  });
 
-    expect(internals.membraneSynth.dispose).toHaveBeenCalledOnce();
-    expect(internals.noiseSynth.dispose).toHaveBeenCalledOnce();
-    expect(internals.metalSynth.dispose).toHaveBeenCalledOnce();
+  it('fadeOut은 gain을 0으로 ramp + dispose 호출 안 함', () => {
+    const voice = createDrumVoice();
+    voice.fadeOut();
+    const gainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(gainResult.gain.linearRampToValueAtTime).toHaveBeenCalled();
+    expect(gainResult.disconnect).not.toHaveBeenCalled();
   });
 });

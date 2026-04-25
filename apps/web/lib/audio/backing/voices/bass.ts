@@ -1,46 +1,42 @@
 /**
- * 베이스 보이스 — Tone.MonoSynth, 단음.
+ * GM 베이스 샘플 voice (Sprint 2-4).
+ * Sprint 2-3의 MonoSynth 합성 베이스 대체.
  *
- * 엔진이 현재 코드의 루트 MIDI를 한 옥타브 다운(`midi[0] - 12`)해서 트리거한다.
- * 음색은 sawtooth + lowpass — 베이스 라인용 두툼한 음.
+ * 단일 MIDI 노트 trigger. duration은 caller가 BPM 비례로 결정해 넘긴다(예: 4분음 = 60/bpm).
  */
 
-import { midiToFrequency } from '@/lib/theory/chord-voicing';
-
-import { getTone } from '../../tone-bridge';
+import { getAudioContext } from '../../context';
+import { getPlayer, type LoadedInstrument } from '../webaudiofont-bridge';
 
 export interface BassVoice {
-  trigger(midiNote: number, duration: string, time: number): void;
-  stop(): void;
+  trigger(midi: number, preset: LoadedInstrument, durationSec: number, time: number, velocity?: number): void;
+  fadeOut(): void;
   dispose(): void;
 }
 
-type MonoSynthLike = {
-  toDestination(): MonoSynthLike;
-  triggerAttackRelease(freq: number, duration: string, time: number): void;
-  triggerRelease(time?: number): void;
-  dispose(): void;
-};
-
 export function createBassVoice(): BassVoice {
-  const Tone = getTone();
-
-  const synth = new Tone.MonoSynth({
-    oscillator: { type: 'sawtooth' },
-    filter: { Q: 2, type: 'lowpass' },
-    envelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.4 },
-  }).toDestination() as unknown as MonoSynthLike;
+  const ctx = getAudioContext();
+  const gain = ctx.createGain();
+  gain.gain.value = 1.0;
+  gain.connect(ctx.destination);
 
   return {
-    trigger(midiNote, duration, time) {
-      synth.triggerAttackRelease(midiToFrequency(midiNote), duration, time);
+    trigger(midi, preset, durationSec, time, velocity = 0.9) {
+      getPlayer().queueWaveTable(ctx, gain, preset.patch, time, midi, durationSec, velocity);
     },
-    stop() {
-      const Tone = getTone();
-      synth.triggerRelease(Tone.now());
+    fadeOut() {
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(gain.gain.value, t);
+      gain.gain.linearRampToValueAtTime(0, t + 0.01);
+      // 100ms 후 1.0 복구 — 다음 start 즉시 재사용 가능
+      setTimeout(() => {
+        gain.gain.cancelScheduledValues(ctx.currentTime);
+        gain.gain.setValueAtTime(1.0, ctx.currentTime);
+      }, 100);
     },
     dispose() {
-      synth.dispose();
+      gain.disconnect();
     },
   };
 }
