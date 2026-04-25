@@ -29,15 +29,15 @@ import { BpmSlider } from './BpmSlider';
 import { ProgressionPlayButton } from './ProgressionPlayButton';
 import { UseRecommendedScaleButton } from './UseRecommendedScaleButton';
 
-/**
- * 12 bars 이하면 단일 row, 초과면 절반씩 2 row.
- * 16 → 8+8, 14 → 7+7, 13 → 7+6 등. flex-wrap이 한 줄이 너무 좁아질 때
- * 자연스럽게 줄을 바꿔주지만, 12 초과 진행은 명시적으로 끊어 시각 균형을 맞춤.
- */
+// 8 bars 단위로 row 분할. 11/1 같은 자연 wrap 깨짐 방지 + 8 단위 그리드 감.
+// 12 → [8, 4], 16 → [8, 8], 24 → [8, 8, 8].
 function splitIntoBarRows<T>(steps: readonly T[]): T[][] {
-  if (steps.length <= 12) return [Array.from(steps)];
-  const half = Math.ceil(steps.length / 2);
-  return [Array.from(steps).slice(0, half), Array.from(steps).slice(half)];
+  if (steps.length <= 8) return [Array.from(steps)];
+  const out: T[][] = [];
+  for (let i = 0; i < steps.length; i += 8) {
+    out.push(Array.from(steps).slice(i, i + 8));
+  }
+  return out;
 }
 
 export function ProgressionCard({
