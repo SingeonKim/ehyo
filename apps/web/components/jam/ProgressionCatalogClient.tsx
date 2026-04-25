@@ -106,7 +106,7 @@ export function ProgressionCatalogClient({
                       </span>
                     </div>
                     {/* 마디 strip — 항상 별도 row. 컨트롤과 같은 줄에 붙지 않게 */}
-                    <ul className="flex flex-wrap gap-1 font-mono text-[0.65rem] text-ink-muted">
+                    <ul className="flex flex-wrap gap-1 font-mono text-xs text-ink-muted">
                       {t.progression.map((step, idx) => {
                         const isCurrent = currentBarIdx === idx;
                         return (
@@ -129,11 +129,13 @@ export function ProgressionCatalogClient({
                         );
                       })}
                     </ul>
-                    {/* 컨트롤 row — BpmSlider · Apply scale · PlayButton */}
-                    <div className="flex flex-wrap items-center justify-end gap-2">
+                    {/* 컨트롤 row — BPM은 좌측에서 시작, PlayButton만 ml-auto로 우측 */}
+                    <div className="flex flex-wrap items-center gap-2">
                       <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
                       <UseRecommendedScaleButton template={t} />
-                      <ProgressionPlayButton template={t} />
+                      <div className="ml-auto">
+                        <ProgressionPlayButton template={t} />
+                      </div>
                     </div>
                   </li>
                 );
