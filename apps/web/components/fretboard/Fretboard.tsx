@@ -27,6 +27,18 @@ export interface FretboardProps {
   /** 지판 상단·하단 프렛 번호 표시 여부. 기본 true. */
   showFretNumbers?: boolean;
   className?: string;
+  /**
+   * 현재 코드 톤 피치 클래스 집합 (배킹 트랙 동기화).
+   * undefined이면 halo를 전혀 그리지 않는다. 빈 Set이면 마찬가지.
+   * 값이 있으면 해당 PC를 가진 모든 노트 위에 반투명 ring을 별도 SVG 레이어로 추가.
+   */
+  chordTonePcs?: ReadonlySet<number>;
+  /**
+   * 현재 코드 심볼 문자열 (예: "I", "IV", "V7").
+   * halo SVG group의 key로 사용되어 chordSymbol이 바뀌면
+   * group이 re-mount → CSS animation이 0%에서 재시작된다.
+   */
+  chordSymbol?: string | null;
 }
 
 // ─── 기하 상수 ──────────────────────────────
@@ -69,6 +81,10 @@ function computeFretLines(frets: number, fretSpacing: FretSpacing): number[] {
   return positions;
 }
 
+// halo 반지름 — fretWidth 기준 고정 비율. tier별 노트 반지름(최대 0.23)보다 크게,
+// tier와 무관하게 일정한 ring이 노트 원을 약간 감싸도록 설정.
+const HALO_RADIUS_RATIO = 0.30;
+
 export function Fretboard({
   notes,
   openStrings,
@@ -78,6 +94,8 @@ export function Fretboard({
   labelMode,
   showFretNumbers = true,
   className,
+  chordTonePcs,
+  chordSymbol,
 }: FretboardProps) {
   const fretLines = computeFretLines(frets, fretSpacing);
   const lastFretX = fretLines[frets] ?? PAD_LEFT;
@@ -228,6 +246,33 @@ export function Fretboard({
         />
       ))}
 
+      {/* ── 코드 톤 halo ring — 노트 마커보다 먼저(아래 레이어)에 그려서 노트 원이 위에 남는다 */}
+      {chordTonePcs && chordTonePcs.size > 0 && (
+        <g
+          key={chordSymbol ?? 'idle-chord'}
+          className="chord-tone-halo"
+          aria-hidden="true"
+        >
+          {notes
+            .filter((n) => chordTonePcs.has(n.pitchClass))
+            .map((n) => {
+              const cx = mirrorX(fretCenterX(n.fret));
+              const cy = stringY(n.string);
+              return (
+                <circle
+                  key={`halo-${n.string}-${n.fret}`}
+                  cx={cx}
+                  cy={cy}
+                  r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                  fill="none"
+                  stroke="var(--color-scale-chord)"
+                  strokeWidth={2}
+                />
+              );
+            })}
+        </g>
+      )}
+
       {/* ── 노트 마커 (fret 1+) ─────── */}
       {notes.map((n) => (
         <FretboardNote
@@ -241,6 +286,7 @@ export function Fretboard({
           labelMode={labelMode}
           stringNumber={n.string}
           fret={n.fret}
+          isChordTone={chordTonePcs?.has(n.pitchClass) ?? false}
         />
       ))}
     </svg>

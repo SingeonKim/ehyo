@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import type { LabelMode, NoteTier } from '@/lib/theory/types';
 
 /*
@@ -23,6 +25,12 @@ interface FretboardNoteProps {
   labelMode: LabelMode;
   stringNumber: number;
   fret: number;
+  /**
+   * 현재 코드 톤에 해당하는 노트인지 여부.
+   * 내부적으로는 halo 렌더를 Fretboard에서 별도 레이어로 처리하므로 직접 쓰지 않지만,
+   * React.memo의 shallow comparison이 코드 톤 변화 시 올바르게 동작하도록 여기에 선언.
+   */
+  isChordTone?: boolean;
 }
 
 // regular = 기준 1.0 → fretWidth * 0.19.  root = 1.2 → 0.228, colored = 1.1 → 0.209.
@@ -44,7 +52,7 @@ const TIER_COLOR_TOKEN: Record<NoteTier, string> = {
 
 const COLORED_TIERS: ReadonlySet<NoteTier> = new Set<NoteTier>(['root', 'orange', 'green', 'blue']);
 
-export function FretboardNote({
+function FretboardNoteImpl({
   cx,
   cy,
   fretWidth,
@@ -54,6 +62,10 @@ export function FretboardNote({
   labelMode,
   stringNumber,
   fret,
+  // isChordTone은 현재 컴포넌트 내에서 직접 사용하지 않으나,
+  // props로 받아둬야 React.memo shallow compare가 값 변화를 감지할 수 있다.
+  // '_' 접두사로 unused-vars lint 규칙 통과 (argsIgnorePattern: '^_').
+  isChordTone: _isChordTone,
 }: FretboardNoteProps) {
   const r = fretWidth * TIER_RADIUS_RATIO[tier];
   const label = labelMode === 'name' ? noteName : labelMode === 'degree' ? degree : '';
@@ -107,3 +119,7 @@ export function FretboardNote({
     </g>
   );
 }
+
+// memo로 감싸 노트별 props가 바뀔 때만 리렌더. 지판 그리드는 변하지 않아도
+// 코드 톤 set이 바뀌면 isChordTone이 달라진 노트만 선택적으로 리렌더된다.
+export const FretboardNote = memo(FretboardNoteImpl);
