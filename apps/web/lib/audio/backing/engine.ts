@@ -241,13 +241,19 @@ function createEngine(): BackingEngine {
         for (const s of BACKBEAT_DRUMS.snare) voices.drums.trigger('snare', preset.drums, t(s.time), s.velocity);
         for (const s of BACKBEAT_DRUMS.hat)   voices.drums.trigger('hat',   preset.drums, t(s.time), s.velocity);
 
-        // bass: 루트 1옥타브 다운, 1박·3박 2회 queueWaveTable
-        const bassMidi = midi[0]! - 12;
+        // bass: 루트 2옥타브 다운, 1박·3박 2회 queueWaveTable
+        // -12는 C3 부근(midrange) — 일반 베이스 기타 컴핑 음역(E1~G3)보다 높아 가벼움.
+        // -24로 C2 부근까지 내려야 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
+        const bassMidi = midi[0]! - 24;
         for (const s of BACKBEAT_BASS.steps) voices.bass.trigger(bassMidi, preset.bass, beatSec, t(s.time), s.velocity);
 
         // guitar: EIGHTH_STRUM 6스텝 — down/up 방향으로 queueStrumDown/queueStrumUp
+        // 코드 톤을 1옥타브 다운 — chordSymbolToMidi 기본 옥타브(C4=60) 기준은 실제
+        // 기타 컴핑 음역대(E2~E5)보다 높아 "쇠 같은" 가벼운 소리. 한 옥타브 내려
+        // C3 부근으로 옮기면 실제 어쿠스틱/일렉기타 컴핑 음역과 맞는다.
+        const guitarMidi = midi.map((n) => n - 12);
         for (const s of EIGHTH_STRUM)
-          voices.guitar.strum(s.direction, midi, preset.guitar, strumDurSec, t(s.time), s.velocity);
+          voices.guitar.strum(s.direction, guitarMidi, preset.guitar, strumDurSec, t(s.time), s.velocity);
       }
 
       // ── 2. 상태 갱신 — eventTime까지 대기 후 setState. UI/audio 위상 일치. ──
