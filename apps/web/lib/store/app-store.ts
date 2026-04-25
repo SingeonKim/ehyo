@@ -76,6 +76,8 @@ export interface BackingSliceState {
   backingPlayingSlug: string | null;
   /** 런타임. 엔진이 퍼블리시하는 현재 코드. */
   backingCurrentChord: { symbol: string; barIndex: number } | null;
+  /** 영속. 카드 slug → 사용자가 설정한 BPM. 없으면 template.default_bpm 사용. */
+  bpmOverrides: Record<string, number>;
 }
 
 // ─── 루트 state + 액션 ────────────────────────────────────
@@ -119,6 +121,10 @@ export interface AppState {
   _setBackingCurrentChord: (
     c: { symbol: string; barIndex: number } | null,
   ) => void;
+  /** slug에 BPM override를 설정. 엔진의 setBpm과 함께 호출해야 즉시 반영. */
+  setBackingBpm: (slug: string, bpm: number) => void;
+  /** slug의 BPM override를 제거. 이후 재생 시 template.default_bpm으로 복귀. */
+  clearBackingBpm: (slug: string) => void;
 }
 
 /** 색 사이클 순서: none(undefined) → orange → green → blue → none. */
@@ -166,12 +172,70 @@ const DEFAULT_BACKING: BackingSliceState = {
   backingKey: 0, // C
   backingPlayingSlug: null,
   backingCurrentChord: null,
+  bpmOverrides: {},
 };
 
 // BPM 클램프 유틸 — planning 1.3 M1 요건: 20~300
 const clampBpm = (n: number): number => Math.round(Math.max(20, Math.min(300, n)));
 const TAP_WINDOW_MS = 2000;  // 2초 공백 시 tap 초기화
 const TAP_MAX = 4;           // 최근 4탭으로 평균
+
+// ─── persist migrate 함수 ─────────────────────────────────
+// module-level로 추출한 이유: persist config 안에서 참조하면서,
+// 동시에 __migrate export로 단위테스트에서 직접 호출할 수 있도록 한다.
+function migrate(persistedState: unknown, version: number): unknown {
+  if (!persistedState || typeof persistedState !== 'object') return persistedState;
+  const s = persistedState as Record<string, unknown>;
+  const fb = (s.fretboard as Record<string, unknown>) ?? {};
+  if (version < 2) {
+    delete fb.importantDegreesByScale;
+  }
+  if (version < 3) {
+    fb.highlightsByScale = {};
+  }
+  if (version < 4 && fb.accidentalMode === undefined) {
+    fb.accidentalMode = 'auto';
+  }
+  s.fretboard = fb;
+  if (version < 5) {
+    const met = (s.metronome as Record<string, unknown>) ?? {};
+    if (met.volume === 0.8) {
+      met.volume = 0.5;
+    }
+    s.metronome = met;
+  }
+  // v5 → v6: backing 슬라이스 추가. 기존 유저 데이터에는 backing 키가
+  // 없으므로 기본값 주입. 런타임 필드는 rehydrate 직후 엔진이 null로
+  // 재설정하므로 여기서는 backingKey만 챙긴다.
+  if (version < 6) {
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    if (typeof backing.backingKey !== 'number') {
+      backing.backingKey = 0;
+    }
+    backing.backingPlayingSlug = null;
+    backing.backingCurrentChord = null;
+    s.backing = backing;
+  }
+  // v6 → v7: backing.bpmOverrides 추가. 카드별 BPM override를 영속화하기 위함.
+  // null/배열처럼 잘못된 타입이 이미 있는 경우도 빈 객체로 교체한다.
+  if (version < 7) {
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    const overrides = backing.bpmOverrides;
+    if (!overrides || typeof overrides !== 'object' || Array.isArray(overrides)) {
+      backing.bpmOverrides = {};
+    }
+    s.backing = backing;
+  }
+  return persistedState;
+}
+
+/**
+ * Test helper — persist 미들웨어 외부에서 migrate 로직을 직접 검증할 때만 사용.
+ * 프로덕션 코드에서 import 금지.
+ */
+export function __migrate(state: unknown, version: number): unknown {
+  return migrate(state, version);
+}
 
 // ─── 스토어 생성 ──────────────────────────────────────────
 export const useAppStore = create<AppState>()(
@@ -312,52 +376,31 @@ export const useAppStore = create<AppState>()(
         set((s) => {
           s.backing.backingCurrentChord = c;
         }),
+
+      setBackingBpm: (slug, bpm) =>
+        set((s) => {
+          // slug에 BPM override를 기록. 엔진 setBpm 호출과 쌍으로 사용한다.
+          s.backing.bpmOverrides[slug] = bpm;
+        }),
+
+      clearBackingBpm: (slug) =>
+        set((s) => {
+          // override를 삭제하면 다음 재생 시 template.default_bpm으로 복귀한다.
+          delete s.backing.bpmOverrides[slug];
+        }),
     })),
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 6,
+      version: 7,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
       // v4 → v5: volume 기본값 0.8 → 0.5. 유저가 슬라이더로 바꾸지 않았던 경우
       //         (정확히 0.8인 경우)만 조정. 커스터마이징된 값은 보존.
       // v5 → v6: backing 슬라이스 추가.
-      migrate: (persistedState, version) => {
-        if (!persistedState || typeof persistedState !== 'object') return persistedState as AppState;
-        const s = persistedState as Record<string, unknown>;
-        const fb = (s.fretboard as Record<string, unknown>) ?? {};
-        if (version < 2) {
-          delete fb.importantDegreesByScale;
-        }
-        if (version < 3) {
-          fb.highlightsByScale = {};
-        }
-        if (version < 4 && fb.accidentalMode === undefined) {
-          fb.accidentalMode = 'auto';
-        }
-        s.fretboard = fb;
-        if (version < 5) {
-          const met = (s.metronome as Record<string, unknown>) ?? {};
-          if (met.volume === 0.8) {
-            met.volume = 0.5;
-          }
-          s.metronome = met;
-        }
-        // v5 → v6: backing 슬라이스 추가. 기존 유저 데이터에는 backing 키가
-        // 없으므로 기본값 주입. 런타임 필드는 rehydrate 직후 엔진이 null로
-        // 재설정하므로 여기서는 backingKey만 챙긴다.
-        if (version < 6) {
-          const backing = (s.backing as Record<string, unknown>) ?? {};
-          if (typeof backing.backingKey !== 'number') {
-            backing.backingKey = 0;
-          }
-          backing.backingPlayingSlug = null;
-          backing.backingCurrentChord = null;
-          s.backing = backing;
-        }
-        return persistedState as AppState;
-      },
+      // v6 → v7: backing.bpmOverrides 추가. 카드별 BPM override 영속화.
+      migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
         metronome: {
@@ -373,6 +416,8 @@ export const useAppStore = create<AppState>()(
         ui: state.ui,
         backing: {
           backingKey: state.backing.backingKey,
+          // bpmOverrides도 영속화 — 카드별 BPM 설정이 새로고침 후에도 유지됨
+          bpmOverrides: state.backing.bpmOverrides,
         },
       }),
       // Zustand 기본 merge는 top-level shallow. metronome 같은 nested object가
