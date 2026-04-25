@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { __migrate } from '@/lib/store/app-store';
+import { __migrate, useAppStore } from '@/lib/store/app-store';
 
 // ─── persist migration 단위 테스트 ─────────────────────────
 
@@ -123,5 +123,56 @@ describe('setBackingBpm action', () => {
     expect(useAppStore.getState().backing.bpmOverrides['slug-b']).toBe(140);
     // 정리
     useAppStore.getState().clearBackingBpm('slug-b');
+  });
+});
+
+// ─── Sprint 2-6 — chordDisplayMode (UI 상태) ────────────────
+
+describe('chordDisplayMode (Sprint 2-6)', () => {
+  it('기본값은 roman', () => {
+    const store = useAppStore.getState();
+    expect(store.ui.chordDisplayMode).toBe('roman');
+  });
+
+  it('setChordDisplayMode로 absolute / roman 전환', () => {
+    const { setChordDisplayMode } = useAppStore.getState();
+    setChordDisplayMode('absolute');
+    expect(useAppStore.getState().ui.chordDisplayMode).toBe('absolute');
+    setChordDisplayMode('roman');
+    expect(useAppStore.getState().ui.chordDisplayMode).toBe('roman');
+  });
+});
+
+// ─── Sprint 2-6 — persist v7 → v8 migration ───────────────
+
+describe('persist migrate v7 → v8', () => {
+  it('chordDisplayMode 없는 상태에 기본값 roman 주입', () => {
+    const v7State = {
+      ui: { theme: 'dark' },
+      backing: {
+        backingKey: 0,
+        backingPlayingSlug: null,
+        backingCurrentChord: null,
+        bpmOverrides: {},
+      },
+    };
+    const migrated = __migrate(v7State, 7) as { ui: { chordDisplayMode: string } };
+    expect(migrated.ui.chordDisplayMode).toBe('roman');
+  });
+
+  it('잘못된 chordDisplayMode 값은 roman으로 정정', () => {
+    const v7State = {
+      ui: { theme: 'dark', chordDisplayMode: 'INVALID' },
+    };
+    const migrated = __migrate(v7State, 7) as { ui: { chordDisplayMode: string } };
+    expect(migrated.ui.chordDisplayMode).toBe('roman');
+  });
+
+  it('이미 absolute로 설정된 경우 보존', () => {
+    const v7State = {
+      ui: { theme: 'dark', chordDisplayMode: 'absolute' },
+    };
+    const migrated = __migrate(v7State, 7) as { ui: { chordDisplayMode: string } };
+    expect(migrated.ui.chordDisplayMode).toBe('absolute');
   });
 });

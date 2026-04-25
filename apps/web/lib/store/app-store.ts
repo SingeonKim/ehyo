@@ -12,6 +12,7 @@ import type {
   ScaleKey,
 } from '@/lib/theory/types';
 import { SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
+import type { ChordDisplayMode } from '@/lib/theory/chord-display';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -66,6 +67,13 @@ export interface FretboardState {
 // ─── UI ────────────────────────────────────────────────────
 export interface UiState {
   theme: 'dark' | 'light';
+  /**
+   * 배킹 카탈로그의 코드 표기 모드.
+   * 'roman': 도수 표기 (I, IV, V7) — 키와 무관한 보편 형태
+   * 'absolute': 키 적용 표기 (C, F, G7) — 실제 음 이름
+   * 사용자가 토글로 전환, persist에 포함.
+   */
+  chordDisplayMode: ChordDisplayMode;
 }
 
 // ─── 배킹 트랙 ─────────────────────────────────────────────
@@ -125,6 +133,10 @@ export interface AppState {
   setBackingBpm: (slug: string, bpm: number) => void;
   /** slug의 BPM override를 제거. 이후 재생 시 template.default_bpm으로 복귀. */
   clearBackingBpm: (slug: string) => void;
+
+  // UI 액션
+  /** 카탈로그 코드 표기 모드 전환. 'roman' ↔ 'absolute'. */
+  setChordDisplayMode: (mode: ChordDisplayMode) => void;
 }
 
 /** 색 사이클 순서: none(undefined) → orange → green → blue → none. */
@@ -166,6 +178,7 @@ const DEFAULT_FRETBOARD: FretboardState = {
 
 const DEFAULT_UI: UiState = {
   theme: 'dark',
+  chordDisplayMode: 'roman',
 };
 
 const DEFAULT_BACKING: BackingSliceState = {
@@ -225,6 +238,15 @@ function migrate(persistedState: unknown, version: number): unknown {
       backing.bpmOverrides = {};
     }
     s.backing = backing;
+  }
+  // v7 → v8: ui.chordDisplayMode 추가. 잘못된 값(undefined/문자열 외)은 'roman'으로 정정.
+  // 카탈로그 카드 코드 표기를 도수↔절대 토글하는 UI 상태이므로 persist 포함.
+  if (version < 8) {
+    const ui = (s.ui as Record<string, unknown>) ?? {};
+    if (ui.chordDisplayMode !== 'absolute' && ui.chordDisplayMode !== 'roman') {
+      ui.chordDisplayMode = 'roman';
+    }
+    s.ui = ui;
   }
   return persistedState;
 }
@@ -388,11 +410,18 @@ export const useAppStore = create<AppState>()(
           // override를 삭제하면 다음 재생 시 template.default_bpm으로 복귀한다.
           delete s.backing.bpmOverrides[slug];
         }),
+
+      setChordDisplayMode: (mode) =>
+        set((s) => {
+          // 카탈로그 칩/재생 라벨 모두 ui.chordDisplayMode를 구독하므로
+          // 이 한 줄 변경이 전역적으로 표기를 전환한다.
+          s.ui.chordDisplayMode = mode;
+        }),
     })),
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 7,
+      version: 8,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -400,6 +429,7 @@ export const useAppStore = create<AppState>()(
       //         (정확히 0.8인 경우)만 조정. 커스터마이징된 값은 보존.
       // v5 → v6: backing 슬라이스 추가.
       // v6 → v7: backing.bpmOverrides 추가. 카드별 BPM override 영속화.
+      // v7 → v8: ui.chordDisplayMode 추가 (Sprint 2-6 카탈로그 표기 토글).
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
