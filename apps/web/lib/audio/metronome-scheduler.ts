@@ -4,23 +4,21 @@ import type {
   SchedulerEvent,
   SchedulerListener,
 } from './types';
-import { LOOKAHEAD_MS, SCHEDULE_AHEAD_IOS_SEC, SCHEDULE_AHEAD_SEC, SUBDIVISION_COUNT } from './types';
+import { SUBDIVISION_COUNT } from './types';
 import { scheduleClick } from './sounds';
+import { createLookaheadScheduler } from './scheduler/lookahead-scheduler';
 
 /*
- * Chris Wilson lookahead 스케줄러.
+ * Chris Wilson lookahead 스케줄러 — LookaheadScheduler 코어를 재사용한 버전.
  *
  * 핵심 로직:
- *   1. Worker가 LOOKAHEAD_MS(25ms)마다 메인 스레드에 'tick' 메시지를 보냄.
- *   2. tick 수신 시 "다음 예약할 이벤트의 시각"이 currentTime + scheduleAheadTime
- *      보다 작으면 = 이 lookahead 창 안에 들어왔으면 — 실제 오디오를 예약하고
- *      다음 이벤트 시각을 계산해 포인터 전진.
- *   3. 그렇지 않으면 패스 (다음 틱에서 재검토).
- *
- * 이 구조가 setInterval 단독보다 정확한 이유:
- *   - 오디오 예약은 AudioContext의 샘플-정확 clock에 맡김
- *   - JS 타이머의 지터(± 수 ms)는 lookahead 창(100ms)으로 흡수됨
- *   - 창을 넘어서면 예약이 밀리므로 창 < lookahead 간격이면 무조건 catch up
+ *   1. LookaheadScheduler가 Worker를 관리하고 25ms마다 onTick 콜백을 트리거한다.
+ *   2. onTick이 불릴 때마다 "다음 예약할 이벤트 시각"이 currentTime + scheduleAhead
+ *      안에 들어왔으면 오디오를 예약하고 다음 이벤트 시각 포인터를 전진한다.
+ *   3. LookaheadScheduler의 intervalSeconds = LOOKAHEAD_MS / 1000(= 0.025)로 설정.
+ *      이로 인해 한 Worker tick 당 onTick이 최대 4~5번 불릴 수 있지만,
+ *      메트로놈 windowing이 자체 nextEventTime과 horizon 가드를 가지므로
+ *      중복 호출은 완전히 idempotent하다 (두 번째 호출부터 while이 즉시 종료).
  *
  * Swing 처리:
  *   한 박을 8분음 2개로 나눌 때, 두 번째 8분음을 (1 + SWING_DELAY) × halfBeat
@@ -28,6 +26,13 @@ import { scheduleClick } from './sounds';
  */
 
 const SWING_DELAY = 0.33; // 0 = 스트레이트, 0.33 ≈ 재즈 셔플, 0.5 = 3연음의 2음째
+
+// LookaheadScheduler에 전달할 intervalSeconds.
+// 값 자체는 메트로놈 windowing에서 무시되지만, LookaheadScheduler 내부 while이
+// Worker tick당 onTick을 몇 번 부르는지에 영향을 준다.
+// 0.025(= LOOKAHEAD_MS/1000)로 설정하면 한 tick에 최대 scheduleAhead/0.025 ≈ 4회 호출.
+// 메트로놈 자체 windowing이 idempotent하므로 문제없음.
+const LOOKAHEAD_SCHEDULER_INTERVAL_SEC = 0.025;
 
 interface SchedulerOptions {
   audioContext: AudioContext;
@@ -42,12 +47,6 @@ interface SchedulerOptions {
    * 테스트에서는 false 고정 권장.
    */
   isIOS?: boolean;
-}
-
-function detectIOS(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent;
-  return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
 }
 
 /**
@@ -70,10 +69,7 @@ function tickInterval(config: SchedulerConfig): number {
 
 export function createMetronomeScheduler(options: SchedulerOptions): MetronomeScheduler {
   const { audioContext, getConfig, spy } = options;
-  const isIOS = options.isIOS ?? detectIOS();
-  const scheduleAhead = isIOS ? SCHEDULE_AHEAD_IOS_SEC : SCHEDULE_AHEAD_SEC;
 
-  let worker: Worker | null = null;
   let running = false;
   /** 다음에 예약할 이벤트의 AudioContext 시각. */
   let nextEventTime = 0;
@@ -87,6 +83,31 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
   master.connect(audioContext.destination);
 
   const listeners = new Set<SchedulerListener>();
+
+  // LookaheadScheduler 인스턴스 — Worker 관리와 tick 트리거를 위임한다.
+  // isIOS를 그대로 전달해 scheduleAhead 보정을 LookaheadScheduler가 처리하게 한다.
+  const lookahead = createLookaheadScheduler({
+    audioContext,
+    createWorker: options.createWorker,
+    isIOS: options.isIOS,
+  });
+
+  // LookaheadScheduler 내부가 관리하는 scheduleAhead 값.
+  // 메트로놈 windowing의 horizon 계산에 동일한 값을 써야 드리프트 없이 맞는다.
+  // isIOS=true일 때 LookaheadScheduler 내부는 0.15를 쓰므로 여기도 맞춘다.
+  // isIOS 옵션이 undefined면 LookaheadScheduler와 동일한 navigator 감지 로직에 맡긴다.
+  // 단, 테스트에서는 isIOS: false를 명시적으로 전달하므로 0.1이 사용된다.
+  const IOS_SCHEDULE_AHEAD = 0.15;
+  const DEFAULT_SCHEDULE_AHEAD = 0.1;
+
+  function resolveIsIOS(): boolean {
+    if (options.isIOS !== undefined) return options.isIOS;
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent;
+    return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
+  }
+
+  const scheduleAhead = resolveIsIOS() ? IOS_SCHEDULE_AHEAD : DEFAULT_SCHEDULE_AHEAD;
 
   function advancePointer(config: SchedulerConfig): void {
     const subdivCount = SUBDIVISION_COUNT[config.subdivision];
@@ -133,7 +154,28 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
     listeners.forEach((l) => l(event));
   }
 
-  /** Worker tick 처리 — lookahead 내에 있는 모든 이벤트를 예약. */
+  /**
+   * Swing의 "현재가 두 번째 8분음이었는가"를 advancePointer 이전에 판별.
+   *
+   * currentSubdiv가 advance되기 전에 호출됨. swing 모드의 currentSubdiv === 1이면
+   * 이번 예약이 off-beat이고 다음은 다음 박의 down-beat — delta = baseInterval * (1 - SWING).
+   */
+  function isSecondEighthBefore(config: SchedulerConfig): boolean {
+    return config.subdivision === 'swing' && currentSubdiv === 1;
+  }
+
+  /**
+   * Worker tick 처리 — lookahead 창 안에 있는 모든 이벤트를 예약.
+   *
+   * LookaheadScheduler가 매 Worker tick 당 이 함수를 여러 번 호출할 수 있다
+   * (LOOKAHEAD_SCHEDULER_INTERVAL_SEC = 0.025 기준으로 한 tick당 최대 4~5회).
+   * 그러나 자체 nextEventTime과 horizon 가드가 있어 중복 호출은 idempotent하다.
+   * — 두 번째 이후 호출에서 while 조건이 이미 false이므로 즉시 종료.
+   *
+   * LookaheadScheduler가 전달하는 eventTime 인수는 사용하지 않는다.
+   * 메트로놈은 BPM·swing·subdivision에 따라 박마다 다른 간격을 계산하므로
+   * 고정 intervalSeconds 기반의 외부 포인터가 아닌 자체 nextEventTime을 써야 한다.
+   */
   function onTick(): void {
     if (!running) return;
     const config = getConfig();
@@ -150,24 +192,12 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
       // Swing: 8th subdivision 두 번째에만 지연 적용
       const baseInterval = tickInterval(config);
       const isSecondEighth = config.subdivision === 'swing' && currentSubdiv === 0;
-      const delta = isSecondEighth ? baseInterval * (1 + SWING_DELAY) : baseInterval * (isSecondEighthBefore(config) ? 1 - SWING_DELAY : 1);
+      const delta = isSecondEighth
+        ? baseInterval * (1 + SWING_DELAY)
+        : baseInterval * (isSecondEighthBefore(config) ? 1 - SWING_DELAY : 1);
       nextEventTime += delta;
 
       advancePointer(config);
-    }
-  }
-
-  /** Swing의 "현재가 두 번째 8분음이었는가"를 advancePointer 이전에 판별. */
-  function isSecondEighthBefore(config: SchedulerConfig): boolean {
-    // currentSubdiv가 advance되기 전에 호출됨. swing 모드의 currentSubdiv === 1이면
-    // 이번 예약이 off-beat이고 다음은 다음 박의 down-beat — delta = baseInterval * (1 - SWING).
-    // 실제 로직은 위 삼항에서 반전되어 적용됨. 이 헬퍼는 가독성용.
-    return config.subdivision === 'swing' && currentSubdiv === 1;
-  }
-
-  function handleMessage(e: MessageEvent): void {
-    if ((e.data as { type?: string } | null)?.type === 'tick') {
-      onTick();
     }
   }
 
@@ -187,17 +217,21 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
       // 5ms 버퍼로 시작 — 첫 이벤트를 안정적으로 예약
       nextEventTime = audioContext.currentTime + 0.05;
 
-      const create = options.createWorker;
-      if (!worker && create) {
-        worker = create();
-        worker.addEventListener('message', handleMessage);
-      }
-      worker?.postMessage({ type: 'start', intervalMs: LOOKAHEAD_MS });
+      // LookaheadScheduler에 intervalSeconds를 설정한다.
+      // 이 값은 LookaheadScheduler 내부 포인터 전진에만 사용되며,
+      // 메트로놈의 onTick은 이 포인터를 무시하고 자체 nextEventTime으로 동작한다.
+      lookahead.setIntervalSeconds(LOOKAHEAD_SCHEDULER_INTERVAL_SEC);
+
+      // onTick을 콜백으로 전달 — Worker tick마다 메트로놈 windowing 실행.
+      // _eventTime 인수(LookaheadScheduler 내부 포인터)는 의도적으로 무시한다.
+      lookahead.start((_eventTime: number) => {
+        onTick();
+      });
     },
 
     stop() {
       running = false;
-      worker?.postMessage({ type: 'stop' });
+      lookahead.stop();
       // 이미 예약된 노트는 AudioContext 스레드에서 자체 종료되므로 별도 취소 X.
       // 단 master gain을 일시 음소거 → 즉시 정적. 재시작 시 복원.
       try {
