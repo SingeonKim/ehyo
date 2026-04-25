@@ -39,6 +39,18 @@ export type TrackPattern = {
 export function parseBeatStep(notation: string, bpm: number, beatsPerBar = 4): number {
   const parts = notation.split(':').map(Number);
   const [bars = 0, beats = 0, subs = 0] = parts;
+
+  // dev 가드: 패턴 데이터는 모두 우리가 작성하는 상수 — 잘못된 값이 들어오면
+  // 런타임 즉시 발견. production 빌드에서는 dead-code-eliminate.
+  if (process.env.NODE_ENV !== 'production') {
+    if (!Number.isFinite(bars) || !Number.isFinite(beats) || !Number.isFinite(subs)) {
+      throw new Error(`parseBeatStep: invalid notation "${notation}"`);
+    }
+    if (!Number.isFinite(bpm) || bpm <= 0) {
+      throw new Error(`parseBeatStep: bpm must be > 0, got ${bpm}`);
+    }
+  }
+
   const beatSec = 60 / bpm;
   return bars * beatsPerBar * beatSec + beats * beatSec + (subs / 4) * beatSec;
 }

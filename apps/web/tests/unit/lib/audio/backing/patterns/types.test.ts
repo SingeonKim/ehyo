@@ -35,3 +35,17 @@ describe('parseBeatStep', () => {
     expect(parseBeatStep('1:0:0', 120, 3)).toBeCloseTo(1.5);
   });
 });
+
+describe('parseBeatStep dev guards', () => {
+  it('잘못된 notation은 throw', () => {
+    expect(() => parseBeatStep('abc:1:0', 120)).toThrow(/invalid notation/);
+  });
+
+  it('BPM 0은 throw', () => {
+    expect(() => parseBeatStep('0:0:0', 0)).toThrow(/bpm must be > 0/);
+  });
+
+  it('음수 BPM은 throw', () => {
+    expect(() => parseBeatStep('0:0:0', -10)).toThrow(/bpm must be > 0/);
+  });
+});
