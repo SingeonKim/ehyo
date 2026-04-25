@@ -12,6 +12,7 @@ import { clsx } from 'clsx';
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 
+import { BpmSlider } from './BpmSlider';
 import { KeySelector } from './KeySelector';
 import { ProgressionPlayButton } from './ProgressionPlayButton';
 
@@ -91,7 +92,11 @@ export function ProgressionCatalogClient({
                         <span className="px-1.5 py-[1px] text-ink-muted">…</span>
                       )}
                     </div>
-                    <ProgressionPlayButton template={t} />
+                    {/* BpmSlider + PlayButton: 카드 우측 컨트롤 영역 */}
+                    <div className="flex items-center gap-2">
+                      <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
+                      <ProgressionPlayButton template={t} />
+                    </div>
                   </div>
                 </li>
               ))}
