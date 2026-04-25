@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
-import { getChordOverlay } from '@/lib/theory/chord-voicing';
+import { getChordOverlay, type ChordOverlay } from '@/lib/theory/chord-voicing';
 import {
   STANDARD_TUNING,
   getFretboardNotes,
@@ -65,8 +65,9 @@ export function FretboardClient() {
 
   // 현재 코드 overlay (root / tones 분리) — isBackingActive 이고
   // currentChordSymbol이 있을 때만 계산. Fretboard가 두 layer로 분리 렌더한다.
-  // Task 6에서 useMemo 자체 정리(여기 임시 어댑터) 예정.
-  const chordOverlay = useMemo(() => {
+  // 빈 overlay (root null + tones empty)는 undefined로 정규화해 Fretboard가 overlay
+  // 레이어 자체를 건너뛰도록 한다.
+  const chordOverlay = useMemo<ChordOverlay | undefined>(() => {
     if (!isBackingActive || !currentChordSymbol) return undefined;
     const overlay = getChordOverlay(currentChordSymbol, backingKey);
     if (overlay.root === null && overlay.tones.size === 0) return undefined;
