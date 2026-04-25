@@ -20,6 +20,7 @@ import { Loader2 } from 'lucide-react';
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 import { getBackingEngine } from '@/lib/audio/backing';
 import { useAppStore } from '@/lib/store/app-store';
+import { displayChord } from '@/lib/theory/chord-display';
 
 export function ProgressionPlayButton({
   template,
@@ -31,6 +32,8 @@ export function ProgressionPlayButton({
   );
   const backingKey = useAppStore((s) => s.backing.backingKey);
   const currentChord = useAppStore((s) => s.backing.backingCurrentChord);
+  // 코드 표기 모드(symbol/degree) — Sprint 2-6에서 도입된 UI 토글.
+  const chordDisplayMode = useAppStore((s) => s.ui.chordDisplayMode);
   // Bug 1: 정지 상태에서 BPM 슬라이더로 변경 후 ▶ 누를 때 override 값 반영.
   // engine은 store를 직접 import하지 않으므로 호출자가 읽어서 전달하는 bridge 패턴.
   const overrideBpm = useAppStore(
@@ -80,7 +83,7 @@ export function ProgressionPlayButton({
           <span aria-hidden="true">{isPlaying ? '⏹' : '▶'}</span>
           {isPlaying && currentChord && (
             <span className="tabular-nums">
-              {currentChord.symbol} · bar {currentChord.barIndex + 1}/{template.bars}
+              {displayChord(currentChord.symbol, backingKey, chordDisplayMode)} · bar {currentChord.barIndex + 1}/{template.bars}
             </span>
           )}
         </>
