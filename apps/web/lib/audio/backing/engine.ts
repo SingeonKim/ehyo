@@ -348,10 +348,13 @@ if (typeof window !== 'undefined') {
       }
     });
 
-    // store → engine: Key 변경 + BPM override 변화 전파
+    // store → engine: Key 변경 + BPM override 변화 전파.
+    // Sprint 2-6 후속(v9): backing key가 fretboard.root로 통합됐으므로 root를 구독.
+    // 사용자가 RootPicker/KeySelector 어디서든 키를 바꿔도 같은 fretboard.root를
+    // 갱신하므로 한 번의 subscribe로 두 컨트롤이 모두 잡힌다.
     useAppStore.subscribe((s, prev) => {
-      if (s.backing.backingKey !== prev.backing.backingKey) {
-        engine.setKey(s.backing.backingKey);
+      if (s.fretboard.root !== prev.fretboard.root) {
+        engine.setKey(s.fretboard.root);
       }
       // BPM override 변화 감지 — Task 9에서 bpmOverrides 추가 시 활성.
       // 현재는 store에 bpmOverrides 없음 → 이 selector는 항상 undefined === undefined.

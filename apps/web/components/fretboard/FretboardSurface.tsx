@@ -33,7 +33,7 @@ import { Fretboard } from './Fretboard';
 export function FretboardSurface() {
   const hydrated = useHasHydrated();
 
-  const fretboardRoot = useAppStore((s) => s.fretboard.root);
+  const root = useAppStore((s) => s.fretboard.root);
   const scale = useAppStore((s) => s.fretboard.scale);
   const handedness = useAppStore((s) => s.fretboard.handedness);
   const labelMode = useAppStore((s) => s.fretboard.labelMode);
@@ -42,35 +42,36 @@ export function FretboardSurface() {
   const highlightsOverride = useAppStore((s) => s.fretboard.highlightsByScale[scale]);
   const accidentalMode = useAppStore((s) => s.fretboard.accidentalMode);
 
-  const backingKey = useAppStore((s) => s.backing.backingKey);
+  // Sprint 2-6 후속(v9): backing key가 fretboard.root로 통합됐다.
+  // 이전엔 isBackingActive 분기로 backingKey를 effectiveRoot로 썼으나,
+  // 이제 root 하나만 사용. backingPlayingSlug 구독은 chordOverlay 활성 분기용으로만 유지.
   const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
   const currentChordSymbol = useAppStore(
     (s) => s.backing.backingCurrentChord?.symbol ?? null,
   );
 
   const isBackingActive = backingPlayingSlug !== null;
-  const effectiveRoot = isBackingActive ? backingKey : fretboardRoot;
 
   const chordOverlay = useMemo<ChordOverlay | undefined>(() => {
     if (!isBackingActive || !currentChordSymbol) return undefined;
-    const overlay = getChordOverlay(currentChordSymbol, backingKey);
+    const overlay = getChordOverlay(currentChordSymbol, root);
     if (overlay.root === null && overlay.tones.size === 0) return undefined;
     return overlay;
-  }, [isBackingActive, currentChordSymbol, backingKey]);
+  }, [isBackingActive, currentChordSymbol, root]);
 
-  const useFlats = shouldUseFlats(effectiveRoot, accidentalMode);
+  const useFlats = shouldUseFlats(root, accidentalMode);
 
   const notes = useMemo(() => {
     const highlights = resolveScaleHighlights(scale, highlightsOverride);
     return getFretboardNotes({
       tuning: STANDARD_TUNING,
       frets,
-      root: effectiveRoot,
+      root,
       scale,
       highlights,
       useFlats,
     });
-  }, [effectiveRoot, scale, frets, highlightsOverride, useFlats]);
+  }, [root, scale, frets, highlightsOverride, useFlats]);
 
   const openStrings = useMemo(
     () => getOpenStringLabels(STANDARD_TUNING, useFlats),

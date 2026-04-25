@@ -30,7 +30,8 @@ export function ProgressionPlayButton({
   const isPlaying = useAppStore(
     (s) => s.backing.backingPlayingSlug === template.slug,
   );
-  const backingKey = useAppStore((s) => s.backing.backingKey);
+  // Sprint 2-6 후속(v9): backing key가 fretboard.root로 통합. 단일 소스 사용.
+  const root = useAppStore((s) => s.fretboard.root);
   const currentChord = useAppStore((s) => s.backing.backingCurrentChord);
   // 코드 표기 모드(symbol/degree) — Sprint 2-6에서 도입된 UI 토글.
   const chordDisplayMode = useAppStore((s) => s.ui.chordDisplayMode);
@@ -50,7 +51,7 @@ export function ProgressionPlayButton({
       setIsLoading(true);
       try {
         // overrideBpm이 undefined면 engine이 template.default_bpm을 사용
-        await engine.start(template, backingKey, overrideBpm);
+        await engine.start(template, root, overrideBpm);
       } finally {
         // 성공·실패 모두 loading 해제 (playing 상태는 store 브리지가 담당)
         setIsLoading(false);
@@ -83,7 +84,7 @@ export function ProgressionPlayButton({
           <span aria-hidden="true">{isPlaying ? '⏹' : '▶'}</span>
           {isPlaying && currentChord && (
             <span className="tabular-nums">
-              {displayChord(currentChord.symbol, backingKey, chordDisplayMode)} · bar {currentChord.barIndex + 1}/{template.bars}
+              {displayChord(currentChord.symbol, root, chordDisplayMode)} · bar {currentChord.barIndex + 1}/{template.bars}
             </span>
           )}
         </>

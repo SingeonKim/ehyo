@@ -26,10 +26,15 @@ describe('persist migration', () => {
     expect(result.backing.bpmOverrides).toEqual({});
   });
 
-  it('v6 state의 backing.backingKey 보존', () => {
+  it('v6 state의 backing.backingKey가 v9에서 fretboard.root로 흡수되고 삭제됨', () => {
+    // migrate는 항상 마지막 버전(v9)까지 누적 적용되므로 v6 입력도 v9 결과로 비교한다.
     const v6 = { backing: { backingKey: 7 } };
-    const result = __migrate(v6, 6) as { backing: { backingKey: number } };
-    expect(result.backing.backingKey).toBe(7);
+    const result = __migrate(v6, 6) as {
+      backing: Record<string, unknown>;
+      fretboard: { root: number };
+    };
+    expect(result.fretboard.root).toBe(7);
+    expect(result.backing.backingKey).toBeUndefined();
   });
 
   it('v7 state의 bpmOverrides는 그대로 보존 (idempotent)', () => {
@@ -58,22 +63,87 @@ describe('persist migration', () => {
     expect(__migrate(undefined, 6)).toBeUndefined();
   });
 
-  it('v5 state에서 v7까지 누적 migration이 올바르게 동작 (volume 조정 + bpmOverrides 주입)', () => {
-    // v5 이전 유저: volume=0.8, backing 없음 → v7 기준으로 모두 처리돼야 함
+  it('v4 state에서 v9까지 누적 migration이 올바르게 동작', () => {
+    // v4 이전 유저: volume=0.8, backing 없음 → 누적 마이그레이션 끝에 v9 모양이 돼야 함
     const v5State = {
       fretboard: { root: 0, scale: 'major' },
       metronome: { volume: 0.8 },
     };
     const result = __migrate(v5State, 4) as {
       metronome: { volume: number };
-      backing: { backingKey: number; bpmOverrides: Record<string, number> };
+      fretboard: { root: number };
+      backing: { bpmOverrides: Record<string, number> } & Record<string, unknown>;
+      ui: { chordDisplayMode: string };
     };
     // v4→v5: volume 0.8 → 0.5
     expect(result.metronome.volume).toBe(0.5);
-    // v5→v6: backingKey 기본값 0 주입
-    expect(result.backing.backingKey).toBe(0);
-    // v6→v7: bpmOverrides 빈 객체 주입
+    // v5→v6: backing 슬라이스 주입(v9에서 backingKey는 다시 빠짐)
+    // v6→v7: bpmOverrides 빈 객체
     expect(result.backing.bpmOverrides).toEqual({});
+    // v7→v8: chordDisplayMode 기본 roman
+    expect(result.ui.chordDisplayMode).toBe('roman');
+    // v8→v9: backingKey가 fretboard.root로 흡수되고 backing에서 삭제됨
+    expect(result.backing.backingKey).toBeUndefined();
+    expect(result.fretboard.root).toBe(0);
+  });
+});
+
+// ─── Sprint 2-6 후속 — persist v8 → v9 migration (Key 동기화) ───
+
+describe('persist migrate v8 → v9', () => {
+  it('backingKey가 있으면 fretboard.root로 옮기고 backingKey 삭제', () => {
+    const v8 = {
+      fretboard: { root: 0, scale: 'major' },
+      backing: { backingKey: 7, bpmOverrides: {} },
+      ui: { chordDisplayMode: 'roman' },
+    };
+    const result = __migrate(v8, 8) as {
+      fretboard: { root: number };
+      backing: Record<string, unknown>;
+    };
+    // jam에서 듣던 키 보존이 우선 — RootPicker 기본값(C)을 덮어씀
+    expect(result.fretboard.root).toBe(7);
+    expect(result.backing.backingKey).toBeUndefined();
+  });
+
+  it('backingKey가 없으면 fretboard.root 변동 없음', () => {
+    const v8 = {
+      fretboard: { root: 5 },
+      backing: { bpmOverrides: {} },
+    };
+    const result = __migrate(v8, 8) as {
+      fretboard: { root: number };
+      backing: Record<string, unknown>;
+    };
+    expect(result.fretboard.root).toBe(5);
+    expect(result.backing.backingKey).toBeUndefined();
+  });
+
+  it('잘못된 backingKey(범위 밖, 정수 아님)는 무시', () => {
+    const v8 = {
+      fretboard: { root: 3 },
+      backing: { backingKey: 13, bpmOverrides: {} },
+    };
+    const result = __migrate(v8, 8) as {
+      fretboard: { root: number };
+      backing: Record<string, unknown>;
+    };
+    // 잘못된 값은 fretboard.root를 덮지 않음 — 기존 root 유지
+    expect(result.fretboard.root).toBe(3);
+    expect(result.backing.backingKey).toBeUndefined();
+  });
+
+  it('backingKey가 문자열 등 잘못된 타입이면 무시', () => {
+    const v8 = {
+      fretboard: { root: 9 },
+      backing: { backingKey: 'G', bpmOverrides: {} },
+    };
+    const result = __migrate(v8, 8) as {
+      fretboard: { root: number };
+      backing: Record<string, unknown>;
+    };
+    expect(result.fretboard.root).toBe(9);
+    expect(result.backing.backingKey).toBeUndefined();
   });
 });
 

@@ -32,12 +32,13 @@ const blues12: ProgressionTemplate = {
 
 describe('ProgressionCatalogClient', () => {
   beforeEach(() => {
-    // store를 알려진 기본값으로 초기화 (각 테스트 격리)
+    // store를 알려진 기본값으로 초기화 (각 테스트 격리).
+    // v9: backing key는 fretboard.root로 통합돼, 카탈로그 칩의 절대 표기는 root를 따른다.
     useAppStore.setState((s) => ({
       ui: { ...s.ui, chordDisplayMode: 'roman' },
+      fretboard: { ...s.fretboard, root: 0 },
       backing: {
         ...s.backing,
-        backingKey: 0,
         backingPlayingSlug: null,
         backingCurrentChord: null,
       },
@@ -82,7 +83,7 @@ describe('ProgressionCatalogClient', () => {
   it('mode=absolute + key=2(D) → I7 칩 텍스트가 D7', () => {
     useAppStore.setState((s) => ({
       ui: { ...s.ui, chordDisplayMode: 'absolute' },
-      backing: { ...s.backing, backingKey: 2 },
+      fretboard: { ...s.fretboard, root: 2 },
     }));
     render(<ProgressionCatalogClient templates={[blues12]} />);
     const card = screen.getByText('12-Bar Blues (Test)').closest('li')!;

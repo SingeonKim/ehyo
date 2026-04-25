@@ -77,9 +77,12 @@ export interface UiState {
 }
 
 // ─── 배킹 트랙 ─────────────────────────────────────────────
+//
+// Sprint 2-6 후속(v9): 배킹 재생 Key를 fretboard.root와 단일 소스로 통합.
+//   기존 backing.backingKey는 제거 — KeySelector(잼)와 RootPicker(설정)이
+//   같은 fretboard.root를 양방향으로 제어한다. 엔진은 store 브리지에서
+//   fretboard.root 변화를 구독해 setKey를 호출.
 export interface BackingSliceState {
-  /** 영속. 사용자가 선택한 재생 Key (0=C ~ 11=B). */
-  backingKey: PitchClass;
   /** 런타임. 재생 중인 template.slug 또는 null. */
   backingPlayingSlug: string | null;
   /** 런타임. 엔진이 퍼블리시하는 현재 코드. */
@@ -122,7 +125,6 @@ export interface AppState {
   resetHighlights: (scale: ScaleKey) => void;
 
   // 배킹 액션
-  setBackingKey: (k: PitchClass) => void;
   /** engine subscriber 전용 — UI에서 호출 금지. */
   _setBackingPlaying: (slug: string | null) => void;
   /** engine subscriber 전용 — UI에서 호출 금지. */
@@ -182,7 +184,6 @@ const DEFAULT_UI: UiState = {
 };
 
 const DEFAULT_BACKING: BackingSliceState = {
-  backingKey: 0, // C
   backingPlayingSlug: null,
   backingCurrentChord: null,
   bpmOverrides: {},
@@ -247,6 +248,22 @@ function migrate(persistedState: unknown, version: number): unknown {
       ui.chordDisplayMode = 'roman';
     }
     s.ui = ui;
+  }
+  // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합.
+  //   사용자가 jam에서 G 키로 듣다가 마이그레이션하면 fretboard.root가 G로 옮겨와
+  //   설정 영역(RootPicker)도 G를 보여주는 단일 소스 상태가 된다.
+  //   잘못된 값(미정의·범위 밖)은 무시하고 fretboard 기본값(C=0)을 유지.
+  if (version < 9) {
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    const fbCur = (s.fretboard as Record<string, unknown>) ?? {};
+    const bk = backing.backingKey;
+    if (typeof bk === 'number' && bk >= 0 && bk <= 11 && Number.isInteger(bk)) {
+      // jam에서 듣던 키를 우선 보존 — RootPicker 기본값보다 사용자 의도에 가깝다
+      fbCur.root = bk;
+    }
+    delete backing.backingKey;
+    s.backing = backing;
+    s.fretboard = fbCur;
   }
   return persistedState;
 }
@@ -384,11 +401,6 @@ export const useAppStore = create<AppState>()(
           delete s.fretboard.highlightsByScale[scale];
         }),
 
-      setBackingKey: (k) =>
-        set((s) => {
-          s.backing.backingKey = k;
-        }),
-
       _setBackingPlaying: (slug) =>
         set((s) => {
           s.backing.backingPlayingSlug = slug;
@@ -421,7 +433,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 8,
+      version: 9,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -430,6 +442,7 @@ export const useAppStore = create<AppState>()(
       // v5 → v6: backing 슬라이스 추가.
       // v6 → v7: backing.bpmOverrides 추가. 카드별 BPM override 영속화.
       // v7 → v8: ui.chordDisplayMode 추가 (Sprint 2-6 카탈로그 표기 토글).
+      // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합 (Key 동기화).
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
@@ -445,8 +458,8 @@ export const useAppStore = create<AppState>()(
         fretboard: state.fretboard,
         ui: state.ui,
         backing: {
-          backingKey: state.backing.backingKey,
-          // bpmOverrides도 영속화 — 카드별 BPM 설정이 새로고침 후에도 유지됨
+          // bpmOverrides만 영속화 — 카드별 BPM 설정 유지.
+          // backingKey는 v9에서 제거 (fretboard.root와 통합).
           bpmOverrides: state.backing.bpmOverrides,
         },
       }),

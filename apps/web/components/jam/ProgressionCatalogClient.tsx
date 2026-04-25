@@ -53,7 +53,8 @@ export function ProgressionCatalogClient({
   const groups = groupByCategory(templates);
   // 칩 라벨이 키 적용/도수 모드를 따라가야 하므로 store 셀렉터로 직접 구독.
   // selector를 잘게 쪼개 불필요한 리렌더 회피 (chordDisplayMode 토글이 카드 11개에 전파될 때만 재렌더).
-  const backingKey = useAppStore((s) => s.backing.backingKey);
+  // Sprint 2-6 후속(v9): backing key는 fretboard.root로 통합 — 단일 소스.
+  const root = useAppStore((s) => s.fretboard.root);
   const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
   const backingCurrentBarIndex = useAppStore(
     (s) => s.backing.backingCurrentChord?.barIndex ?? null,
@@ -122,7 +123,7 @@ export function ProgressionCatalogClient({
                           >
                             {displayChord(
                               step.chord,
-                              backingKey,
+                              root,
                               chordDisplayMode,
                             )}
                           </li>

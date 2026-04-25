@@ -1,6 +1,5 @@
 'use client';
 
-import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
 
 import { FretboardOptions } from './FretboardOptions';
@@ -16,15 +15,15 @@ import { ScalePicker } from './ScalePicker';
  * /fretboard 페이지는 FretboardClient를 통해 Surface + Controls 둘 다 마운트.
  * /jam 페이지는 Surface(sticky)와 Controls를 page level에서 따로 배치.
  *
+ * Sprint 2-6 후속(v9): RootPicker는 더 이상 syncedToBacking 분기를 갖지 않는다.
+ *   fretboard.root와 backing key가 단일 소스로 통합돼, 재생 중에도 root를
+ *   자유롭게 변경 가능(엔진이 setKey로 다음 마디부터 전조).
+ *
  * hydration gate — Surface와 동일하게 첫 렌더 DOM mismatch 방지.
- * Surface가 별도 hydration gate를 가지므로 Controls는 hydrated=false일 때 null만
- * 렌더해 페이지 레이아웃에서 자리만 비운다.
  */
 
 export function FretboardControls() {
   const hydrated = useHasHydrated();
-  const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
-  const isBackingActive = backingPlayingSlug !== null;
 
   if (!hydrated) {
     return null;
@@ -33,7 +32,7 @@ export function FretboardControls() {
   return (
     <div className="grid gap-8 lg:grid-cols-[2fr_3fr]">
       <div className="space-y-6">
-        <RootPicker syncedToBacking={isBackingActive} />
+        <RootPicker />
         <FretboardOptions />
       </div>
       <div className="space-y-6">
