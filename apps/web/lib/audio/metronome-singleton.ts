@@ -21,7 +21,6 @@ import type { MetronomeScheduler, SchedulerConfig, SchedulerListener } from './t
  */
 
 let instance: MetronomeScheduler | null = null;
-let worker: Worker | null = null;
 
 function readConfig(): SchedulerConfig {
   const m = useAppStore.getState().metronome;
@@ -44,12 +43,11 @@ export function ensureMetronomeScheduler(): MetronomeScheduler | null {
   if (typeof window === 'undefined') return null;
 
   const ctx = getAudioContext();
-  // Worker URL은 Next.js가 import.meta.url 패턴을 인식해 번들한다.
-  worker = new Worker(new URL('./scheduler-worker.ts', import.meta.url));
+  // createWorker를 주입하지 않으면 createMetronomeScheduler → createLookaheadScheduler가
+  // 내부적으로 scheduler/worker.ts를 로드한다. 싱글턴에서는 Worker 생성을 위임한다.
   instance = createMetronomeScheduler({
     audioContext: ctx,
     getConfig: readConfig,
-    createWorker: () => worker!,
   });
   return instance;
 }
