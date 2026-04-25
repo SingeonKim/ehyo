@@ -19,7 +19,7 @@ import { CHORD_EXTENSIONS } from './chord-extensions';
 import { chordPitchClasses, romanToChord } from './chords';
 import { GENRE_RULES, type ProgressionCategory } from './genre-rules';
 import { pitchClassFromRoot } from './notes';
-import type { PitchClass, ScaleKey } from './types';
+import type { PitchClass } from './types';
 
 /** MIDI 노트 번호 변환 기준 옥타브. C4=60이 되는 옥타브. */
 export const DEFAULT_OCTAVE = 4;
@@ -86,11 +86,13 @@ export interface AppropriateNotes {
 /**
  * Sprint 2-7 — 배킹 재생 중 "적절한 음" 집합 계산.
  *
- * 입력 4축:
+ * 입력 3축:
  *   - chordSymbol (현재 마디 코드 심볼, 로마 숫자)
  *   - keyRoot (베이스 키)
- *   - scale (베이스 스케일 — 현재 미사용, 향후 어보이드 정제용 인자 보존)
  *   - category (장르 — Part B/C 룰 선택)
+ *
+ * NOTE: scale은 현재 시그니처에서 제외. modal-aware 어보이드 정제가 실제
+ * 필요해질 때 다시 추가한다(YAGNI).
  *
  * 출력:
  *   - chordRoot (1pc)        → 빨강 ring
@@ -104,8 +106,6 @@ export interface AppropriateNotes {
 export function getAppropriateNotes(
   chordSymbol: string,
   keyRoot: PitchClass,
-  // 현재 미사용 — 향후 modal-aware 어보이드 정제용으로 시그니처에 보존.
-  _scale: ScaleKey,
   category: ProgressionCategory,
 ): AppropriateNotes {
   const chord = romanToChord(chordSymbol);

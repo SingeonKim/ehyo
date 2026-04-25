@@ -69,7 +69,6 @@ export function FretboardSurface() {
     const result = getAppropriateNotes(
       currentChordSymbol,
       root,
-      scale,
       backingPlayingCategory,
     );
     // 모든 필드 비어있으면 undefined로 통일 — Fretboard에서 group 미렌더 분기를 단순화.
@@ -81,7 +80,7 @@ export function FretboardSurface() {
       return undefined;
     }
     return result;
-  }, [isBackingActive, currentChordSymbol, root, scale, backingPlayingCategory]);
+  }, [isBackingActive, currentChordSymbol, root, backingPlayingCategory]);
 
   const useFlats = shouldUseFlats(root, accidentalMode);
 

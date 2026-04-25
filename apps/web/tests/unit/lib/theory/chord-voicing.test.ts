@@ -74,7 +74,7 @@ describe('midiToFrequency', () => {
 
 describe('getAppropriateNotes — chord tones', () => {
   it('I in C / scale=major / category=pop → root=0, tones={4,7}, colorTones={2}', () => {
-    const r = getAppropriateNotes('I', 0 as PitchClass, 'major', 'pop');
+    const r = getAppropriateNotes('I', 0 as PitchClass, 'pop');
     expect(r.chordRoot).toBe(0);
     expect([...r.chordTones].sort((a, b) => a - b)).toEqual([4, 7]);
     expect([...r.colorTones].sort((a, b) => a - b)).toEqual([2]); // major triad의 9
@@ -84,7 +84,7 @@ describe('getAppropriateNotes — chord tones', () => {
     // V7 = G7 (root=7), chord tones = {7, 11, 2, 5}
     // Jazz dominant7 추가: G+1=Ab, G+3=Bb, G+6=C#, G+8=Eb
     // 합쳐 chord tones 제외 → 다양한 alt가 colorTones에 들어감.
-    const r = getAppropriateNotes('V7', 0 as PitchClass, 'major', 'jazz');
+    const r = getAppropriateNotes('V7', 0 as PitchClass, 'jazz');
     expect(r.chordRoot).toBe(7);
     expect([...r.chordTones].sort((a, b) => a - b)).toEqual([2, 5, 11]);
     const colors = [...r.colorTones].sort((a, b) => a - b);
@@ -102,7 +102,7 @@ describe('getAppropriateNotes — chord tones', () => {
     // I7 = A7 (root=9, tones=1=C#, 4=E, 7=G)
     // blues universal [3,6,10] applied to keyRoot 9 → [0(C), 3(Eb), 7(G)]
     // G(7) is chord tone so it's removed. C(0), Eb(3) remain.
-    const r = getAppropriateNotes('I7', 9 as PitchClass, 'minor_pentatonic', 'blues');
+    const r = getAppropriateNotes('I7', 9 as PitchClass, 'blues');
     expect(r.chordRoot).toBe(9);
     const colors = [...r.colorTones].sort((a, b) => a - b);
     expect(colors).toContain(0); // b3 of A = C
@@ -114,21 +114,21 @@ describe('getAppropriateNotes — chord tones', () => {
     // chordTones (root 제외) = {5, 9, 0}
     // Part A minor7: [2,5,9] → relative to chord root D(2): pcs 4, 7, 11 (E, G, B)
     // None collide with chord tones.
-    const r = getAppropriateNotes('Im7', 2 as PitchClass, 'dorian', 'modal');
+    const r = getAppropriateNotes('Im7', 2 as PitchClass, 'modal');
     expect(r.chordRoot).toBe(2);
     const colors = [...r.colorTones].sort((a, b) => a - b);
     expect(colors).toEqual([4, 7, 11]); // Part A only — Part B/C empty for modal
   });
 
   it('I in C / category=folk → colorTones는 Part A의 9만', () => {
-    const r = getAppropriateNotes('I', 0 as PitchClass, 'major', 'folk');
+    const r = getAppropriateNotes('I', 0 as PitchClass, 'folk');
     expect(r.chordRoot).toBe(0);
     expect([...r.chordTones].sort((a, b) => a - b)).toEqual([4, 7]);
     expect([...r.colorTones]).toEqual([2]);
   });
 
   it('파싱 실패 → chordRoot=null, chordTones·colorTones 비어있음', () => {
-    const r = getAppropriateNotes('???', 0 as PitchClass, 'major', 'pop');
+    const r = getAppropriateNotes('???', 0 as PitchClass, 'pop');
     expect(r.chordRoot).toBeNull();
     expect(r.chordTones.size).toBe(0);
     expect(r.colorTones.size).toBe(0);
@@ -136,7 +136,7 @@ describe('getAppropriateNotes — chord tones', () => {
 
   it('chordTones와 colorTones는 항상 disjoint, chordRoot도 colorTones에 없음', () => {
     // 어떤 코드/카테고리에서도 같은 pc가 두 집합에 들어가면 안 됨.
-    const r = getAppropriateNotes('Imaj7', 0 as PitchClass, 'major', 'blues');
+    const r = getAppropriateNotes('Imaj7', 0 as PitchClass, 'blues');
     const tones = new Set(r.chordTones);
     for (const c of r.colorTones) {
       expect(tones.has(c)).toBe(false);
