@@ -63,18 +63,14 @@ export function FretboardClient() {
   const isBackingActive = backingPlayingSlug !== null;
   const effectiveRoot = isBackingActive ? backingKey : fretboardRoot;
 
-  // 현재 코드 톤 PC Set — isBackingActive 이고 currentChordSymbol이 있을 때만 계산.
-  // Sprint 2-6 Task 2: chordPitchClassSet 제거. 정식 chordOverlay prop 분리는
-  // Task 6에서 진행하므로 여기서는 임시로 root + tones 합집합을 단일 Set으로 묶어
-  // 기존 chordTonePcs prop과 동등한 형태를 유지한다.
-  const chordTonePcs = useMemo(() => {
+  // 현재 코드 overlay (root / tones 분리) — isBackingActive 이고
+  // currentChordSymbol이 있을 때만 계산. Fretboard가 두 layer로 분리 렌더한다.
+  // Task 6에서 useMemo 자체 정리(여기 임시 어댑터) 예정.
+  const chordOverlay = useMemo(() => {
     if (!isBackingActive || !currentChordSymbol) return undefined;
     const overlay = getChordOverlay(currentChordSymbol, backingKey);
     if (overlay.root === null && overlay.tones.size === 0) return undefined;
-    // 기존 단일 set 의미 유지 — root + tones 합집합
-    const all = new Set<number>(overlay.tones);
-    if (overlay.root !== null) all.add(overlay.root);
-    return all;
+    return overlay;
   }, [isBackingActive, currentChordSymbol, backingKey]);
 
   // 이명동음 표기는 effectiveRoot 기준 — backing 재생 중에는 backingKey 조표 적용.
@@ -119,7 +115,7 @@ export function FretboardClient() {
           handedness={handedness}
           fretSpacing={fretSpacing}
           labelMode={labelMode}
-          chordTonePcs={chordTonePcs}
+          chordOverlay={chordOverlay}
           chordSymbol={currentChordSymbol}
         />
       </div>
