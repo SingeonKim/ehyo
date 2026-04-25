@@ -2,10 +2,10 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// backing-track 엔진 모킹 — start/stop spy만 필요
+// backing 엔진 모킹 — start/stop spy만 필요
 const startSpy = vi.fn(async () => {});
 const stopSpy = vi.fn();
-vi.mock('@/lib/audio/backing-track', () => ({
+vi.mock('@/lib/audio/backing', () => ({
   getBackingEngine: () => ({
     getState: () => ({ status: 'idle' }),
     subscribe: () => () => {},
