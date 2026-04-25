@@ -220,8 +220,10 @@ function createEngine(): BackingEngine {
         for (const s of BACKBEAT_DRUMS.snare) voices.drums.trigger('snare', preset.drums, t(s.time), s.velocity);
         for (const s of BACKBEAT_DRUMS.hat)   voices.drums.trigger('hat',   preset.drums, t(s.time), s.velocity);
 
-        // bass: 루트 1옥타브 다운, 1박·3박 2회 queueWaveTable
-        const bassMidi = midi[0]! - 12;
+        // bass: 루트 2옥타브 다운, 1박·3박 2회 queueWaveTable
+        // -12는 C3 부근(midrange) — 일반 베이스 기타 컴핑 음역(E1~G3)보다 높아 가벼움.
+        // -24로 C2 부근까지 내려야 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
+        const bassMidi = midi[0]! - 24;
         for (const s of BACKBEAT_BASS.steps) voices.bass.trigger(bassMidi, preset.bass, beatSec, t(s.time), s.velocity);
 
         // guitar: EIGHTH_STRUM 6스텝 — down/up 방향으로 queueStrumDown/queueStrumUp
