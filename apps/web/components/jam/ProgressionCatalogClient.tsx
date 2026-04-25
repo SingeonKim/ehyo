@@ -12,6 +12,9 @@
  *   accent-brass 스타일로 강조 (배킹 엔진 onBar → store.backingCurrentChord 구독).
  * - 카탈로그 헤더에 ChordDisplayModeToggle을 두고, 모든 칩 텍스트를
  *   displayChord(symbol, backingKey, mode)로 정규화 (소문자 i7 → Im7, 절대 표기 등).
+ * - 카드 내부 layout: 이름/BPM 표기 → 마디 strip → 컨트롤(BPM·scale·재생)을
+ *   항상 별도 row로 분리. 진행 길이에 따라 chips와 컨트롤이 한 줄에 붙는 일이
+ *   없도록 flex-wrap row를 깨고 형제 div로 정렬.
  */
 
 import { clsx } from 'clsx';
@@ -92,7 +95,7 @@ export function ProgressionCatalogClient({
                 return (
                   <li
                     key={t.slug}
-                    className="border border-ink-muted/15 bg-bg-elevated px-3 py-2.5"
+                    className="space-y-2 border border-ink-muted/15 bg-bg-elevated px-3 py-2.5"
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="font-mono text-sm text-ink-primary">
@@ -102,36 +105,35 @@ export function ProgressionCatalogClient({
                         {t.default_bpm} bpm · {t.bars} bars
                       </span>
                     </div>
-                    <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
-                      <ul className="flex flex-wrap gap-1 font-mono text-[0.65rem] text-ink-muted">
-                        {t.progression.map((step, idx) => {
-                          const isCurrent = currentBarIdx === idx;
-                          return (
-                            <li
-                              key={idx}
-                              aria-current={isCurrent ? 'true' : undefined}
-                              className={clsx(
-                                'border px-1.5 py-[1px] tabular-nums transition-colors duration-75',
-                                isCurrent
-                                  ? 'border-accent-brass bg-accent-brass/10 font-bold text-accent-brass'
-                                  : 'border-ink-muted/15 text-ink-secondary',
-                              )}
-                            >
-                              {displayChord(
-                                step.chord,
-                                backingKey,
-                                chordDisplayMode,
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                      {/* BpmSlider + Apply scale + PlayButton: 카드 우측 컨트롤 영역 */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
-                        <UseRecommendedScaleButton template={t} />
-                        <ProgressionPlayButton template={t} />
-                      </div>
+                    {/* 마디 strip — 항상 별도 row. 컨트롤과 같은 줄에 붙지 않게 */}
+                    <ul className="flex flex-wrap gap-1 font-mono text-[0.65rem] text-ink-muted">
+                      {t.progression.map((step, idx) => {
+                        const isCurrent = currentBarIdx === idx;
+                        return (
+                          <li
+                            key={idx}
+                            aria-current={isCurrent ? 'true' : undefined}
+                            className={clsx(
+                              'border px-1.5 py-[1px] tabular-nums transition-colors duration-75',
+                              isCurrent
+                                ? 'border-accent-brass bg-accent-brass/10 font-bold text-accent-brass'
+                                : 'border-ink-muted/15 text-ink-secondary',
+                            )}
+                          >
+                            {displayChord(
+                              step.chord,
+                              backingKey,
+                              chordDisplayMode,
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {/* 컨트롤 row — BpmSlider · Apply scale · PlayButton */}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
+                      <UseRecommendedScaleButton template={t} />
+                      <ProgressionPlayButton template={t} />
                     </div>
                   </li>
                 );
