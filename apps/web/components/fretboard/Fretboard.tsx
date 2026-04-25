@@ -291,8 +291,9 @@ export function Fretboard({
       )}
 
       {/* ── 색채음 layer — Sprint 2-7 ────────────────────
-          chord-overlay와 분리해 pulse 애니메이션 없음(정지). 같은 파랑 색이지만
-          stroke 1.5px + opacity 0.45로 코드톤(2px, 1.0)과 위계 분리. */}
+          chord-overlay와 분리해 pulse 애니메이션 없음(정지). 코드톤(파랑·2px·pulse)
+          과의 hue 분리를 위해 desaturated slate-blue 전용 토큰 사용. ring 반지름도
+          코드톤(0.30) 보다 살짝 작게(0.27) 둬서 위계를 한 단계 더 확보. */}
       {appropriateNotes && appropriateNotes.colorTones.size > 0 && (
         <g
           data-overlay-tier="color-tone"
@@ -305,9 +306,9 @@ export function Fretboard({
                 key={`overlay-color-${pc}-${p.string}-${p.fret}`}
                 cx={mirrorX(fretCenterX(p.fret))}
                 cy={stringY(p.string)}
-                r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                r={UNIFORM_FRET_WIDTH * 0.27}
                 fill="none"
-                stroke="var(--color-chord-overlay-tone)"
+                stroke="var(--color-chord-overlay-color)"
                 strokeWidth={1.5}
               />
             )),
