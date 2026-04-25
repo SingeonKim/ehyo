@@ -269,10 +269,14 @@ function createEngine(): BackingEngine {
         for (const s of BACKBEAT_BASS.steps) voices.bass.trigger(bassMidi, preset.bass, beatSec, t(s.time), s.velocity);
 
         // guitar: EIGHTH_STRUM 6스텝 — down/up 방향으로 queueStrumDown/queueStrumUp
-        // 코드 톤을 1옥타브 다운 — chordSymbolToMidi 기본 옥타브(C4=60) 기준은 실제
-        // 기타 컴핑 음역대(E2~E5)보다 높아 "쇠 같은" 가벼운 소리. 한 옥타브 내려
-        // C3 부근으로 옮기면 실제 어쿠스틱/일렉기타 컴핑 음역과 맞는다.
-        const guitarMidi = midi.map((n) => n - 12);
+        // 옥타브 정책 (chord-root pitch class에 따라 분기):
+        //   - root pc ∈ {C, C#, D, D#/Eb} (0~3): -12 적용 안 함. 그대로 두면 C4~Eb4 부근.
+        //     C..Eb를 -12 하면 C3..Eb3까지 너무 어두워져 청취감이 빈약하다는 사용자 피드백.
+        //   - root pc ∈ {E~B} (4~11): -12 적용. E3~B3 부근으로 일반 기타 컴핑 음역과 맞춤.
+        // 결과적으로 voicing 음역이 좁은 5도 안쪽(C4..B3)에 모이고 "들리는 위치"가 일정.
+        const rootPc = midi[0]! % 12;
+        const guitarOctaveOffset = rootPc <= 3 ? 0 : -12;
+        const guitarMidi = midi.map((n) => n + guitarOctaveOffset);
         for (const s of EIGHTH_STRUM)
           voices.guitar.strum(s.direction, guitarMidi, preset.guitar, strumDurSec, t(s.time), s.velocity);
       }
