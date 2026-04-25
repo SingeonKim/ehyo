@@ -31,6 +31,11 @@ export function ProgressionPlayButton({
   );
   const backingKey = useAppStore((s) => s.backing.backingKey);
   const currentChord = useAppStore((s) => s.backing.backingCurrentChord);
+  // Bug 1: 정지 상태에서 BPM 슬라이더로 변경 후 ▶ 누를 때 override 값 반영.
+  // engine은 store를 직접 import하지 않으므로 호출자가 읽어서 전달하는 bridge 패턴.
+  const overrideBpm = useAppStore(
+    (s) => (s.backing as { bpmOverrides?: Record<string, number> }).bpmOverrides?.[template.slug],
+  );
   // engine.start()의 async 구간 (샘플 로드) 동안 로컬에서만 추적
   const [isLoading, setIsLoading] = useState(false);
 
@@ -41,7 +46,8 @@ export function ProgressionPlayButton({
     } else {
       setIsLoading(true);
       try {
-        await engine.start(template, backingKey);
+        // overrideBpm이 undefined면 engine이 template.default_bpm을 사용
+        await engine.start(template, backingKey, overrideBpm);
       } finally {
         // 성공·실패 모두 loading 해제 (playing 상태는 store 브리지가 담당)
         setIsLoading(false);

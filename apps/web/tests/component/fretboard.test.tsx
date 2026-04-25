@@ -2,8 +2,10 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 
+import { Fretboard } from '@/components/fretboard/Fretboard';
 import { FretboardClient } from '@/components/fretboard/FretboardClient';
 import { useAppStore } from '@/lib/store/app-store';
+import { getFretboardNotes, getOpenStringLabels, STANDARD_TUNING } from '@/lib/theory/fretboard';
 
 /*
  * 지판 Client의 인터랙션을 jsdom 환경에서 검증.
@@ -112,5 +114,99 @@ describe('FretboardClient', () => {
 
     await user.click(screen.getByRole('radio', { name: 'Left' }));
     expect(useAppStore.getState().fretboard.handedness).toBe('left');
+  });
+});
+
+// ── Fretboard 컴포넌트 직접 렌더링 테스트 ──────────────────────────────
+// FretboardClient를 통하지 않고 Fretboard에 props를 직접 주입해 halo 동작 검증.
+
+/*
+ * C major 스케일(root=0, scale='major') 기준 baseProps.
+ * PC 0=C, 4=E, 7=G — C major 코드 3개 음.
+ * 22프렛 × 6줄이므로 해당 PC는 지판 전역에 다수 등장한다.
+ */
+const MAJOR_SCALE_HIGHLIGHTS = { 5: 'orange', 7: 'orange' } as const;
+const baseFretboardProps = {
+  notes: getFretboardNotes({
+    tuning: STANDARD_TUNING,
+    frets: 22,
+    root: 0,
+    scale: 'major',
+    highlights: MAJOR_SCALE_HIGHLIGHTS,
+    useFlats: false,
+  }),
+  openStrings: getOpenStringLabels(STANDARD_TUNING, false),
+  frets: 22 as const,
+  handedness: 'right' as const,
+  fretSpacing: 'uniform' as const,
+  labelMode: 'name' as const,
+};
+
+describe('Fretboard chord-tone halo', () => {
+  it('chordTonePcs가 undefined면 halo group 없음', () => {
+    const { container } = render(<Fretboard {...baseFretboardProps} />);
+    expect(container.querySelector('.chord-tone-halo')).toBeNull();
+  });
+
+  it('chordTonePcs가 빈 Set이면 halo group 없음', () => {
+    const { container } = render(
+      <Fretboard {...baseFretboardProps} chordTonePcs={new Set()} chordSymbol="silent" />
+    );
+    expect(container.querySelector('.chord-tone-halo')).toBeNull();
+  });
+
+  it('chordTonePcs={0,4,7}이면 halo group + 다수 circle 렌더', () => {
+    const { container } = render(
+      <Fretboard
+        {...baseFretboardProps}
+        chordTonePcs={new Set([0, 4, 7])}
+        chordSymbol="I"
+      />
+    );
+    const halo = container.querySelector('.chord-tone-halo');
+    expect(halo).toBeInTheDocument();
+    // 22프렛 × 6줄 → PC 0, 4, 7 각각 여러 번 등장. 최소 12개 이상 보장.
+    const haloCircles = halo!.querySelectorAll('circle');
+    expect(haloCircles.length).toBeGreaterThan(10);
+  });
+
+  it('halo group은 aria-hidden="true"로 스크린리더에서 숨겨진다', () => {
+    const { container } = render(
+      <Fretboard
+        {...baseFretboardProps}
+        chordTonePcs={new Set([0, 4, 7])}
+        chordSymbol="I"
+      />
+    );
+    const halo = container.querySelector('.chord-tone-halo');
+    expect(halo).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('chordSymbol이 다른 값으로 바뀌면 halo group이 여전히 존재하고 circle이 유효하다', () => {
+    const { container, rerender } = render(
+      <Fretboard
+        {...baseFretboardProps}
+        chordTonePcs={new Set([0])}
+        chordSymbol="I"
+      />
+    );
+    expect(container.querySelector('.chord-tone-halo')).toBeInTheDocument();
+
+    // IV 코드(F major) — PC 5=F, 9=A, 0=C. PC 5,9는 major 스케일에 포함.
+    rerender(
+      <Fretboard
+        {...baseFretboardProps}
+        chordTonePcs={new Set([5, 9, 0])}
+        chordSymbol="IV"
+      />
+    );
+    const haloIV = container.querySelector('.chord-tone-halo');
+    expect(haloIV).toBeInTheDocument();
+    // PC 5,9,0은 major 스케일에 포함되므로 circle이 하나 이상 존재.
+    expect(haloIV!.querySelectorAll('circle').length).toBeGreaterThan(0);
+    // halo circle은 stroke 토큰 + fill none이어야 한다.
+    const firstCircle = haloIV!.querySelector('circle');
+    expect(firstCircle).toHaveAttribute('stroke', 'var(--color-scale-chord)');
+    expect(firstCircle).toHaveAttribute('fill', 'none');
   });
 });

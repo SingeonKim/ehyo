@@ -70,3 +70,18 @@ export function chordSymbolToMidi(
 export function midiToFrequency(midi: number): number {
   return 440 * 2 ** ((midi - 69) / 12);
 }
+
+/**
+ * chordPitchClasses의 결과를 Set으로 래핑 — 지판 렌더 시 O(1) lookup.
+ * Array.includes() 대신 Set.has()를 쓰는 이유: 지판은 최대 6줄 × 24프렛 =
+ * 144 노트를 매 렌더마다 조회하므로 O(1) 보장이 체감 성능에 유리.
+ * 파싱 실패 시 null 반환 — 호출부가 "코드톤 없음" 분기를 명시적으로 처리.
+ */
+export function chordPitchClassSet(
+  symbol: string,
+  keyRoot: PitchClass,
+): Set<number> | null {
+  const pcs = chordPitchClasses(symbol, keyRoot);
+  if (!pcs) return null;
+  return new Set(pcs);
+}
