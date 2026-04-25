@@ -67,9 +67,13 @@
 
   /* ── Chord overlay (Sprint 2-6) ─────────────────
      scale-root/scale-chord와 색이 동일하지만 의미 분리를 위해 alias.
-     Sprint 2-7에서 chord-tension, chord-color 추가 예정. */
+     Sprint 2-7에 color-tone는 chord-overlay-tone을 opacity로 차등 사용. */
   --color-chord-overlay-root: var(--color-scale-root);
   --color-chord-overlay-tone: var(--color-scale-chord);
+
+  /* Sprint 2-7 — out-of-scale 위치의 ghost marker (점) 색.
+     ink-muted alias: 노트 회색 톤과 동일해 시선 분산 최소. */
+  --color-fretboard-ghost: var(--color-ink-muted);
 }
 
 /* ── Base resets ───────────────────────────────── */
