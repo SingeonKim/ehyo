@@ -8,9 +8,10 @@
  *   - BPM 런타임 변경 (setBpm/resetBpmToDefault)
  *
  * 4.2박 회귀 차단:
- *   onBar 콜백 안 setState를 queueMicrotask로 분리. 오디오 예약 블록은 동기,
- *   상태 갱신은 다음 microtask. setState가 트리거하는 React 리렌더가 audio
- *   scheduling thread를 막지 못하게 함.
+ *   onBar 콜백 안 setState를 setTimeout(delay)으로 분리. 오디오 예약 블록은 동기,
+ *   상태 갱신은 eventTime까지 대기 후 실행. queueMicrotask는 현재 JS 턴에서
+ *   즉시 실행되므로 scheduleAheadTime(100–150ms) 동안 UI가 오디오보다 앞서
+ *   렌더되는 문제를 막지 못한다 — setTimeout으로 eventTime 동기화.
  *
  * BPM 스냅샷:
  *   onBar 진입 직후 const bpm = currentBpm으로 로컬 캡처. 마디 도중 setBpm이
@@ -25,6 +26,11 @@
  * Voice 수명:
  *   start/stop 사이클에서 voice 객체 재사용. fadeOut만 호출(ramp 0).
  *   엔진 dispose() 시에만 voice.dispose().
+ *
+ * initialBpm (Bug 1 수정):
+ *   start()의 optional 3번째 인자. 정지 상태에서 BPM 슬라이더 조정 후 ▶ 누를 때
+ *   store의 bpmOverrides를 호출자(ProgressionPlayButton)가 읽어 전달한다.
+ *   엔진은 store를 직접 import하지 않는 bridge 패턴 유지.
  */
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
@@ -59,7 +65,12 @@ export type BackingState =
 export interface BackingEngine {
   getState(): BackingState;
   subscribe(listener: (s: BackingState) => void): () => void;
-  start(template: ProgressionTemplate, keyRoot: PitchClass): Promise<void>;
+  /**
+   * 재생 시작. initialBpm이 유효한 양수면 그 값으로 시작, 아니면 template.default_bpm.
+   * 호출자가 store의 bpmOverrides[slug]를 읽어 전달하는 bridge 패턴으로
+   * 엔진 자체는 store를 import하지 않는다.
+   */
+  start(template: ProgressionTemplate, keyRoot: PitchClass, initialBpm?: number): Promise<void>;
   /**
    * 재생 중 Key를 교체. 현재 바의 소리는 유지, 다음 바부터 새 Key로 전조.
    * 재생 중이 아니면 currentKeyRoot만 갱신.
@@ -92,6 +103,12 @@ function createEngine(): BackingEngine {
   let guitar: GuitarVoice | null = null;
   let scheduler: BarScheduler | null = null;
 
+  /**
+   * eventTime까지 setState를 지연하는 setTimeout ID 집합.
+   * hardStop에서 일괄 cancel → stop 후에도 playing 상태가 뒤늦게 dispatch되는 것을 막음.
+   */
+  const pendingStateUpdates = new Set<ReturnType<typeof setTimeout>>();
+
   let currentTemplate: ProgressionTemplate | null = null;
   let currentKeyRoot: PitchClass = 0;
   let currentBpm = 90;
@@ -118,6 +135,9 @@ function createEngine(): BackingEngine {
   const hardStop = () => {
     scheduler?.stop();
     scheduler = null;
+    // pending setState timer를 모두 취소 — stop 후 playing 상태가 뒤늦게 dispatch되는 것을 막음
+    for (const id of pendingStateUpdates) clearTimeout(id);
+    pendingStateUpdates.clear();
     try {
       const player = getPlayer();
       const ctx = getAudioContext();
@@ -129,7 +149,7 @@ function createEngine(): BackingEngine {
     fadeOutVoices();
   };
 
-  const start: BackingEngine['start'] = async (template, keyRoot) => {
+  const start: BackingEngine['start'] = async (template, keyRoot, initialBpm) => {
     // 다른 카드 ▶ 눌러도 이전 세션 자동 teardown
     hardStop();
     setState({ status: 'loading', template });
@@ -159,7 +179,12 @@ function createEngine(): BackingEngine {
     currentTemplate = template;
     currentKeyRoot = keyRoot;
     currentDefaultBpm = template.default_bpm;
-    currentBpm = template.default_bpm;
+    // Bug 1: initialBpm이 유효한 양수면 그 값으로 시작. 없거나 무효면 default_bpm.
+    // 호출자(ProgressionPlayButton)가 store의 bpmOverrides[slug]를 읽어 전달한다.
+    currentBpm =
+      typeof initialBpm === 'number' && Number.isFinite(initialBpm) && initialBpm > 0
+        ? initialBpm
+        : template.default_bpm;
 
     const voices = ensureVoices();
     const lookahead = createLookaheadScheduler({ audioContext: ctx });
@@ -171,7 +196,7 @@ function createEngine(): BackingEngine {
 
       // ── 1. 오디오 예약 블록 (동기) ──────────────────────────────────────────
       // 4.2박 회귀 차단: 이 블록 안에서는 setState 절대 금지.
-      // queueMicrotask로 분리해 React 리렌더가 audio scheduling을 막지 않도록.
+      // setState는 아래 setTimeout에서 eventTime 기준 지연 후 실행.
       const idx = barIndexAbs % tpl.bars;
       const step = tpl.progression[idx];
       if (!step) return;
@@ -204,9 +229,12 @@ function createEngine(): BackingEngine {
           voices.guitar.strum(s.direction, midi, preset.guitar, strumDurSec, t(s.time), s.velocity);
       }
 
-      // ── 2. 상태 갱신 (마이크로태스크) ───────────────────────────────────────
-      // 동기 블록 완료 후 microtask로 setState를 실행. 4.2박 회귀 1순위 차단.
-      queueMicrotask(() => {
+      // ── 2. 상태 갱신 — eventTime까지 대기 후 setState. UI/audio 위상 일치. ──
+      // queueMicrotask는 JS 턴 내에서 즉시 실행되므로 scheduleAheadTime(100–150ms) 동안
+      // UI가 오디오보다 앞서 렌더되는 문제가 있다. setTimeout으로 eventTime 기준 동기화.
+      const delayMs = Math.max(0, (eventTime - ctx.currentTime) * 1000);
+      const id = setTimeout(() => {
+        pendingStateUpdates.delete(id);
         if (!midi) console.warn(`[backing] unparseable "${symbol}" at bar ${idx}; skipping`);
         setState({
           status: 'playing',
@@ -216,7 +244,8 @@ function createEngine(): BackingEngine {
           chordSymbol: symbol,
           currentBpm: bpm,
         });
-      });
+      }, delayMs);
+      pendingStateUpdates.add(id);
     });
 
     // 초기 playing 상태 즉시 설정 (첫 onBar 콜백 전에 UI가 playing 상태를 표시)
@@ -226,7 +255,7 @@ function createEngine(): BackingEngine {
       keyRoot,
       barIndex: 0,
       chordSymbol: template.progression[0]?.chord ?? '',
-      currentBpm: template.default_bpm,
+      currentBpm: currentBpm,
     });
   };
 

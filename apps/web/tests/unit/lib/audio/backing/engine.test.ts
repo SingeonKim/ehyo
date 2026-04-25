@@ -1,5 +1,5 @@
 /**
- * engine.test.ts — Sprint 2-4 Task 7 재작성.
+ * engine.test.ts — Sprint 2-4 Task 7 재작성 / Sprint 2-5 Bug 1·2 수정 반영.
  *
  * 테스트 전략:
  *   - BarScheduler, LookaheadScheduler를 mock으로 교체 → onBar 콜백을 테스트가 직접 호출
@@ -14,7 +14,7 @@
  *   3. barScheduler.start가 default_bpm으로 호출됨
  *   4. 파싱 가능 코드는 drums 12 + bass 2 + guitar strum 6 trigger
  *   5. 파싱 실패 코드는 전 트랙 0회 trigger + console.warn
- *   6. setState는 동기 블록이 아닌 microtask에서 호출됨 (4.2박 회귀 차단)
+ *   6. setState는 동기 블록이 아닌 setTimeout(delay)에서 호출됨 (UI/audio 위상 일치)
  *   7. barIndex는 template.bars로 wrap
  *   8. setBpm은 barScheduler.setBpm 호출
  *   9. setBpm(NaN/0/음수)는 무시 + 경고
@@ -23,6 +23,10 @@
  *   12. stop when idle은 no-op
  *   13. dispose 시 voice GainNode disconnect 호출
  *   14. subscribe/unsubscribe 동작
+ *   15. (Bug 1) start에 initialBpm 주면 barScheduler에 그 값이 전달됨
+ *   16. (Bug 1) initialBpm이 invalid면 default_bpm 사용
+ *   17. (Bug 2) setState는 eventTime까지 setTimeout으로 지연됨
+ *   18. (Bug 2) hardStop은 pending setState timer를 모두 cancel
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -197,6 +201,7 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
   });
 
   it('파싱 실패 코드(bVII)는 drums/bass/guitar 모두 0회 trigger + warn', async () => {
+    vi.useFakeTimers();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const cb = await getOnBarCallback();
     const player = getPlayerInstance();
@@ -204,7 +209,7 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
     player.queueStrumDown.mockClear();
     player.queueStrumUp.mockClear();
 
-    // bar 3 → bVII (파싱 실패)
+    // bar 3 → bVII (파싱 실패), eventTime=0 → delayMs=0
     cb(0, 3);
 
     // 동기 블록에서는 trigger가 없어야 함
@@ -212,14 +217,19 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
     expect(player.queueStrumDown).not.toHaveBeenCalled();
     expect(player.queueStrumUp).not.toHaveBeenCalled();
 
-    // warn은 microtask(setState 내부)에서 발생
-    await flushMicrotasks();
+    // warn은 setTimeout(delay) 내부에서 발생 (eventTime=0이므로 delay=0)
+    vi.advanceTimersByTime(0);
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('bVII'));
 
     warnSpy.mockRestore();
+    vi.useRealTimers();
   });
 
-  it('setState는 동기 블록이 아닌 microtask에서 호출됨 (4.2박 회귀 차단)', async () => {
+  it('setState는 eventTime까지 setTimeout으로 지연됨 (UI/audio 위상 일치)', async () => {
+    vi.useFakeTimers();
+    // mockCtx.currentTime을 1.0으로 고정
+    (mockCtx as unknown as { currentTime: number }).currentTime = 1.0;
+
     const engine = getBackingEngine();
     const listener = vi.fn();
     engine.subscribe(listener);
@@ -232,25 +242,33 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
     if (!lastCall) throw new Error('barScheduler.start was not called');
     const cb = lastCall[2] as (eventTime: number, barIndex: number) => void;
 
-    cb(0, 0); // onBar 동기 호출
+    // eventTime=1.5, currentTime=1.0 → delayMs=500
+    cb(1.5, 0);
 
     // 동기 직후 — listener는 아직 호출되지 않아야 함
     expect(listener).not.toHaveBeenCalled();
 
-    // microtask flush 후 — listener 호출 확인
-    await flushMicrotasks();
+    // 499ms 진행 — 아직 미호출
+    vi.advanceTimersByTime(499);
+    expect(listener).not.toHaveBeenCalled();
+
+    // 2ms 더 진행(총 501ms) — listener 호출됨
+    vi.advanceTimersByTime(2);
     expect(listener).toHaveBeenCalled();
+
+    vi.useRealTimers();
   });
 
   it('barIndex는 template.bars(4)로 wrap', async () => {
+    vi.useFakeTimers();
     const cb = await getOnBarCallback();
     const engine = getBackingEngine();
     const listener = vi.fn();
     engine.subscribe(listener);
 
-    // 0, 1, 2, 3, 4 → 4 % 4 = 0, chord = I7
+    // 0, 1, 2, 3, 4 → 4 % 4 = 0, chord = I7 (eventTime=0 → delay=0)
     cb(0, 0); cb(0, 1); cb(0, 2); cb(0, 3); cb(0, 4);
-    await flushMicrotasks();
+    vi.advanceTimersByTime(0);
 
     // 마지막 listener 호출의 상태 확인
     const last = listener.mock.calls.at(-1)?.[0];
@@ -259,6 +277,7 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
       expect(last.barIndex).toBe(0);
       expect(last.chordSymbol).toBe('I7');
     }
+    vi.useRealTimers();
   });
 });
 
@@ -372,5 +391,70 @@ describe('subscribe', () => {
     listener.mockClear();
     await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bug 1: initialBpm 지원 (Sprint 2-5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('engine.start initialBpm (Bug 1)', () => {
+  it('start에 initialBpm 주면 barScheduler에 그 값이 전달됨', async () => {
+    const engine = getBackingEngine();
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass, 120);
+    // barScheduler.start의 첫 번째 인자가 initialBpm(120)이어야 함
+    expect(barSchedulerInstance.start).toHaveBeenCalledWith(120, 4, expect.any(Function));
+  });
+
+  it('start의 initialBpm이 NaN이면 default_bpm 사용', async () => {
+    const engine = getBackingEngine();
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass, NaN);
+    // NaN은 무효 → template.default_bpm(90)으로 폴백
+    expect(barSchedulerInstance.start).toHaveBeenCalledWith(90, 4, expect.any(Function));
+  });
+
+  it('start의 initialBpm이 0이면 default_bpm 사용', async () => {
+    const engine = getBackingEngine();
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass, 0);
+    // 0은 무효 → template.default_bpm(90)으로 폴백
+    expect(barSchedulerInstance.start).toHaveBeenCalledWith(90, 4, expect.any(Function));
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bug 2: hardStop pending timer cancel (Sprint 2-5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('engine.stop pending setState cancel (Bug 2)', () => {
+  it('hardStop은 pending setState timer를 모두 cancel', async () => {
+    vi.useFakeTimers();
+    (mockCtx as unknown as { currentTime: number }).currentTime = 0;
+
+    const engine = getBackingEngine();
+    const listener = vi.fn();
+    engine.subscribe(listener);
+
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
+    // start() 자체의 playing dispatch는 여기서 초기화
+    listener.mockClear();
+
+    const lastCall = barSchedulerInstance.start.mock.calls.at(-1);
+    if (!lastCall) throw new Error('barScheduler.start was not called');
+    const cb = lastCall[2] as (eventTime: number, barIndex: number) => void;
+
+    // eventTime=0.5, currentTime=0 → delayMs=500
+    cb(0.5, 0);
+
+    // stop → hardStop이 pending timer를 cancel
+    engine.stop();
+    vi.advanceTimersByTime(1000);
+
+    // playing status dispatch는 없어야 함 (stop이 dispatch한 idle만 있음)
+    const playingCalls = listener.mock.calls.filter(
+      (c) => (c[0] as { status: string }).status === 'playing',
+    );
+    expect(playingCalls).toHaveLength(0);
+
+    vi.useRealTimers();
   });
 });

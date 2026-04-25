@@ -74,7 +74,9 @@ describe('ProgressionPlayButton', () => {
     render(<ProgressionPlayButton template={TEMPLATE} />);
     await user.click(screen.getByRole('button', { name: /play/i }));
 
-    expect(startSpy).toHaveBeenCalledWith(TEMPLATE, 5);
+    // Bug 1 수정 후 start는 (template, keyRoot, overrideBpm) 3인자.
+    // store에 bpmOverrides가 없으면 overrideBpm은 undefined → engine이 default_bpm 사용.
+    expect(startSpy).toHaveBeenCalledWith(TEMPLATE, 5, undefined);
   });
 
   it('switches to Stop label when this template is playing', () => {
