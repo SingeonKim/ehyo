@@ -1,32 +1,32 @@
 /**
- * WebAudioFont loader/player 싱글턴 + 패치 캐시.
+ * WebAudioFont 통합 브릿지 — Player·script·패치 캐시 통합 관리.
  *
- * 역할:
- *   - 앱 전체에서 `import 'webaudiofont'`는 이 모듈에서만 수행.
- *   - WebAudioFontPlayer 인스턴스를 싱글턴으로 생성·공유.
- *   - 패치(사운드폰트 데이터)를 surikov/webaudiofontdata CDN에서 lazy 로드하고
- *     Map 캐시에 저장 — 같은 악기 재진입 시 CDN 재요청 없음.
+ * 왜 import가 아닌 script 태그인가:
+ *   webaudiofont npm 패키지는 ESM/CJS export 없이 글로벌 변수 var 선언만
+ *   포함된 plain JS다. webpack이 번들링하면 var가 모듈 스코프에 갇혀
+ *   `globalThis.WebAudioFontPlayer`도 undefined가 된다. 따라서 `<script>`
+ *   태그로 로드해 실제 글로벌 변수가 만들어지도록 한다.
  *
- * 패키지 형태 주의:
- *   webaudiofont v3.x는 글로벌 스크립트 방식으로 설계된 패키지다 (module.exports 없음).
- *   ESM named export가 없으므로, 테스트에서는 vi.mock()으로 주입하고
- *   실제 브라우저 런타임에서는 스크립트 로드 후 globalThis.WebAudioFontPlayer 폴백을 사용.
+ * 로드 순서:
+ *   1. ensurePatch(...) → ensureScriptLoaded() 먼저 await
+ *   2. 스크립트 로드 후 globalThis.WebAudioFontPlayer 사용 가능
+ *   3. getPlayer() 호출 시 싱글턴 인스턴스 생성
+ *   4. 패치 데이터(surikov/webaudiofontdata)는 player.loader.startLoad로 별도 로드
  *
- * patchCache 보장:
- *   같은 (kind, gm) 조합의 두 번째 요청은 startLoad·waitLoad 없이 즉시 반환.
- *   카드 A→B→A 전환 시 A의 첫 ▶ 이후 로딩 지연 없음.
+ * 동시 로드 보호:
+ *   _scriptLoad 프로미스를 캐시해 동시 호출도 단일 스크립트 태그만 삽입.
  *
- * 테스트 지원:
- *   __resetWebAudioFontBridgeForTests()로 싱글턴·캐시를 초기화.
- *   운영 코드에서 호출 금지.
+ * 테스트:
+ *   beforeEach에서 globalThis.WebAudioFontPlayer를 mock 클래스로 직접 set.
+ *   ensureScriptLoaded는 클래스가 이미 있으면 즉시 resolve.
  */
-
-import { WebAudioFontPlayer } from 'webaudiofont';
 
 import { getAudioContext } from '../context';
 import type { InstrumentPreset } from './presets';
 
 const PATCH_BASE = 'https://surikov.github.io/webaudiofontdata/sound/';
+const PLAYER_SCRIPT_URL =
+  'https://surikov.github.io/webaudiofont/npm/dist/WebAudioFontPlayer.js';
 
 /** WebAudioFont 패치 하나가 로드 완료된 결과. */
 export type LoadedInstrument = {
@@ -45,10 +45,17 @@ export type LoadedPreset = {
 // ── 싱글턴 상태 ────────────────────────────────────────────────────────────────
 
 let _player: WebAudioFontPlayer | null = null;
+// 동시 호출이 와도 단일 스크립트 태그만 삽입되도록 프로미스를 캐시한다.
+let _scriptLoad: Promise<void> | null = null;
 // key: "drum:0" | "melodic:27" 등 — 같은 패치의 중복 로드 방지.
 const patchCache = new Map<string, LoadedInstrument>();
 
 // ── 내부 유틸 ──────────────────────────────────────────────────────────────────
+
+/** globalThis에 WebAudioFontPlayer 클래스가 이미 존재하는지 확인. */
+function hasGlobalPlayerClass(): boolean {
+  return typeof (globalThis as { WebAudioFontPlayer?: unknown }).WebAudioFontPlayer !== 'undefined';
+}
 
 function patchKey(kind: 'drum' | 'melodic', gm: number): string {
   return `${kind}:${gm}`;
@@ -84,34 +91,72 @@ function patchUrl(kind: 'drum' | 'melodic', gm: number): { url: string; varName:
 // ── 공개 API ───────────────────────────────────────────────────────────────────
 
 /**
+ * WebAudioFontPlayer 클래스를 글로벌에 로드한다(이미 있으면 no-op).
+ *
+ * 왜 <script> 태그를 쓰는가:
+ *   npm 패키지를 webpack이 번들링하면 var 선언이 모듈 스코프에 갇혀
+ *   globalThis에서 접근 불가. script 태그는 실제 글로벌 스코프에서 실행된다.
+ *
+ * 동시 호출 보호:
+ *   _scriptLoad 프로미스를 공유해 두 번째 호출부터는 동일 프로미스를 반환.
+ */
+export function ensureScriptLoaded(): Promise<void> {
+  // 이미 클래스가 있으면 즉시 resolve (테스트에서 직접 주입한 경우 포함).
+  if (hasGlobalPlayerClass()) return Promise.resolve();
+  if (_scriptLoad) return _scriptLoad;
+
+  // 브라우저 환경이 아니면(SSR 등) 거부.
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return Promise.reject(
+      new Error('[webaudiofont-bridge] cannot load WebAudioFontPlayer outside browser'),
+    );
+  }
+
+  _scriptLoad = new Promise<void>((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = PLAYER_SCRIPT_URL;
+    s.async = true;
+    s.onload = () => {
+      if (hasGlobalPlayerClass()) {
+        resolve();
+      } else {
+        reject(
+          new Error('[webaudiofont-bridge] script loaded but WebAudioFontPlayer global missing'),
+        );
+      }
+    };
+    s.onerror = () =>
+      reject(new Error('[webaudiofont-bridge] failed to load WebAudioFontPlayer.js'));
+    document.head.appendChild(s);
+  });
+  return _scriptLoad;
+}
+
+/**
  * WebAudioFontPlayer 싱글턴 반환.
  *
- * 실제 패키지가 글로벌 방식이라 named import가 undefined일 수 있으므로
- * globalThis.WebAudioFontPlayer를 폴백으로 사용한다.
- * 테스트 환경에서는 vi.mock()이 WebAudioFontPlayer를 정상 주입하므로 폴백 불필요.
+ * 동기 함수이므로, 반드시 ensurePatch 또는 ensureScriptLoaded를 먼저
+ * await한 뒤 호출해야 한다. 클래스 미로드 시 즉시 에러를 던진다.
  */
 export function getPlayer(): WebAudioFontPlayer {
-  if (!_player) {
-    // 실제 브라우저에서 named import가 작동하지 않을 때를 위한 방어 폴백.
-    // webaudiofont는 script 태그 삽입 방식의 구식 패키지이므로 글로벌에 클래스가 올라온다.
-    const Ctor: typeof WebAudioFontPlayer =
-      WebAudioFontPlayer ??
-      (globalThis as unknown as { WebAudioFontPlayer: typeof WebAudioFontPlayer })
-        .WebAudioFontPlayer;
-
-    if (!Ctor) {
-      throw new Error(
-        '[webaudiofont-bridge] WebAudioFontPlayer 클래스를 찾을 수 없습니다. ' +
-          'webaudiofont 패키지 설치 또는 vi.mock() 설정을 확인하세요.',
-      );
-    }
-    _player = new Ctor();
+  if (_player) return _player;
+  if (!hasGlobalPlayerClass()) {
+    throw new Error(
+      '[webaudiofont-bridge] WebAudioFontPlayer 미로드 — ensurePatch/loadPreset 먼저 await 필요',
+    );
   }
+  // unknown 경유 이중 캐스팅: globalThis는 WebAudioFontPlayer 키를 모르므로
+  // 직접 캐스팅 시 TS2352 오류가 발생한다. unknown을 통해 안전하게 우회.
+  const G = globalThis as unknown as { WebAudioFontPlayer: typeof WebAudioFontPlayer };
+  _player = new G.WebAudioFontPlayer();
   return _player;
 }
 
 /**
  * 지정 악기의 패치를 CDN에서 로드(또는 캐시 히트로 즉시 반환).
+ *
+ * 첫 번째 단계로 ensureScriptLoaded()를 await해 WebAudioFontPlayer가
+ * 글로벌에 존재하는 것을 보장한다.
  *
  * @param kind - 'drum'(드럼 킷) | 'melodic'(선율 악기)
  * @param gm   - GM 번호 (드럼: 킷 번호, 선율: GM 0-127)
@@ -120,6 +165,9 @@ export async function ensurePatch(kind: 'drum' | 'melodic', gm: number): Promise
   const key = patchKey(kind, gm);
   const cached = patchCache.get(key);
   if (cached) return cached;
+
+  // WebAudioFontPlayer 스크립트를 먼저 로드한다.
+  await ensureScriptLoaded();
 
   const player = getPlayer();
   const ctx = getAudioContext();
@@ -135,9 +183,7 @@ export async function ensurePatch(kind: 'drum' | 'melodic', gm: number): Promise
         const patch = (globalThis as Record<string, unknown>)[varName];
         if (!patch) {
           reject(
-            new Error(
-              `[webaudiofont-bridge] 패치 변수 "${varName}"가 로드 후에도 존재하지 않습니다.`,
-            ),
+            new Error(`[webaudiofont-bridge] 패치 변수 "${varName}" 로드 실패`),
           );
           return;
         }
@@ -169,10 +215,13 @@ export async function loadPreset(preset: InstrumentPreset): Promise<LoadedPreset
 /**
  * 테스트·HMR 정리용. 운영 코드에서 호출 금지.
  *
- * 싱글턴 player와 패치 캐시를 초기 상태로 되돌린다.
+ * 싱글턴 player, 스크립트 로드 프로미스, 패치 캐시를 초기 상태로 되돌린다.
  * beforeEach/afterEach에서 각 테스트 간 격리를 보장.
  */
 export function __resetWebAudioFontBridgeForTests(): void {
   _player = null;
+  _scriptLoad = null;
   patchCache.clear();
+  // 테스트에서 주입한 globalThis.WebAudioFontPlayer도 정리한다.
+  delete (globalThis as { WebAudioFontPlayer?: unknown }).WebAudioFontPlayer;
 }

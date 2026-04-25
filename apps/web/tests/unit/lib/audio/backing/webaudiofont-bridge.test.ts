@@ -3,8 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   __resetWebAudioFontBridgeForTests,
   ensurePatch,
-  loadPreset,
+  ensureScriptLoaded,
   getPlayer,
+  loadPreset,
 } from '@/lib/audio/backing/webaudiofont-bridge';
 
 vi.mock('@/lib/audio/context', () => ({
@@ -12,9 +13,11 @@ vi.mock('@/lib/audio/context', () => ({
   resumeAudioContext: vi.fn(async () => ({}) as AudioContext),
 }));
 
-const playerMock = {
+// 테스트용 player 인스턴스 — globalThis.WebAudioFontPlayer 생성자가 반환하는 객체
+const playerInstance = {
   loader: {
     startLoad: vi.fn(),
+    // 동기 콜백으로 바로 실행해 await이 즉시 resolve되도록 한다
     waitLoad: vi.fn((cb: () => void) => cb()),
   },
   queueWaveTable: vi.fn(),
@@ -23,15 +26,17 @@ const playerMock = {
   cancelQueue: vi.fn(),
 };
 
-vi.mock('webaudiofont', () => ({
-  WebAudioFontPlayer: vi.fn(() => playerMock),
-}));
+// 생성자 함수 — 매번 같은 playerInstance를 반환해 싱글턴 확인이 가능하도록
+const PlayerCtor = vi.fn(() => playerInstance);
 
 beforeEach(() => {
   __resetWebAudioFontBridgeForTests();
-  playerMock.loader.startLoad.mockClear();
-  playerMock.loader.waitLoad.mockClear();
-  // startLoad가 실제로 설정할 글로벌 패치 변수를 미리 심어둔다 (jsdom에서 script 로드 불가).
+  // 글로벌에 직접 주입 — ensureScriptLoaded는 hasGlobalPlayerClass()가 true이므로 즉시 resolve
+  (globalThis as { WebAudioFontPlayer?: unknown }).WebAudioFontPlayer = PlayerCtor as unknown;
+  PlayerCtor.mockClear();
+  playerInstance.loader.startLoad.mockClear();
+  playerInstance.loader.waitLoad.mockClear();
+  // startLoad가 실제로 설정할 글로벌 패치 변수를 미리 심어둔다 (jsdom에서 script 로드 불가)
   (globalThis as Record<string, unknown>)['_tone_0270_FluidR3_GM_sf2_file'] = { fakePatch: true };
 });
 
@@ -42,16 +47,16 @@ afterEach(() => {
 describe('webaudiofont-bridge', () => {
   it('ensurePatch는 startLoad + waitLoad 호출 후 LoadedInstrument 반환', async () => {
     const result = await ensurePatch('melodic', 27);
-    expect(playerMock.loader.startLoad).toHaveBeenCalledOnce();
+    expect(playerInstance.loader.startLoad).toHaveBeenCalledOnce();
     expect(result).toBeDefined();
     expect(typeof result.url).toBe('string');
   });
 
   it('같은 패치 재요청은 캐시 히트로 startLoad 추가 호출 없음', async () => {
     await ensurePatch('melodic', 27);
-    playerMock.loader.startLoad.mockClear();
+    playerInstance.loader.startLoad.mockClear();
     await ensurePatch('melodic', 27);
-    expect(playerMock.loader.startLoad).not.toHaveBeenCalled();
+    expect(playerInstance.loader.startLoad).not.toHaveBeenCalled();
   });
 
   it('loadPreset은 drums/bass/guitar 3개 패치 병렬 로드', async () => {
@@ -69,5 +74,10 @@ describe('webaudiofont-bridge', () => {
     const p1 = getPlayer();
     const p2 = getPlayer();
     expect(p1).toBe(p2);
+  });
+
+  it('ensureScriptLoaded는 클래스가 이미 있으면 즉시 resolve', async () => {
+    // beforeEach에서 globalThis.WebAudioFontPlayer를 이미 주입했으므로 즉시 resolve
+    await expect(ensureScriptLoaded()).resolves.toBeUndefined();
   });
 });

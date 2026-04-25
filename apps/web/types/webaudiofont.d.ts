@@ -1,14 +1,12 @@
 /**
- * webaudiofont 패키지의 자체 타입 선언 (라이브러리에 .d.ts 부족).
- *
- * 실제 패키지(v3.0.4)는 글로벌 방식으로 설계되어 module.exports가 없다.
- * Vitest mock에서 named export로 주입하기 위해 declare module로 최소 표면을 선언.
- * 실제 런타임 브라우저 경로에서는 webaudiofont-bridge.ts가 globalThis 폴백을 제공한다.
- *
- * 점진적 보강 원칙 — 현재 사용하는 메서드만 선언.
+ * WebAudioFontPlayer는 런타임에 <script> 태그를 통해 글로벌로 로드된다
+ * (webaudiofont-bridge.ts 참조). npm 패키지의 메인 파일은 webpack이
+ * 번들링할 때 ESM/CJS export를 만들지 않으므로 스크립트 태그 방식을 사용한다.
+ * 아래 선언은 실제로 사용하는 표면만 기술한 최소 타입 정의다.
  */
-declare module 'webaudiofont' {
-  export class WebAudioFontPlayer {
+
+declare global {
+  class WebAudioFontPlayer {
     constructor();
     loader: {
       startLoad(audioContext: AudioContext, url: string, variableName: string): void;
@@ -46,3 +44,5 @@ declare module 'webaudiofont' {
     cancelQueue(audioContext: AudioContext): void;
   }
 }
+
+export {};
