@@ -72,3 +72,61 @@ test.describe('Sprint 2-6 — Jam Skeleton', () => {
     await card.getByRole('button', { name: /^Stop$/i }).click();
   });
 });
+
+test.describe('Sprint 2-7 — Smart Highlighting', () => {
+  // 기존 Sprint 2-6 describe와 동일한 goto 패턴 사용.
+  const goto = (page: import('@playwright/test').Page, url: string) =>
+    page.goto(url, { waitUntil: 'domcontentloaded' });
+
+  test('배킹 재생 중 color-tone tier circle이 등장한다', async ({ page }) => {
+    await goto(page, '/jam');
+    // 안전 카드: 12-Bar Blues — 기존 회귀 테스트와 동일.
+    // blues 카테고리는 universal blue notes(♭3·♭5·♭7)를 항상 colorTones로 추가하므로
+    // I7 첫 마디에서도 즉시 color-tone group이 등장한다.
+    const card = page.getByText('12-Bar Blues (Major)').locator('..').locator('..');
+    await card.getByRole('button', { name: /^Play$/i }).click();
+
+    // 첫 마디 진입까지 약간의 여유 (배킹 로드 + 첫 코드 emit).
+    await expect(
+      page.locator('[data-overlay-tier="color-tone"] circle').first(),
+    ).toBeVisible({ timeout: 8000 });
+
+    const colorToneCount = await page
+      .locator('[data-overlay-tier="color-tone"] circle')
+      .count();
+    expect(colorToneCount).toBeGreaterThan(0);
+
+    // 정지
+    await card.getByRole('button', { name: /^Stop$/i }).click();
+  });
+
+  test('Jazz 카드 재생 중 ghost marker가 등장한다', async ({ page }) => {
+    await goto(page, '/jam');
+    // Jazz 카드(시드 'Jazz ii–V–I')는 dominant7에 alt 텐션 4종(♭9·♯9·♯11·♭13)을
+    // 추가하므로 V7 마디에서 스케일 밖 ghost marker가 다수 등장한다.
+    // 시드 이름이 en-dash(–)임에 주의 — apps/api/app/scripts/seed.py 참조.
+    // 환경(백엔드 미가용)에서 카드 자체가 없으면 test.skip.
+    const jazzLabel = page.getByText(/Jazz ii.{1,2}V.{1,2}I/i).first();
+    if ((await jazzLabel.count()) === 0) {
+      test.skip(true, 'Jazz 시드 없음 — 백엔드 카탈로그 미가용');
+      return;
+    }
+
+    const jazzCard = jazzLabel.locator('..').locator('..');
+    await jazzCard.getByRole('button', { name: /^Play$/i }).click();
+
+    // V7 마디까지 도달 대기. ii–V–I는 둘째 마디부터 V7이 들어오므로 비교적 빠르게
+    // ghost marker가 등장하지만, 배킹 로드 지연을 감안해 timeout을 넉넉히.
+    await expect(
+      page.locator('[data-overlay-tier="ghost"] circle').first(),
+    ).toBeVisible({ timeout: 10000 });
+
+    const ghostCount = await page
+      .locator('[data-overlay-tier="ghost"] circle')
+      .count();
+    expect(ghostCount).toBeGreaterThan(0);
+
+    // 정지
+    await jazzCard.getByRole('button', { name: /^Stop$/i }).click();
+  });
+});
