@@ -1,18 +1,13 @@
 /**
- * 멀티트랙 배킹 패턴 데이터 타입.
+ * 멀티트랙 배킹 패턴 데이터 타입 + 시각 표기 파서.
  *
- * 한 마디(`'1m'`) 내부에서 각 voice가 언제 무엇을 칠지 표현한다.
- * `time` 표기는 Tone.js Time literal — `'bar:beat:sub'` 형식, 예: `'0:0:0'` = 마디 시작,
- * `'0:2:0'` = 3박, `'0:0:2'` = 8분 2번째.
- *
- * 엔진은 매 마디 콜백에서 패턴을 순회하며 voice별 trigger를 호출. 음높이는 베이스/keys만
- * 현재 코드 기준으로 동적 결정 — 패턴 데이터에 음정 정보 없음.
+ * 시각 표기는 'bar:beat:sub' (16분 sub). Sprint 2-3에서 Tone.Time을 썼으나
+ * Sprint 2-4는 자체 파서로 결정론성을 확보 — BPM을 명시 인자로 받음.
  */
 
 export type BeatStep = {
-  /** Tone.js Time literal. 마디 내부 상대 시각. */
+  /** 'bar:beat:sub' — 16분 sub. 예: '0:1:2' = 2박+8분(half beat). */
   time: string;
-  /** 0..1, 기본 0.8. */
   velocity?: number;
 };
 
@@ -27,13 +22,23 @@ export type BassPattern = {
   steps: BeatStep[];
 };
 
-export type KeysPattern = {
-  /** 각 step에서 블록 코드를 trigger. duration도 step별. */
-  steps: (BeatStep & { duration: string })[];
-};
+// keys 필드 제거 — Sprint 2-4부터 guitar로 대체.
+export type StrumStep = BeatStep & { direction: 'down' | 'up' };
+export type StrumPattern = StrumStep[];
 
 export type TrackPattern = {
   drums: DrumPattern;
   bass: BassPattern;
-  keys: KeysPattern;
+  guitar: StrumPattern;
 };
+
+/**
+ * 'bar:beat:sub' 표기를 BPM 기준 초로 환산.
+ * sub는 16분음 단위(한 박 = 4 sub).
+ */
+export function parseBeatStep(notation: string, bpm: number, beatsPerBar = 4): number {
+  const parts = notation.split(':').map(Number);
+  const [bars = 0, beats = 0, subs = 0] = parts;
+  const beatSec = 60 / bpm;
+  return bars * beatsPerBar * beatSec + beats * beatSec + (subs / 4) * beatSec;
+}
