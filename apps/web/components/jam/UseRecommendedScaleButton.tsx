@@ -41,7 +41,7 @@ export function UseRecommendedScaleButton({ template }: Props) {
     <button
       type="button"
       onClick={() => setScale(recommended)}
-      className="border border-ink-muted/20 px-2 py-0.5 font-mono text-[0.65rem] uppercase tracking-wider text-ink-muted transition-colors duration-75 hover:border-accent-brass/40 hover:text-accent-brass"
+      className="flex h-7 items-center border border-ink-muted/20 px-2 font-mono text-[0.65rem] uppercase tracking-wider text-ink-muted transition-colors duration-75 hover:border-accent-brass/40 hover:text-accent-brass"
     >
       Apply scale: {recommended.replace(/_/g, ' ')}
     </button>

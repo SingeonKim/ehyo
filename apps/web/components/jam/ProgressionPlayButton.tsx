@@ -65,7 +65,7 @@ export function ProgressionPlayButton({
       disabled={isLoading}
       aria-label={isPlaying ? 'Stop' : 'Play'}
       className={clsx(
-        'flex items-center gap-2 border px-2 py-1 font-mono text-xs',
+        'flex h-7 items-center gap-2 border px-2 font-mono text-[0.65rem] tabular-nums transition-colors duration-75',
         isPlaying
           ? 'border-accent-brass/60 bg-accent-brass/10 text-accent-brass'
           : isLoading
