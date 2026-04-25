@@ -89,6 +89,11 @@ export interface BackingSliceState {
   backingCurrentChord: { symbol: string; barIndex: number } | null;
   /** 영속. 카드 slug → 사용자가 설정한 BPM. 없으면 template.default_bpm 사용. */
   bpmOverrides: Record<string, number>;
+  /**
+   * 영속. 배킹 트랙 마스터 볼륨 (0~1). 메트로놈 볼륨과는 별개.
+   * 엔진은 store 브리지에서 이 값을 구독해 master gain에 적용한다.
+   */
+  volume: number;
 }
 
 // ─── 루트 state + 액션 ────────────────────────────────────
@@ -135,6 +140,8 @@ export interface AppState {
   setBackingBpm: (slug: string, bpm: number) => void;
   /** slug의 BPM override를 제거. 이후 재생 시 template.default_bpm으로 복귀. */
   clearBackingBpm: (slug: string) => void;
+  /** 배킹 마스터 볼륨 변경 (0~1). 엔진 브리지가 setVolume을 자동 호출. */
+  setBackingVolume: (v: number) => void;
 
   // UI 액션
   /** 카탈로그 코드 표기 모드 전환. 'roman' ↔ 'absolute'. */
@@ -187,6 +194,8 @@ const DEFAULT_BACKING: BackingSliceState = {
   backingPlayingSlug: null,
   backingCurrentChord: null,
   bpmOverrides: {},
+  // 메트로놈 볼륨(0.5)과 동일한 시작점. 사용자가 슬라이더로 조정 가능.
+  volume: 0.5,
 };
 
 // BPM 클램프 유틸 — planning 1.3 M1 요건: 20~300
@@ -264,6 +273,15 @@ function migrate(persistedState: unknown, version: number): unknown {
     delete backing.backingKey;
     s.backing = backing;
     s.fretboard = fbCur;
+  }
+  // v9 → v10: backing.volume 추가. 잘못된 값/누락은 0.5(기본).
+  if (version < 10) {
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    const v = backing.volume;
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 1) {
+      backing.volume = 0.5;
+    }
+    s.backing = backing;
   }
   return persistedState;
 }
@@ -423,6 +441,13 @@ export const useAppStore = create<AppState>()(
           delete s.backing.bpmOverrides[slug];
         }),
 
+      setBackingVolume: (v) =>
+        set((s) => {
+          // 0~1 클램프. NaN/Infinity는 무시(기존 값 유지).
+          if (!Number.isFinite(v)) return;
+          s.backing.volume = Math.max(0, Math.min(1, v));
+        }),
+
       setChordDisplayMode: (mode) =>
         set((s) => {
           // 카탈로그 칩/재생 라벨 모두 ui.chordDisplayMode를 구독하므로
@@ -433,7 +458,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 9,
+      version: 10,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -443,6 +468,7 @@ export const useAppStore = create<AppState>()(
       // v6 → v7: backing.bpmOverrides 추가. 카드별 BPM override 영속화.
       // v7 → v8: ui.chordDisplayMode 추가 (Sprint 2-6 카탈로그 표기 토글).
       // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합 (Key 동기화).
+      // v9 → v10: backing.volume 추가 — 배킹 마스터 볼륨.
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
@@ -461,6 +487,8 @@ export const useAppStore = create<AppState>()(
           // bpmOverrides만 영속화 — 카드별 BPM 설정 유지.
           // backingKey는 v9에서 제거 (fretboard.root와 통합).
           bpmOverrides: state.backing.bpmOverrides,
+          // v10: 마스터 볼륨도 영속화.
+          volume: state.backing.volume,
         },
       }),
       // Zustand 기본 merge는 top-level shallow. metronome 같은 nested object가

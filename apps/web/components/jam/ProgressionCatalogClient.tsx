@@ -23,6 +23,7 @@ import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 import { useAppStore } from '@/lib/store/app-store';
 import { displayChord } from '@/lib/theory/chord-display';
 
+import { BackingVolumeSlider } from './BackingVolumeSlider';
 import { BpmSlider } from './BpmSlider';
 import { ChordDisplayModeToggle } from './ChordDisplayModeToggle';
 import { KeySelector } from './KeySelector';
@@ -70,6 +71,7 @@ export function ProgressionCatalogClient({
         <div className="flex flex-wrap items-center gap-4">
           <ChordDisplayModeToggle />
           <KeySelector />
+          <BackingVolumeSlider />
           <span className="font-mono text-[0.65rem] text-ink-muted">
             {templates.length} progressions
           </span>

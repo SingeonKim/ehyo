@@ -85,6 +85,12 @@ export interface BackingEngine {
    * 현재 template의 default_bpm으로 복귀.
    */
   resetBpmToDefault(): void;
+  /**
+   * 마스터 볼륨 설정. 0~1 범위. 유효하지 않은 값은 무시.
+   * 재생 중이면 즉시 반영(부드러운 ramp 없이 setValueAtTime — 슬라이더 드래그 빈도가
+   * 충분히 빨라 사용자 입장에서 자연스러움).
+   */
+  setVolume(v: number): void;
   stop(): void;
   dispose(): void;
 }
@@ -104,6 +110,14 @@ function createEngine(): BackingEngine {
   let scheduler: BarScheduler | null = null;
 
   /**
+   * 마스터 게인 노드 — 모든 voice가 여기로 합류한 뒤 destination으로 출력.
+   * setVolume이 이 gain.value만 조정하므로 voice별 fadeOut/start 사이클과 독립.
+   * lazy 생성: 첫 ensureVoices 시 audio context와 함께 만들어진다.
+   */
+  let masterGain: GainNode | null = null;
+  let currentVolume = 0.7; // store에서 setVolume 들어오기 전 기본값. UI 슬라이더와 동일 default.
+
+  /**
    * eventTime까지 setState를 지연하는 setTimeout ID 집합.
    * hardStop에서 일괄 cancel → stop 후에도 playing 상태가 뒤늦게 dispatch되는 것을 막음.
    */
@@ -115,11 +129,18 @@ function createEngine(): BackingEngine {
   let currentDefaultBpm = 90;
   let currentLoadedPreset: LoadedPreset | null = null;
 
-  /** voice 객체를 lazy 생성. start/stop 사이클에서 재사용. */
+  /** voice 객체를 lazy 생성. start/stop 사이클에서 재사용.
+   *  마스터 게인을 먼저 만들고 모든 voice가 그것을 destination으로 사용한다. */
   const ensureVoices = () => {
-    if (!drums) drums = createDrumVoice();
-    if (!bass) bass = createBassVoice();
-    if (!guitar) guitar = createGuitarVoice();
+    if (!masterGain) {
+      const ctx = getAudioContext();
+      masterGain = ctx.createGain();
+      masterGain.gain.value = currentVolume;
+      masterGain.connect(ctx.destination);
+    }
+    if (!drums) drums = createDrumVoice(masterGain);
+    if (!bass) bass = createBassVoice(masterGain);
+    if (!guitar) guitar = createGuitarVoice(masterGain);
     return { drums, bass, guitar };
   };
 
@@ -278,6 +299,19 @@ function createEngine(): BackingEngine {
     setBpm(currentDefaultBpm);
   };
 
+  const setVolume: BackingEngine['setVolume'] = (v) => {
+    if (!Number.isFinite(v)) {
+      console.warn('[backing] invalid volume ignored:', v);
+      return;
+    }
+    const clamped = Math.max(0, Math.min(1, v));
+    currentVolume = clamped;
+    if (masterGain) {
+      const ctx = getAudioContext();
+      masterGain.gain.setValueAtTime(clamped, ctx.currentTime);
+    }
+  };
+
   const stop: BackingEngine['stop'] = () => {
     hardStop();
     setState({ status: 'idle' });
@@ -288,6 +322,10 @@ function createEngine(): BackingEngine {
     drums?.dispose(); drums = null;
     bass?.dispose(); bass = null;
     guitar?.dispose(); guitar = null;
+    if (masterGain) {
+      masterGain.disconnect();
+      masterGain = null;
+    }
     listeners.clear();
     state = { status: 'idle' };
   };
@@ -295,7 +333,7 @@ function createEngine(): BackingEngine {
   return {
     getState: () => state,
     subscribe: (l) => { listeners.add(l); return () => listeners.delete(l); },
-    start, setKey, setBpm, resetBpmToDefault, stop, dispose,
+    start, setKey, setBpm, resetBpmToDefault, setVolume, stop, dispose,
   };
 }
 
@@ -348,16 +386,24 @@ if (typeof window !== 'undefined') {
       }
     });
 
-    // store → engine: Key 변경 + BPM override 변화 전파.
+    // store → engine: Key 변경 + BPM override + volume 변화 전파.
     // Sprint 2-6 후속(v9): backing key가 fretboard.root로 통합됐으므로 root를 구독.
     // 사용자가 RootPicker/KeySelector 어디서든 키를 바꿔도 같은 fretboard.root를
     // 갱신하므로 한 번의 subscribe로 두 컨트롤이 모두 잡힌다.
+    //
+    // 초기 hydration 직후 store.backing.volume이 default(0.5) 또는 영속값으로
+    // 들어와 있으나, masterGain은 아직 lazy-create 안 된 상태일 수 있다.
+    // engine.setVolume은 masterGain이 없으면 currentVolume에 캐시만 해두고,
+    // ensureVoices가 master를 만들 때 그 값으로 초기화하므로 안전.
+    engine.setVolume(useAppStore.getState().backing.volume);
+
     useAppStore.subscribe((s, prev) => {
       if (s.fretboard.root !== prev.fretboard.root) {
         engine.setKey(s.fretboard.root);
       }
-      // BPM override 변화 감지 — Task 9에서 bpmOverrides 추가 시 활성.
-      // 현재는 store에 bpmOverrides 없음 → 이 selector는 항상 undefined === undefined.
+      if (s.backing.volume !== prev.backing.volume) {
+        engine.setVolume(s.backing.volume);
+      }
       const slug = s.backing.backingPlayingSlug;
       if (!slug) return;
       const newBpm = (s.backing as { bpmOverrides?: Record<string, number> }).bpmOverrides?.[slug];
