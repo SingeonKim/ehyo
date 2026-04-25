@@ -274,7 +274,7 @@ export function Fretboard({
         <g
           data-overlay-tier="ghost"
           aria-hidden="true"
-          opacity={0.35}
+          opacity={0.22}
         >
           {ghostNotes.map((g) => (
             <circle
@@ -297,7 +297,7 @@ export function Fretboard({
         <g
           data-overlay-tier="color-tone"
           aria-hidden="true"
-          opacity={0.45}
+          opacity={0.38}
         >
           {[...appropriateNotes.colorTones].flatMap((pc) =>
             ringPositions(pc).map((p) => (
