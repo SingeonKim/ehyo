@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
-import { chordPitchClassSet } from '@/lib/theory/chord-voicing';
+import { getChordOverlay } from '@/lib/theory/chord-voicing';
 import {
   STANDARD_TUNING,
   getFretboardNotes,
@@ -64,10 +64,17 @@ export function FretboardClient() {
   const effectiveRoot = isBackingActive ? backingKey : fretboardRoot;
 
   // 현재 코드 톤 PC Set — isBackingActive 이고 currentChordSymbol이 있을 때만 계산.
-  // 파싱 실패 시 chordPitchClassSet이 null을 반환하므로 undefined로 폴백.
+  // Sprint 2-6 Task 2: chordPitchClassSet 제거. 정식 chordOverlay prop 분리는
+  // Task 6에서 진행하므로 여기서는 임시로 root + tones 합집합을 단일 Set으로 묶어
+  // 기존 chordTonePcs prop과 동등한 형태를 유지한다.
   const chordTonePcs = useMemo(() => {
     if (!isBackingActive || !currentChordSymbol) return undefined;
-    return chordPitchClassSet(currentChordSymbol, backingKey) ?? undefined;
+    const overlay = getChordOverlay(currentChordSymbol, backingKey);
+    if (overlay.root === null && overlay.tones.size === 0) return undefined;
+    // 기존 단일 set 의미 유지 — root + tones 합집합
+    const all = new Set<number>(overlay.tones);
+    if (overlay.root !== null) all.add(overlay.root);
+    return all;
   }, [isBackingActive, currentChordSymbol, backingKey]);
 
   // 이명동음 표기는 effectiveRoot 기준 — backing 재생 중에는 backingKey 조표 적용.

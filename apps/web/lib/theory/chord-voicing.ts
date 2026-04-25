@@ -71,17 +71,30 @@ export function midiToFrequency(midi: number): number {
   return 440 * 2 ** ((midi - 69) / 12);
 }
 
+export interface ChordOverlay {
+  /** 현재 코드의 root pitch class. 파싱 실패 시 null. */
+  root: PitchClass | null;
+  /** root를 제외한 chord tones (보통 2~3개). 파싱 실패 시 빈 Set. */
+  tones: ReadonlySet<PitchClass>;
+}
+
 /**
- * chordPitchClasses의 결과를 Set으로 래핑 — 지판 렌더 시 O(1) lookup.
- * Array.includes() 대신 Set.has()를 쓰는 이유: 지판은 최대 6줄 × 24프렛 =
- * 144 노트를 매 렌더마다 조회하므로 O(1) 보장이 체감 성능에 유리.
- * 파싱 실패 시 null 반환 — 호출부가 "코드톤 없음" 분기를 명시적으로 처리.
+ * Sprint 2-6 — Fretboard halo overlay를 chord-root / chord-tone 두 레이어로 분리.
+ * 파싱 실패 시 { root: null, tones: empty Set } — 호출부는 halo 미표시 분기.
+ *
+ * Sprint 2-7에서 tensions, color 옵셔널 필드 추가 예정.
  */
-export function chordPitchClassSet(
+export function getChordOverlay(
   symbol: string,
   keyRoot: PitchClass,
-): Set<number> | null {
+): ChordOverlay {
   const pcs = chordPitchClasses(symbol, keyRoot);
-  if (!pcs) return null;
-  return new Set(pcs);
+  if (!pcs || pcs.length === 0) {
+    return { root: null, tones: new Set() };
+  }
+  const [root, ...rest] = pcs;
+  return {
+    root: root as PitchClass,
+    tones: new Set(rest),
+  };
 }
