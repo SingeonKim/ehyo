@@ -30,10 +30,13 @@ export function ChordDisplayModeToggle() {
             aria-pressed={isActive}
             onClick={() => setMode(mode)}
             className={clsx(
-              'border px-2 py-1 font-mono text-[0.65rem] uppercase tracking-widest transition-colors duration-75',
-              idx === 0 ? 'border-r-0' : '',
+              // 두 버튼이 1px 겹치도록 -ml-px. active 버튼은 z-[1]로 위에 표시해
+              // active border가 inactive border를 가리도록 한다(이전엔 border-r-0
+              // + 다음 버튼 좌측 회색 border가 active brass 박스의 우측을 잘랐음).
+              'relative border px-2 py-1 font-mono text-[0.65rem] uppercase tracking-widest transition-colors duration-75',
+              idx > 0 && '-ml-px',
               isActive
-                ? 'border-accent-brass bg-accent-brass/10 text-accent-brass'
+                ? 'z-[1] border-accent-brass bg-accent-brass/10 text-accent-brass'
                 : 'border-ink-muted/25 text-ink-secondary hover:text-ink-primary',
             )}
           >
