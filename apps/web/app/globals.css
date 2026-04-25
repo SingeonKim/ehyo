@@ -84,6 +84,24 @@ body {
   border-radius: 2px;
 }
 
+/* ──────────────────────────────────────
+ * Sprint 2-5 — chord tone halo overlay
+ * ──────────────────────────────────────
+ * key={chordSymbol} prop으로 SVG group이 re-mount되면 keyframe이 0%부터 재시작.
+ * attack(20%까지 0.75 점화) → decay(100%까지 0.5 안착, forwards 유지).
+ * 전역 prefers-reduced-motion 규칙이 animation-duration을 0.01ms로 강제해도
+ * forwards로 마지막 프레임(opacity 0.5)에 안착되어 정적 halo 보장.
+ */
+@keyframes chord-tone-pulse {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.75; }
+  100% { opacity: 0.5; }
+}
+
+.chord-tone-halo {
+  animation: chord-tone-pulse 0.6s ease-out forwards;
+}
+
 /* 사용자가 모션 축소 요청 시 — 진자 애니메이션 등 장식적 모션 억제 */
 @media (prefers-reduced-motion: reduce) {
   *,
