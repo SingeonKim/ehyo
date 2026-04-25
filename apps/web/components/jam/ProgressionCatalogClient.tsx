@@ -15,6 +15,7 @@ import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 import { BpmSlider } from './BpmSlider';
 import { KeySelector } from './KeySelector';
 import { ProgressionPlayButton } from './ProgressionPlayButton';
+import { UseRecommendedScaleButton } from './UseRecommendedScaleButton';
 
 const CATEGORY_LABELS: Record<string, string> = {
   blues: 'Blues',
@@ -92,9 +93,10 @@ export function ProgressionCatalogClient({
                         <span className="px-1.5 py-[1px] text-ink-muted">…</span>
                       )}
                     </div>
-                    {/* BpmSlider + PlayButton: 카드 우측 컨트롤 영역 */}
-                    <div className="flex items-center gap-2">
+                    {/* BpmSlider + Apply scale + PlayButton: 카드 우측 컨트롤 영역 */}
+                    <div className="flex flex-wrap items-center gap-2">
                       <BpmSlider slug={t.slug} defaultBpm={t.default_bpm} />
+                      <UseRecommendedScaleButton template={t} />
                       <ProgressionPlayButton template={t} />
                     </div>
                   </div>
