@@ -108,7 +108,7 @@ export function FretboardClient() {
   return (
     <div className="space-y-8">
       {/* 지판 SVG — 와이드 */}
-      <div className="overflow-x-auto border border-ink-muted/20 bg-bg-elevated px-4 py-6">
+      <div className="overflow-x-auto border border-ink-muted/20 bg-bg-elevated px-4 py-6 lg:sticky lg:top-[var(--header-height)] lg:z-[1]">
         <Fretboard
           notes={notes}
           openStrings={openStrings}

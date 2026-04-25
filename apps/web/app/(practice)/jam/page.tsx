@@ -2,31 +2,27 @@ import type { Metadata } from 'next';
 
 import { FretboardClient } from '@/components/fretboard/FretboardClient';
 import { ProgressionCatalog } from '@/components/jam/ProgressionCatalog';
-import { MetronomeClient } from '@/components/metronome/MetronomeClient';
 
 /*
- * Jam — 통합 뷰. 메트로놈과 지판을 한 페이지에 놓는다.
+ * Jam — Sprint 2-6 재구성.
  *
- * 설계 판단:
- *   두 Client를 그대로 쌓는 "두 세션을 한 자리에" 방식. 각 컴포넌트의 전체
- *   기능을 유지하되 시각적 구분자로 분리. 복잡해 보일 수 있지만 한번 설정
- *   후 연주 중에는 거의 건드리지 않는 사용 패턴이라 실 혼잡도는 낮다.
+ * 본문에서 메트로놈을 제거 — 헤더 MetronomeDock만으로 박자 잡기 충분.
+ * Fretboard SVG는 lg: 이상에서 sticky로 카탈로그를 스크롤하면서도 지판이
+ * 항상 보이도록 한다. 컨트롤 그리드(RootPicker 등)는 sticky 아님.
  *
- *   메트로놈 간이 제어는 이미 헤더 Dock에 상시 존재하므로, /jam에서는
- *   "메트로놈 페이지 풀 컨트롤 + 지판 풀 컨트롤" 조합으로 연습 워크벤치를 완성.
- *
- * 키보드 단축키는 MetronomeClient가 window-level로 등록하므로 /jam에서도
- * 그대로 작동 (Space, ↑↓, Shift+↑↓, T).
+ * sticky offset: globals.css의 --header-height (현재 56px).
+ * 모바일(<lg)에서는 일반 흐름 — fretboard가 화면 절반을 잡으면 카탈로그가
+ * 가려지므로 sticky 해제.
  */
 
 export const metadata: Metadata = {
   title: 'Jam',
-  description: '메트로놈과 기타 지판을 한 페이지에. 실제 연습 워크벤치.',
+  description: '지판과 배킹 트랙이 한 화면에. 코드 진행 따라 chord overlay가 매 마디 갱신.',
 };
 
 export default function JamPage() {
   return (
-    <section className="space-y-16 py-8">
+    <section className="space-y-12 py-8">
       <header className="mb-4">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
           Practice / Jam
@@ -35,30 +31,20 @@ export default function JamPage() {
           <span className="text-accent-brass">Practice</span>, together.
         </h1>
         <p className="mt-4 max-w-xl font-mono text-sm text-ink-secondary">
-          메트로놈과 지판이 한 화면에. 헤더 Dock으로 다른 페이지에서도 계속 재생.
+          지판과 배킹 트랙이 한 자리에. 헤더 Dock으로 다른 페이지에서도 메트로놈 계속.
         </p>
       </header>
 
-      <section aria-label="Metronome 영역">
-        <h2 className="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
-          § Metronome
-        </h2>
-        <MetronomeClient />
-      </section>
-
-      <div className="border-t border-ink-muted/15" aria-hidden="true" />
-
-      <section aria-label="Fretboard 영역">
-        <h2 className="mb-6 font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
+      <section aria-label="Fretboard 영역" className="space-y-6">
+        <h2 className="font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
           § Fretboard
         </h2>
+        {/* sticky는 FretboardClient 내부의 SVG 컨테이너에서 처리 — page는 단순 마운트만 */}
         <FretboardClient />
       </section>
 
       <div className="border-t border-ink-muted/15" aria-hidden="true" />
 
-      {/* Phase 5 Day 4 — 백엔드 연결 확인용 프리뷰. Phase 5 후반에 각 카드가
-          배킹 트랙 재생 버튼을 얻는다. */}
       <ProgressionCatalog />
     </section>
   );
