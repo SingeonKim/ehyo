@@ -42,10 +42,13 @@ export default function JamPage() {
         </p>
       </header>
 
-      {/* sticky 섹션 — Surface만 고정. 카탈로그까지 스크롤해도 헤더 아래에 유지 */}
+      {/* sticky 섹션 — Surface만 고정. 카탈로그까지 스크롤해도 헤더 아래에 유지.
+          z-10: 카탈로그 내부 일부 요소(예: ChordDisplayModeToggle active 버튼의
+          z-[1] stacking)가 sticky fretboard 위로 떠 보이지 않도록 우선순위 확보.
+          헤더(layout.tsx)는 top-0 + z-10이지만 위치가 안 겹쳐 충돌 없음. */}
       <section
         aria-label="Fretboard 영역"
-        className="lg:sticky lg:top-[var(--header-height)] lg:z-[1] bg-bg-base"
+        className="lg:sticky lg:top-[var(--header-height)] lg:z-10 bg-bg-base"
       >
         <h2 className="mb-3 font-mono text-xs uppercase tracking-[0.25em] text-ink-muted">
           § Fretboard

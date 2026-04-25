@@ -19,8 +19,11 @@ export function ChordDisplayModeToggle() {
   const current = useAppStore((s) => s.ui.chordDisplayMode);
   const setMode = useAppStore((s) => s.setChordDisplayMode);
 
+  // isolate: active 버튼의 z-[1]을 이 그룹 내부 stacking context로 격리.
+  // 외부(예: jam page의 sticky fretboard 섹션)와 z-index 비교가 일어나
+  // 토글이 sticky fretboard 위로 떠 보이는 것을 방지.
   return (
-    <div role="group" aria-label="코드 표기 모드" className="flex">
+    <div role="group" aria-label="코드 표기 모드" className="isolate flex">
       {OPTIONS.map(({ mode, label }, idx) => {
         const isActive = current === mode;
         return (
