@@ -10,7 +10,7 @@
 import { clsx } from 'clsx';
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
-import { getBackingEngine } from '@/lib/audio/backing-track';
+import { getBackingEngine } from '@/lib/audio/backing';
 import { useAppStore } from '@/lib/store/app-store';
 
 export function ProgressionPlayButton({
