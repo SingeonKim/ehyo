@@ -24,8 +24,14 @@ import { displayChord } from '@/lib/theory/chord-display';
 
 export function ProgressionPlayButton({
   template,
+  startBarIndex,
 }: {
   template: ProgressionTemplate;
+  /**
+   * 클릭한 마디부터 재생 시작. 정의되지 않으면 0번 마디부터.
+   * Sprint 2-7 후속 click-to-seek 기능. ProgressionCard의 selectedBarIdx에서 전달.
+   */
+  startBarIndex?: number;
 }) {
   const isPlaying = useAppStore(
     (s) => s.backing.backingPlayingSlug === template.slug,
@@ -51,7 +57,8 @@ export function ProgressionPlayButton({
       setIsLoading(true);
       try {
         // overrideBpm이 undefined면 engine이 template.default_bpm을 사용
-        await engine.start(template, root, overrideBpm);
+        // startBarIndex가 undefined면 0번 마디부터
+        await engine.start(template, root, overrideBpm, startBarIndex);
       } finally {
         // 성공·실패 모두 loading 해제 (playing 상태는 store 브리지가 담당)
         setIsLoading(false);

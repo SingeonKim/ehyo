@@ -64,8 +64,10 @@ test.describe('Sprint 2-6 — Jam Skeleton', () => {
     const card = page.getByText('12-Bar Blues (Major)').locator('..').locator('..');
     // ▶ 버튼 클릭 (정지 상태일 때 aria-label='Play')
     await card.getByRole('button', { name: /^Play$/i }).click();
-    // 첫 마디가 aria-current로 잡힘 (배킹 로딩 후 1~2초 내, 여유 5s)
-    await expect(card.locator('li[aria-current="true"]')).toHaveCount(1, {
+    // 첫 마디가 aria-current로 잡힘 (배킹 로딩 후 1~2초 내, 여유 5s).
+    // Sprint 2-7 후속: 마디 chip이 <li>에서 <button>으로 변경되어 aria-current가
+    // button에 박혀 있음 — 셀렉터를 tag-agnostic으로 갱신.
+    await expect(card.locator('[aria-current="true"]')).toHaveCount(1, {
       timeout: 5000,
     });
     // 정지
