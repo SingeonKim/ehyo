@@ -395,3 +395,57 @@ describe('INLAY_POSITIONS', () => {
     expect(INLAY_POSITIONS.map((p) => p.fret)).toEqual([3, 5, 7, 9, 12, 15, 17, 19, 21, 24]);
   });
 });
+
+import { getGhostFretboardPositions, type GhostNote } from '@/lib/theory/fretboard';
+
+describe('getGhostFretboardPositions', () => {
+  it('빈 pitchClasses set이면 빈 배열', () => {
+    expect(
+      getGhostFretboardPositions({
+        tuning: STANDARD_TUNING,
+        frets: 12,
+        pitchClasses: new Set(),
+        useFlats: false,
+      }),
+    ).toEqual([]);
+  });
+
+  it('C# (pc=1) — 12 프렛 안에서 6개 줄 모든 등장 위치', () => {
+    // 표준 튜닝 EADGBE: open pcs = [4(E), 9(A), 2(D), 7(G), 11(B), 4(E)]
+    // C#=1 등장: 6번줄(E) → fret 9, 5번줄(A) → fret 4, 4번줄(D) → fret 11,
+    //   3번줄(G) → fret 6, 2번줄(B) → fret 2, 1번줄(E) → fret 9
+    const result = getGhostFretboardPositions({
+      tuning: STANDARD_TUNING,
+      frets: 12,
+      pitchClasses: new Set([1]),
+      useFlats: false,
+    });
+    expect(result).toHaveLength(6);
+    expect(result.every((g) => g.pitchClass === 1)).toBe(true);
+    const positions = result
+      .map((g) => `${g.string}-${g.fret}`)
+      .sort();
+    expect(positions).toEqual(['1-9', '2-2', '3-6', '4-11', '5-4', '6-9']);
+  });
+
+  it('useFlats=true면 노트 이름이 플랫 표기', () => {
+    const result = getGhostFretboardPositions({
+      tuning: STANDARD_TUNING,
+      frets: 12,
+      pitchClasses: new Set([1]), // C#/Db
+      useFlats: true,
+    });
+    expect(result[0]?.noteName).toBe('Db');
+  });
+
+  it('open string(fret 0) 위치는 포함하지 않음 — open 라벨은 별도 책임', () => {
+    // E (pc=4)는 open string에 있는 음
+    const result = getGhostFretboardPositions({
+      tuning: STANDARD_TUNING,
+      frets: 12,
+      pitchClasses: new Set([4]),
+      useFlats: false,
+    });
+    expect(result.every((g) => g.fret > 0)).toBe(true);
+  });
+});

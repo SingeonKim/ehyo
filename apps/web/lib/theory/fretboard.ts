@@ -149,3 +149,49 @@ export const INLAY_POSITIONS: readonly { fret: number; double: boolean }[] = [
   { fret: 21, double: false },
   { fret: 24, double: true },
 ] as const;
+
+/**
+ * Ghost note — 스케일 밖이지만 chord/color tone으로 표시되어야 하는 위치.
+ * NoteMark과 다르게 tier·degree·semitonesFromRoot가 없다 — 스케일 멤버십과
+ * 무관하게 단순 "이 pitch class가 어디 떨어지는가"만 알려줌.
+ */
+export interface GhostNote {
+  /** 1~6, 1번줄(최고음). */
+  string: number;
+  /** 1 ~ frets (open string은 포함 안 함). */
+  fret: number;
+  pitchClass: PitchClass;
+  noteName: string;
+}
+
+/**
+ * 주어진 pitch class set이 지판 위에 떨어지는 모든 위치(fret 1 이상).
+ * 스케일 멤버십·tier 검사 없음.
+ *
+ * 사용처: Sprint 2-7 ghost marker — out-of-scale 코드톤/색채음을 별도 SVG
+ * 그룹으로 렌더할 때 위치 계산.
+ */
+export function getGhostFretboardPositions(params: {
+  tuning: readonly PitchClass[];
+  frets: number;
+  pitchClasses: ReadonlySet<PitchClass>;
+  useFlats: boolean;
+}): GhostNote[] {
+  const { tuning, frets, pitchClasses, useFlats } = params;
+  if (pitchClasses.size === 0) return [];
+
+  const out: GhostNote[] = [];
+  for (let stringIdx = 0; stringIdx < tuning.length; stringIdx++) {
+    for (let fret = 1; fret <= frets; fret++) {
+      const pc = pitchAt(tuning, stringIdx, fret);
+      if (!pitchClasses.has(pc)) continue;
+      out.push({
+        string: tuning.length - stringIdx,
+        fret,
+        pitchClass: pc,
+        noteName: getNoteName(pc, useFlats),
+      });
+    }
+  }
+  return out;
+}
