@@ -246,3 +246,63 @@ describe('persist migrate v7 → v8', () => {
     expect(migrated.ui.chordDisplayMode).toBe('absolute');
   });
 });
+
+describe('persist v10 → v11 migration', () => {
+  it('v10 state에 backingPlayingCategory: null 추가', () => {
+    const v10 = {
+      fretboard: { root: 0, scale: 'major', highlightsByScale: {}, accidentalMode: 'auto' },
+      backing: {
+        backingPlayingSlug: null,
+        backingCurrentChord: null,
+        bpmOverrides: {},
+        volume: 0.5,
+      },
+      ui: { theme: 'dark', chordDisplayMode: 'roman' },
+    };
+    const result = __migrate(v10, 10) as { backing: { backingPlayingCategory: unknown } };
+    expect(result.backing.backingPlayingCategory).toBeNull();
+  });
+
+  it('v11 이미 적용된 state는 멱등 — 기존 category 보존', () => {
+    const v11 = {
+      fretboard: { root: 0, scale: 'major', highlightsByScale: {}, accidentalMode: 'auto' },
+      backing: {
+        backingPlayingSlug: 'pop-axis',
+        backingPlayingCategory: 'pop',
+        backingCurrentChord: null,
+        bpmOverrides: {},
+        volume: 0.5,
+      },
+      ui: { theme: 'dark', chordDisplayMode: 'roman' },
+    };
+    const result = __migrate(v11, 11) as { backing: { backingPlayingCategory: unknown } };
+    expect(result.backing.backingPlayingCategory).toBe('pop');
+  });
+});
+
+describe('_setBackingPlayingTemplate', () => {
+  it('template이 주어지면 slug + category 동시 set', () => {
+    useAppStore.getState()._setBackingPlayingTemplate({
+      slug: 'jazz-251',
+      category: 'jazz',
+    } as never);
+    const s = useAppStore.getState();
+    expect(s.backing.backingPlayingSlug).toBe('jazz-251');
+    expect(s.backing.backingPlayingCategory).toBe('jazz');
+  });
+
+  it('null이면 slug + category 둘 다 null', () => {
+    useAppStore.getState()._setBackingPlayingTemplate(null);
+    const s = useAppStore.getState();
+    expect(s.backing.backingPlayingSlug).toBeNull();
+    expect(s.backing.backingPlayingCategory).toBeNull();
+  });
+
+  it('알 수 없는 category는 pop으로 fallback', () => {
+    useAppStore.getState()._setBackingPlayingTemplate({
+      slug: 'weird',
+      category: 'unknown-genre',
+    } as never);
+    expect(useAppStore.getState().backing.backingPlayingCategory).toBe('pop');
+  });
+});

@@ -13,6 +13,8 @@ import type {
 } from '@/lib/theory/types';
 import { SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
 import type { ChordDisplayMode } from '@/lib/theory/chord-display';
+import { GENRE_RULES, type ProgressionCategory } from '@/lib/theory/genre-rules';
+import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -85,6 +87,8 @@ export interface UiState {
 export interface BackingSliceState {
   /** 런타임. 재생 중인 template.slug 또는 null. */
   backingPlayingSlug: string | null;
+  /** 런타임. 재생 중인 template.category. backingPlayingSlug와 항상 동기화. */
+  backingPlayingCategory: ProgressionCategory | null;
   /** 런타임. 엔진이 퍼블리시하는 현재 코드. */
   backingCurrentChord: { symbol: string; barIndex: number } | null;
   /** 영속. 카드 slug → 사용자가 설정한 BPM. 없으면 template.default_bpm 사용. */
@@ -132,6 +136,8 @@ export interface AppState {
   // 배킹 액션
   /** engine subscriber 전용 — UI에서 호출 금지. */
   _setBackingPlaying: (slug: string | null) => void;
+  /** engine subscriber 전용 — UI에서 호출 금지. slug + category 동시 set. */
+  _setBackingPlayingTemplate: (template: ProgressionTemplate | null) => void;
   /** engine subscriber 전용 — UI에서 호출 금지. */
   _setBackingCurrentChord: (
     c: { symbol: string; barIndex: number } | null,
@@ -192,6 +198,7 @@ const DEFAULT_UI: UiState = {
 
 const DEFAULT_BACKING: BackingSliceState = {
   backingPlayingSlug: null,
+  backingPlayingCategory: null,
   backingCurrentChord: null,
   bpmOverrides: {},
   // 메트로놈 볼륨(0.5)과 동일한 시작점. 사용자가 슬라이더로 조정 가능.
@@ -280,6 +287,15 @@ function migrate(persistedState: unknown, version: number): unknown {
     const v = backing.volume;
     if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 1) {
       backing.volume = 0.5;
+    }
+    s.backing = backing;
+  }
+  // v10 → v11: backing.backingPlayingCategory 추가. 런타임 필드라 기본 null.
+  //   엔진은 start 시 _setBackingPlayingTemplate으로 채운다.
+  if (version < 11) {
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    if (!('backingPlayingCategory' in backing)) {
+      backing.backingPlayingCategory = null;
     }
     s.backing = backing;
   }
@@ -424,6 +440,22 @@ export const useAppStore = create<AppState>()(
           s.backing.backingPlayingSlug = slug;
         }),
 
+      _setBackingPlayingTemplate: (template) =>
+        set((s) => {
+          if (!template) {
+            s.backing.backingPlayingSlug = null;
+            s.backing.backingPlayingCategory = null;
+            return;
+          }
+          s.backing.backingPlayingSlug = template.slug ?? null;
+          const cat = template.category as string | undefined;
+          // 알 수 없는 category는 pop fallback — presets.ts getPreset과 동일 패턴.
+          s.backing.backingPlayingCategory =
+            cat && cat in GENRE_RULES
+              ? (cat as ProgressionCategory)
+              : 'pop';
+        }),
+
       _setBackingCurrentChord: (c) =>
         set((s) => {
           s.backing.backingCurrentChord = c;
@@ -458,7 +490,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 10,
+      version: 11,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -469,6 +501,7 @@ export const useAppStore = create<AppState>()(
       // v7 → v8: ui.chordDisplayMode 추가 (Sprint 2-6 카탈로그 표기 토글).
       // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합 (Key 동기화).
       // v9 → v10: backing.volume 추가 — 배킹 마스터 볼륨.
+      // v10 → v11: backing.backingPlayingCategory 추가 (Sprint 2-7 스마트 하이라이팅).
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
