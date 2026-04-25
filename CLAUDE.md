@@ -46,7 +46,7 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 
 ### 한 줄 요약
 
-기타 연습자용 **메트로놈 + 지판 스케일 가이드** 웹앱. v1은 **순수 클라이언트 Next.js 앱**(백엔드 없음). 배킹 트랙이 들어오는 Phase 5에서 FastAPI + Postgres + MinIO를 도입하며 그 시점에 모노레포로 전환.
+기타 연습자용 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙** 웹앱. v1은 **순수 클라이언트 Next.js 앱**(백엔드 없음). 배킹 트랙도 WebAudioFont(surikov CDN) 샘플 기반으로 클라이언트에서 합성 — 원래 Phase 5에 도입 예정이던 Tone.js·FastAPI·MinIO·모노레포 전환은 **모두 보류**. 사용자 인증·프리셋 공유 같은 서버 종속 기능이 명확해질 때 백엔드 도입 재검토.
 
 ### 핵심 설계 결정 (파일만 봐서는 안 보이는 것)
 
@@ -62,16 +62,20 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 
 - **Server vs Client 경계**: 브라우저 API(AudioContext, localStorage, window) 접근 컴포넌트는 `'use client'` 필수. 페이지는 기본 Server Component로 두고 인터랙티브 서브트리만 Client로 분리(`FretboardClient` 패턴). `useHasHydrated()` 훅(`lib/store/hooks.ts`)으로 첫 렌더의 DOM mismatch 방지.
 
+- **fretboard.root는 키의 단일 소스**: 지판 root와 배킹 트랙 키가 항상 동일하다. Sprint 2-6에서 `backing.backingKey`를 v9 마이그레이션으로 제거하고 `fretboard.root` 하나로 통합. 엔진 브리지·`KeySelector`·`RootPicker` 모두 같은 필드를 구독·갱신해 "지판 키 ≠ 배킹 키" 상태가 구조적으로 불가능하도록 막았다.
+
 - **reactStrictMode: false**: Next 기본 on인 StrictMode의 이중 mount가 AudioContext 싱글턴과 충돌해 2개 생성되는 것을 막기 위해 의도적으로 꺼둠. Phase 1에서 guard 검증 후 재검토 예정(`next.config.ts` 주석 참조).
 
 ### 디렉토리 책임
 
-- `app/` — Next.js App Router. `(practice)` 라우트 그룹이 메트로놈·지판·jam 뷰를 공유 레이아웃으로 묶음. 페이지는 정적 쉘만, 실제 UI는 components/ 클라이언트 컴포넌트.
-- `components/fretboard/` — SVG 지판 렌더러 + 컨트롤. 각 컨트롤은 Zustand 스토어를 직접 구독하는 자체 컨테이너 패턴 (prop drilling 없음).
-- `components/metronome/` — Phase 1에서 구현 예정.
-- `lib/audio/` — AudioContext 관리, Phase 1+ 메트로놈 스케줄러(Chris Wilson lookahead 패턴, 25ms lookahead / 100ms scheduleAhead, iOS 150ms).
-- `lib/theory/` — 음악 이론 데이터·함수. `notes.ts`(피치 클래스·도수), `scales.ts`(16 스케일 + `IMPORTANT_DEGREES`), `fretboard.ts`(튜닝 × 프렛 → 노트 마크).
+- `app/` — Next.js App Router. `(practice)` 라우트 그룹이 메트로놈·지판·jam 뷰를 공유 레이아웃으로 묶음. 헤더의 `MetronomeDock`은 layout 상주(다른 페이지에서도 메트로놈 유지). 페이지는 정적 쉘만, 실제 UI는 components/ 클라이언트 컴포넌트.
+- `components/fretboard/` — SVG 지판 렌더러 + 컨트롤. 각 컨트롤은 Zustand 스토어를 직접 구독하는 자체 컨테이너 패턴 (prop drilling 없음). `FretboardSurface`(SVG)와 `FretboardControls`(설정 UI)가 분리돼 jam 페이지에서는 Surface만 sticky.
+- `components/metronome/` — 메트로놈 UI(MetronomeDock, BpmInput 등).
+- `components/jam/` — 통합 뷰 컴포넌트. 코드 진행 카탈로그(`ProgressionCatalog`), 키·BPM·볼륨 슬라이더, Roman/Absolute 표기 토글, 재생 버튼.
+- `lib/audio/` — AudioContext 싱글턴 + Chris Wilson lookahead 스케줄러(25ms / 100ms, iOS 150ms). `lib/audio/backing/`은 WebAudioFont 통합 — `engine.ts`가 BarScheduler·voice·masterGain을 묶고, `webaudiofont-bridge.ts`가 surikov CDN 스크립트 + 패치 캐시를 관리. 단일 재생 원칙(다른 카드 ▶ 누르면 자동 teardown).
+- `lib/theory/` — 음악 이론 데이터·함수. `notes.ts`(피치 클래스·도수), `scales.ts`(16 스케일 + `SCALE_HIGHLIGHTS` 색상 매트릭스), `fretboard.ts`(튜닝 × 프렛 → 노트 마크), `chords.ts`(로마 숫자 파싱), `chord-voicing.ts`(MIDI 변환 + `ChordOverlay`), `chord-display.ts`(Roman ↔ Absolute 표기 변환).
 - `lib/store/` — Zustand 단일 스토어 + persist 미들웨어 + `useHasHydrated` 훅.
+- `lib/api/progression-templates.ts` — 코드 진행 카탈로그 데이터 소스. `generated.ts`는 시드에서 자동 생성, 직접 편집 금지.
 - `tests/unit/` — Vitest, 순수 함수 타겟 100%. `tests/component/` — Testing Library. `tests/e2e/` — Playwright (Docker에서 실행). `tests/audio-helpers.ts` — `createSchedulerSpy()` 패턴으로 오디오 타이밍 검증 (실제 출력 대신 예약된 시각 배열 spy).
 
 ### 스케일·도수 표기 규율
@@ -82,29 +86,31 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 
 ### 에이전트 팀 (`.claude/agents/`)
 
-6개 도메인 전문가. 호출 매트릭스는 `.claude/agents/README.md`.
+7개 도메인 전문가. 호출 매트릭스는 `.claude/agents/README.md`.
 
 | 에이전트 | 주 담당 |
 |---|---|
-| `music-theory-guardian` | `lib/theory/**`, `SCALES`, `IMPORTANT_DEGREES` 변경의 최종 검증 |
-| `web-audio-engineer` | `lib/audio/**`, AudioContext·Tone.js 타이밍 |
-| `fretboard-renderer` | `components/fretboard/**`, 지판 SVG·노트 좌표 |
+| `music-theory-guardian` | `lib/theory/**`, `SCALES`, `SCALE_HIGHLIGHTS`, 코드 파싱 규칙 변경의 최종 검증 |
+| `web-audio-engineer` | `lib/audio/**`, AudioContext·BarScheduler·WebAudioFont 타이밍 |
+| `fretboard-renderer` | `components/fretboard/**`, 지판 SVG·노트 좌표·overlay 레이어 |
 | `aesthetic-reviewer` | 디자인 규율(금지 폰트·보라 그라데이션 차단), 토큰 일관성 |
 | `test-strategist` | Vitest/Playwright 전략, 오디오 타이밍 spy, CI |
 | `nextjs-architect` | App Router·Zustand persist·Tailwind v4·빌드 |
+| `backend-architect` | FastAPI/SQLAlchemy/Alembic — 현재 dormant(백엔드 미도입). 서버 분리 결정 시 활성. |
 
 규칙: 범위 겹치지 않고 순차 의존성 없을 때 **병렬** 호출 (단일 메시지에 여러 Agent tool 호출). 새 스케일 추가는 `music-theory-guardian` + `test-strategist`, 지판 UI 변경은 `fretboard-renderer` + `aesthetic-reviewer`가 대표 조합.
 
 ### Phase 로드맵
 
-현재 Phase 2 완료 상태. 상세는 `docs/planning.md` §12.
+현재 Phase 4 진행 중(Sprint 2-6까지 머지). 상세는 `docs/planning.md` §12.
 
 - Phase 0: 셋업 ✅
-- Phase 1: 메트로놈 MVP
+- Phase 1: 메트로놈 MVP ✅
 - Phase 2: 지판 스케일 가이드 ✅
-- Phase 3: 스케일 확장 (이미 16종 전부 정의됨 — 실질 완료)
-- Phase 4: `/jam` 통합 뷰
-- Phase 5+: 배킹 트랙 (여기서 FastAPI/Postgres/MinIO 도입, 모노레포 전환, Tone.js 합류)
+- Phase 3: 스케일 확장 (16종 정의 + UI) ✅
+- Phase 4: `/jam` 통합 뷰 ✅ (Sprint 2-6 — sticky 지판 + 배킹 카탈로그 통합)
+  - 배킹 트랙은 원래 Phase 5 백엔드 도입 후로 미뤘으나, **WebAudioFont 채택으로 클라이언트만으로 작동**(Sprint 2-2 ~ 2-5).
+- Phase 5+: 백엔드 분리는 **사용자 인증·프리셋 공유가 명확해지면 재개**. Tone.js·FastAPI·MinIO 도입은 그 시점 결정.
 
 ---
 
@@ -336,7 +342,9 @@ ss -tlnp | grep :3000
 
 ### localStorage 스키마 변경 시 유저 화면이 깨짐
 `lib/store/app-store.ts`의 persist `version`을 올리고 `migrate`에서 구 필드를
-제거·변환. v1 → v2 예시는 현재 코드 참조.
+제거·변환. 현재 v10. 최근 사례: v9에서 `backing.backingKey` → `fretboard.root`
+흡수(키 단일 소스화), v10에서 `backing.volume` 필드 추가. `__migrate` export로
+유닛 테스트에서 직접 검증 가능.
 
 ### 브라우저 변경이 반영 안 됨
 1. **Dev 서버 로그에 "Compiling" 이벤트가 있는지 확인.** WSL + `/mnt/c/`에서
@@ -354,6 +362,16 @@ ss -tlnp | grep :3000
 WSL에 시스템 chromium 의존 라이브러리 없음. `docker compose -f
 docker-compose.test.yml up` 으로 돌리거나, `sudo apt install libnspr4 libnss3
 libasound2t64` (sudo 권한 필요).
+
+### WebAudioFont 카드 일부가 무음 (특히 jazz)
+surikov CDN(`surikov.github.io/webaudiofontdata/sound/`)은 모든 GM drum kit을
+보유하지 않는다 — kit `0`(Standard), `8`(Room), `16`(Power), `24`(Electronic),
+`25`(TR-808)만 모든 노트 파일이 존재. kit `32`(Jazz) 등은 404.
+
+`ensureDrumPatch`가 실패 시 자동으로 kit=0(Standard)로 폴백하므로 무음은 발생하지
+않지만, 사운드가 의도와 달라진다. 재즈 브러시 사운드는 Sprint 2-8(RhythmRecipe +
+사운드폰트 교체)에서 복원 예정. 현재는 `lib/audio/backing/presets.ts`의
+`jazz.drumsKit`가 의도적으로 `0`으로 설정돼 있음(2026-04 commit `7e0906d`).
 
 ### Chrome DevTools / Playwright MCP가 chrome 못 찾음
 Windows에 Google Chrome 64-bit(`C:\Program Files\Google\Chrome\...`) 설치가 제일
