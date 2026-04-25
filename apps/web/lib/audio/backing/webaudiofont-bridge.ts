@@ -219,10 +219,31 @@ export async function ensurePatch(gm: number): Promise<LoadedInstrument> {
  * surikov 패턴상 드럼은 노트별 개별 파일. kick=36, snare=38, hat=42는
  * 각각 별도 URL을 가진다.
  *
+ * surikov CDN은 일부 kit(예: 32 Jazz, 40+)을 보유하지 않아 404가 나는데,
+ * Promise.all로 묶인 loadPreset 전체가 실패하는 것을 막기 위해 요청한 kit
+ * 로드가 실패하면 kit=0(Standard)로 자동 폴백한다. 폴백 동작은 콘솔 경고로
+ * 사용자가 알 수 있게 남긴다.
+ *
  * @param note - MIDI 노트 번호 (36=kick, 38=snare, 42=hat 등)
- * @param kit  - 드럼 킷 번호 (0=Standard, 32=Jazz 등)
+ * @param kit  - 드럼 킷 번호 (0=Standard 등)
  */
 export async function ensureDrumPatch(note: number, kit: number): Promise<LoadedInstrument> {
+  try {
+    return await loadDrumPatchAttempt(note, kit);
+  } catch (e) {
+    if (kit !== 0) {
+      console.warn(
+        `[webaudiofont-bridge] drum kit=${kit} note=${note} 로드 실패, Standard kit(0)로 폴백:`,
+        e,
+      );
+      return loadDrumPatchAttempt(note, 0);
+    }
+    throw e;
+  }
+}
+
+/** 단일 시도 — ensureDrumPatch 폴백 로직과 분리. */
+async function loadDrumPatchAttempt(note: number, kit: number): Promise<LoadedInstrument> {
   const key = patchKeyDrum(note, kit);
   const cached = patchCache.get(key);
   if (cached) return cached;

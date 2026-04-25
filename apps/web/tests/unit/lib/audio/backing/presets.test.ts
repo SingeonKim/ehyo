@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { CATEGORY_PRESETS, getPreset } from '@/lib/audio/backing/presets';
 
 describe('CATEGORY_PRESETS', () => {
-  it('7 카테고리 모두 정의됨', () => {
+  it('9 카테고리 모두 정의됨 (seed의 모든 category 커버)', () => {
     expect(Object.keys(CATEGORY_PRESETS).sort()).toEqual([
-      'blues', 'bossa', 'folk', 'funk', 'jazz', 'pop', 'rock',
+      'blues', 'bossa', 'folk', 'funk', 'jazz', 'minor', 'modal', 'pop', 'rock',
     ]);
   });
 
