@@ -98,6 +98,10 @@ export interface BackingSliceState {
    * 엔진은 store 브리지에서 이 값을 구독해 master gain에 적용한다.
    */
   volume: number;
+  /** 런타임. 사용자가 카드 마디를 클릭해서 선택한 슬러그. 정지 상태에서만 유효. */
+  backingSelectedSlug: string | null;
+  /** 런타임. 선택된 마디 인덱스. backingSelectedSlug와 항상 쌍으로 변경. */
+  backingSelectedBarIndex: number | null;
 }
 
 // ─── 루트 state + 액션 ────────────────────────────────────
@@ -146,6 +150,20 @@ export interface AppState {
   clearBackingBpm: (slug: string) => void;
   /** 배킹 마스터 볼륨 변경 (0~1). 엔진 브리지가 setVolume을 자동 호출. */
   setBackingVolume: (v: number) => void;
+  /**
+   * 사용자 마디 선택 토글.
+   *  - template + barIndex 양쪽 non-null: 선택 적용. 정지 상태면 chord 컨텍스트
+   *    (backingCurrentChord + backingPlayingCategory)도 함께 set해서 fretboard
+   *    하이라이팅이 동기화. 재생 중이면 chord 컨텍스트는 엔진이 관리하므로
+   *    selectedSlug + selectedBarIndex만 갱신.
+   *  - 둘 중 하나라도 null: 선택 해제. 정지 상태면 chord 컨텍스트도 함께 해제.
+   *
+   * 다른 카드를 선택하거나 같은 마디 재클릭으로 토글 해제할 때 사용.
+   */
+  setBackingSelectedBar: (
+    template: ProgressionTemplate | null,
+    barIndex: number | null,
+  ) => void;
 
   // UI 액션
   /** 카탈로그 코드 표기 모드 전환. 'roman' ↔ 'absolute'. */
@@ -201,6 +219,8 @@ const DEFAULT_BACKING: BackingSliceState = {
   bpmOverrides: {},
   // 메트로놈 볼륨(0.5)과 동일한 시작점. 사용자가 슬라이더로 조정 가능.
   volume: 0.5,
+  backingSelectedSlug: null,
+  backingSelectedBarIndex: null,
 };
 
 // BPM 클램프 유틸 — planning 1.3 M1 요건: 20~300
@@ -447,6 +467,9 @@ export const useAppStore = create<AppState>()(
             cat && cat in GENRE_RULES
               ? (cat as ProgressionCategory)
               : 'pop';
+          // 재생 시작 → selection은 엔진이 인계받았으므로 clear
+          s.backing.backingSelectedSlug = null;
+          s.backing.backingSelectedBarIndex = null;
         }),
 
       _setBackingCurrentChord: (c) =>
@@ -471,6 +494,43 @@ export const useAppStore = create<AppState>()(
           // 0~1 클램프. NaN/Infinity는 무시(기존 값 유지).
           if (!Number.isFinite(v)) return;
           s.backing.volume = Math.max(0, Math.min(1, v));
+        }),
+
+      setBackingSelectedBar: (template, barIndex) =>
+        set((s) => {
+          const isPlaying = s.backing.backingPlayingSlug !== null;
+
+          if (!template || barIndex === null) {
+            // 선택 해제
+            s.backing.backingSelectedSlug = null;
+            s.backing.backingSelectedBarIndex = null;
+            if (!isPlaying) {
+              // 정지 상태에서는 chord 컨텍스트도 우리가 set 했으므로 같이 해제
+              s.backing.backingCurrentChord = null;
+              s.backing.backingPlayingCategory = null;
+            }
+            return;
+          }
+
+          s.backing.backingSelectedSlug = template.slug ?? null;
+          s.backing.backingSelectedBarIndex = barIndex;
+
+          if (!isPlaying) {
+            // 정지 상태 — chord 컨텍스트를 직접 채워 fretboard 하이라이팅 트리거
+            const step = template.progression[barIndex];
+            if (step) {
+              s.backing.backingCurrentChord = {
+                symbol: step.chord,
+                barIndex,
+              };
+              const cat = template.category as string | undefined;
+              s.backing.backingPlayingCategory =
+                cat && cat in GENRE_RULES
+                  ? (cat as ProgressionCategory)
+                  : 'pop';
+            }
+          }
+          // 재생 중이면 backingCurrentChord와 category는 엔진 책임 — 건드리지 않음
         }),
 
       setChordDisplayMode: (mode) =>
