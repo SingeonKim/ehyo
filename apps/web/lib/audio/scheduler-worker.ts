@@ -1,3 +1,5 @@
+// TODO(sprint-2-4-task-11): metronome이 scheduler/worker.ts로 이행하면 이 파일은 삭제
+
 /*
  * 메트로놈 스케줄러 Worker.
  *
