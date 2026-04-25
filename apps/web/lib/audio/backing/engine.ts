@@ -375,13 +375,13 @@ if (typeof window !== 'undefined') {
     engine.subscribe((s) => {
       const store = useAppStore.getState();
       if (s.status === 'playing') {
-        store._setBackingPlaying(s.template.slug);
+        store._setBackingPlayingTemplate(s.template);
         store._setBackingCurrentChord({
           symbol: s.chordSymbol,
           barIndex: s.barIndex,
         });
       } else {
-        store._setBackingPlaying(null);
+        store._setBackingPlayingTemplate(null);
         store._setBackingCurrentChord(null);
       }
     });

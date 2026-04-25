@@ -134,8 +134,6 @@ export interface AppState {
   resetHighlights: (scale: ScaleKey) => void;
 
   // 배킹 액션
-  /** engine subscriber 전용 — UI에서 호출 금지. */
-  _setBackingPlaying: (slug: string | null) => void;
   /** engine subscriber 전용 — UI에서 호출 금지. slug + category 동시 set. */
   _setBackingPlayingTemplate: (template: ProgressionTemplate | null) => void;
   /** engine subscriber 전용 — UI에서 호출 금지. */
@@ -433,11 +431,6 @@ export const useAppStore = create<AppState>()(
           // override를 삭제하면 resolveScaleHighlights가 SCALE_HIGHLIGHTS
           // 기본값을 반환한다. 앞으로 기본값이 바뀌어도 리셋한 스케일은 항상 최신.
           delete s.fretboard.highlightsByScale[scale];
-        }),
-
-      _setBackingPlaying: (slug) =>
-        set((s) => {
-          s.backing.backingPlayingSlug = slug;
         }),
 
       _setBackingPlayingTemplate: (template) =>
