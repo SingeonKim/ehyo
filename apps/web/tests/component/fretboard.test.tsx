@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Fretboard } from '@/components/fretboard/Fretboard';
 import { FretboardClient } from '@/components/fretboard/FretboardClient';
 import { useAppStore } from '@/lib/store/app-store';
-import type { ChordOverlay } from '@/lib/theory/chord-voicing';
+import type { AppropriateNotes } from '@/lib/theory/chord-voicing';
 import { getFretboardNotes, getOpenStringLabels, STANDARD_TUNING } from '@/lib/theory/fretboard';
 
 /*
@@ -150,9 +150,9 @@ describe('Fretboard chord overlay layers', () => {
   });
 
   it('chordOverlay 있음 → root + tone group 모두 렌더', () => {
-    const overlay: ChordOverlay = { root: 0, tones: new Set([4, 7]) };
+    const overlay: AppropriateNotes = { chordRoot: 0, chordTones: new Set([4, 7]), colorTones: new Set() };
     const { container } = render(
-      <Fretboard {...baseFretboardProps} chordOverlay={overlay} chordSymbol="I" />
+      <Fretboard {...baseFretboardProps} appropriateNotes={overlay} chordSymbol="I" />
     );
     const overlayGroup = container.querySelector('.chord-overlay');
     expect(overlayGroup).not.toBeNull();
@@ -161,9 +161,9 @@ describe('Fretboard chord overlay layers', () => {
   });
 
   it('chord-root layer는 root pc인 노트 위치에만', () => {
-    const overlay: ChordOverlay = { root: 0, tones: new Set() };
+    const overlay: AppropriateNotes = { chordRoot: 0, chordTones: new Set(), colorTones: new Set() };
     const { container } = render(
-      <Fretboard {...baseFretboardProps} chordOverlay={overlay} chordSymbol="I" />
+      <Fretboard {...baseFretboardProps} appropriateNotes={overlay} chordSymbol="I" />
     );
     const rootCircles = container.querySelectorAll(
       '[data-overlay-tier="chord-root"] circle',
@@ -173,9 +173,9 @@ describe('Fretboard chord overlay layers', () => {
   });
 
   it('aria-hidden=true (장식 레이어)', () => {
-    const overlay: ChordOverlay = { root: 0, tones: new Set([4, 7]) };
+    const overlay: AppropriateNotes = { chordRoot: 0, chordTones: new Set([4, 7]), colorTones: new Set() };
     const { container } = render(
-      <Fretboard {...baseFretboardProps} chordOverlay={overlay} chordSymbol="I" />
+      <Fretboard {...baseFretboardProps} appropriateNotes={overlay} chordSymbol="I" />
     );
     expect(container.querySelector('.chord-overlay')?.getAttribute('aria-hidden')).toBe('true');
   });

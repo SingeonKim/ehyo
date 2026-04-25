@@ -1,4 +1,4 @@
-import type { ChordOverlay } from '@/lib/theory/chord-voicing';
+import type { AppropriateNotes } from '@/lib/theory/chord-voicing';
 import { INLAY_POSITIONS, type NoteMark, type OpenStringLabel } from '@/lib/theory/fretboard';
 import type { FretSpacing, Handedness, LabelMode } from '@/lib/theory/types';
 
@@ -33,7 +33,7 @@ export interface FretboardProps {
    * undefined이면 overlay 레이어를 그리지 않는다.
    * root는 빨강 ring, tones는 파랑 ring으로 별도 SVG 레이어에 그린다.
    */
-  chordOverlay?: ChordOverlay;
+  appropriateNotes?: AppropriateNotes;
   /**
    * 현재 코드 심볼 문자열 (예: "I", "IV", "V7").
    * overlay SVG group의 key로 사용되어 chordSymbol이 바뀌면
@@ -95,7 +95,7 @@ export function Fretboard({
   labelMode,
   showFretNumbers = true,
   className,
-  chordOverlay,
+  appropriateNotes,
   chordSymbol,
 }: FretboardProps) {
   const fretLines = computeFretLines(frets, fretSpacing);
@@ -250,16 +250,16 @@ export function Fretboard({
       {/* ── 코드 오버레이 — chord-root + chord-tone 두 layer ───────────
           노트 마커보다 먼저(아래 레이어)에 그려서 노트 원이 위에 남는다.
           chord-root는 빨강 ring(stroke 2.5), chord-tone은 파랑 ring(stroke 2). */}
-      {chordOverlay && (chordOverlay.root !== null || chordOverlay.tones.size > 0) && (
+      {appropriateNotes && (appropriateNotes.chordRoot !== null || appropriateNotes.chordTones.size > 0) && (
         <g
           key={chordSymbol ?? 'idle-chord'}
           className="chord-overlay"
           aria-hidden="true"
         >
-          {chordOverlay.root !== null && (
+          {appropriateNotes.chordRoot !== null && (
             <g data-overlay-tier="chord-root">
               {notes
-                .filter((n) => n.pitchClass === chordOverlay.root)
+                .filter((n) => n.pitchClass === appropriateNotes.chordRoot)
                 .map((n) => (
                   <circle
                     key={`overlay-root-${n.string}-${n.fret}`}
@@ -273,10 +273,10 @@ export function Fretboard({
                 ))}
             </g>
           )}
-          {chordOverlay.tones.size > 0 && (
+          {appropriateNotes.chordTones.size > 0 && (
             <g data-overlay-tier="chord-tone">
               {notes
-                .filter((n) => chordOverlay.tones.has(n.pitchClass))
+                .filter((n) => appropriateNotes.chordTones.has(n.pitchClass))
                 .map((n) => (
                   <circle
                     key={`overlay-tone-${n.string}-${n.fret}`}
@@ -307,8 +307,8 @@ export function Fretboard({
           stringNumber={n.string}
           fret={n.fret}
           isChordTone={
-            chordOverlay
-              ? n.pitchClass === chordOverlay.root || chordOverlay.tones.has(n.pitchClass)
+            appropriateNotes
+              ? n.pitchClass === appropriateNotes.chordRoot || appropriateNotes.chordTones.has(n.pitchClass)
               : false
           }
         />

@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
 import { useHasHydrated } from '@/lib/store/hooks';
-import { getChordOverlay, type ChordOverlay } from '@/lib/theory/chord-voicing';
+import { type AppropriateNotes } from '@/lib/theory/chord-voicing';
 import {
   STANDARD_TUNING,
   getFretboardNotes,
@@ -42,22 +42,15 @@ export function FretboardSurface() {
   const highlightsOverride = useAppStore((s) => s.fretboard.highlightsByScale[scale]);
   const accidentalMode = useAppStore((s) => s.fretboard.accidentalMode);
 
-  // Sprint 2-6 후속(v9): backing key가 fretboard.root로 통합됐다.
-  // 이전엔 isBackingActive 분기로 backingKey를 effectiveRoot로 썼으나,
-  // 이제 root 하나만 사용. backingPlayingSlug 구독은 chordOverlay 활성 분기용으로만 유지.
-  const backingPlayingSlug = useAppStore((s) => s.backing.backingPlayingSlug);
+  // chordSymbol prop은 chord 변경 감지용 key로 계속 사용 — Sprint 2-6 overlay 애니메이션
+  // 재시작 트리거. Task 8에서 getAppropriateNotes 정식 호출로 교체될 때 backingPlayingSlug
+  // 분기도 함께 복원된다.
   const currentChordSymbol = useAppStore(
     (s) => s.backing.backingCurrentChord?.symbol ?? null,
   );
 
-  const isBackingActive = backingPlayingSlug !== null;
-
-  const chordOverlay = useMemo<ChordOverlay | undefined>(() => {
-    if (!isBackingActive || !currentChordSymbol) return undefined;
-    const overlay = getChordOverlay(currentChordSymbol, root);
-    if (overlay.root === null && overlay.tones.size === 0) return undefined;
-    return overlay;
-  }, [isBackingActive, currentChordSymbol, root]);
+  // Sprint 2-7 작업 진행 중 — Task 8에서 getAppropriateNotes 정식 호출로 교체.
+  const appropriateNotes = useMemo<AppropriateNotes | undefined>(() => undefined, []);
 
   const useFlats = shouldUseFlats(root, accidentalMode);
 
@@ -97,7 +90,7 @@ export function FretboardSurface() {
         handedness={handedness}
         fretSpacing={fretSpacing}
         labelMode={labelMode}
-        chordOverlay={chordOverlay}
+        appropriateNotes={appropriateNotes}
         chordSymbol={currentChordSymbol}
       />
     </div>
