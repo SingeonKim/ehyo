@@ -3,16 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { CHORD_EXTENSIONS } from '@/lib/theory/chord-extensions';
 
 describe('CHORD_EXTENSIONS', () => {
-  it('major7는 9·#11·13 (P4 어보이드 제외)', () => {
-    expect(CHORD_EXTENSIONS.major7).toEqual([2, 6, 9]);
+  it('major7는 9·13 (♯11은 jazz/bossa Part B로 이관)', () => {
+    expect(CHORD_EXTENSIONS.major7).toEqual([2, 9]);
   });
 
   it('minor7은 9·11·13', () => {
     expect(CHORD_EXTENSIONS.minor7).toEqual([2, 5, 9]);
   });
 
-  it('dominant7은 9·#11·13 (alt는 genre-rules 영역)', () => {
-    expect(CHORD_EXTENSIONS.dominant7).toEqual([2, 6, 9]);
+  it('dominant7은 9·13 (♯11과 alt는 genre-rules 영역)', () => {
+    expect(CHORD_EXTENSIONS.dominant7).toEqual([2, 9]);
   });
 
   it('diminished7은 9·11·b13 (대칭)', () => {
@@ -39,8 +39,8 @@ describe('CHORD_EXTENSIONS', () => {
     expect(CHORD_EXTENSIONS.diminished).toEqual([2, 5]);
   });
 
-  it('minor_major7은 9·11·13', () => {
-    expect(CHORD_EXTENSIONS.minor_major7).toEqual([2, 5, 9]);
+  it('minor_major7은 9·13 (11은 단3도-장7도 위에서 어색해 제외)', () => {
+    expect(CHORD_EXTENSIONS.minor_major7).toEqual([2, 9]);
   });
 
   it('모든 텐션은 root(0)와 겹치지 않음 (0은 chord-tone 영역)', () => {
