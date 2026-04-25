@@ -35,9 +35,19 @@ export type LoadedInstrument = {
   url: string;
 };
 
-/** loadPreset 결과: 드럼·베이스·기타 3개 패치 묶음. */
+/**
+ * 드럼킷 패치 묶음 — surikov 패턴상 드럼은 MIDI 노트별로 별도 파일이므로
+ * kick(36), snare(38), hat(42) 각각을 개별 LoadedInstrument로 보유.
+ */
+export type LoadedDrumKit = {
+  kick: LoadedInstrument;
+  snare: LoadedInstrument;
+  hat: LoadedInstrument;
+};
+
+/** loadPreset 결과: 드럼킷·베이스·기타 패치 묶음. */
 export type LoadedPreset = {
-  drums: LoadedInstrument;
+  drums: LoadedDrumKit;
   bass: LoadedInstrument;
   guitar: LoadedInstrument;
 };
@@ -47,7 +57,7 @@ export type LoadedPreset = {
 let _player: WebAudioFontPlayer | null = null;
 // 동시 호출이 와도 단일 스크립트 태그만 삽입되도록 프로미스를 캐시한다.
 let _scriptLoad: Promise<void> | null = null;
-// key: "drum:0" | "melodic:27" 등 — 같은 패치의 중복 로드 방지.
+// key: "drum:36:0" | "melodic:27" 등 — 같은 패치의 중복 로드 방지.
 const patchCache = new Map<string, LoadedInstrument>();
 
 // ── 내부 유틸 ──────────────────────────────────────────────────────────────────
@@ -57,30 +67,43 @@ function hasGlobalPlayerClass(): boolean {
   return typeof (globalThis as { WebAudioFontPlayer?: unknown }).WebAudioFontPlayer !== 'undefined';
 }
 
-function patchKey(kind: 'drum' | 'melodic', gm: number): string {
-  return `${kind}:${gm}`;
+function patchKeyMelodic(gm: number): string {
+  return `melodic:${gm}`;
 }
 
 /**
- * surikov CDN URL 및 글로벌 변수명 계산.
+ * 드럼 패치용 캐시 키 — 노트·킷 조합이 각각 별도 파일이므로 둘 다 포함.
+ * 예: "drum:36:0" (kick, kit 0)
+ */
+function patchKeyDrum(note: number, kit: number): string {
+  return `drum:${note}:${kit}`;
+}
+
+/**
+ * surikov CDN URL 및 글로벌 변수명 계산 — 드럼 노트별 개별 파일.
  *
- * Drum kit:   킷 번호를 2자리 0패딩 후 '0' 접미사 → 3자리 총 길이.
- *   kit 0  → "000_FluidR3_GM_sf2_file.js", var "_drum_0_FluidR3_GM_sf2_file"
- *   kit 32 → "320_FluidR3_GM_sf2_file.js", var "_drum_32_FluidR3_GM_sf2_file"
+ * surikov 패턴:
+ *   URL: sound/128{note}_{kit}_FluidR3_GM_sf2_file.js
+ *   Var: _drum_{note}_{kit}_FluidR3_GM_sf2_file
+ *
+ *   예: note=36, kit=0 → "12836_0_FluidR3_GM_sf2_file.js"
+ *                         "_drum_36_0_FluidR3_GM_sf2_file"
+ */
+function drumPatchUrl(note: number, kit: number): { url: string; varName: string } {
+  return {
+    url: `${PATCH_BASE}128${note}_${kit}_FluidR3_GM_sf2_file.js`,
+    varName: `_drum_${note}_${kit}_FluidR3_GM_sf2_file`,
+  };
+}
+
+/**
+ * surikov CDN URL 및 글로벌 변수명 계산 — 선율 악기(Melodic).
  *
  * Melodic (GM 0-127): GM 번호 × 10을 4자리 0패딩.
  *   GM 27  → "0270_FluidR3_GM_sf2_file.js", var "_tone_0270_FluidR3_GM_sf2_file"
  *   GM 33  → "0330_FluidR3_GM_sf2_file.js", var "_tone_0330_FluidR3_GM_sf2_file"
  */
-function patchUrl(kind: 'drum' | 'melodic', gm: number): { url: string; varName: string } {
-  if (kind === 'drum') {
-    const padded = String(gm).padStart(2, '0');
-    return {
-      url: `${PATCH_BASE}${padded}0_FluidR3_GM_sf2_file.js`,
-      varName: `_drum_${gm}_FluidR3_GM_sf2_file`,
-    };
-  }
-  // melodic
+function melodicPatchUrl(gm: number): { url: string; varName: string } {
   const padded = String(gm * 10).padStart(4, '0');
   return {
     url: `${PATCH_BASE}${padded}_FluidR3_GM_sf2_file.js`,
@@ -153,25 +176,20 @@ export function getPlayer(): WebAudioFontPlayer {
 }
 
 /**
- * 지정 악기의 패치를 CDN에서 로드(또는 캐시 히트로 즉시 반환).
+ * 선율 악기 패치를 CDN에서 로드(또는 캐시 히트로 즉시 반환).
  *
- * 첫 번째 단계로 ensureScriptLoaded()를 await해 WebAudioFontPlayer가
- * 글로벌에 존재하는 것을 보장한다.
- *
- * @param kind - 'drum'(드럼 킷) | 'melodic'(선율 악기)
- * @param gm   - GM 번호 (드럼: 킷 번호, 선율: GM 0-127)
+ * @param gm - GM 번호 (0-127)
  */
-export async function ensurePatch(kind: 'drum' | 'melodic', gm: number): Promise<LoadedInstrument> {
-  const key = patchKey(kind, gm);
+export async function ensurePatch(gm: number): Promise<LoadedInstrument> {
+  const key = patchKeyMelodic(gm);
   const cached = patchCache.get(key);
   if (cached) return cached;
 
-  // WebAudioFontPlayer 스크립트를 먼저 로드한다.
   await ensureScriptLoaded();
 
   const player = getPlayer();
   const ctx = getAudioContext();
-  const { url, varName } = patchUrl(kind, gm);
+  const { url, varName } = melodicPatchUrl(gm);
 
   return new Promise<LoadedInstrument>((resolve, reject) => {
     try {
@@ -182,9 +200,7 @@ export async function ensurePatch(kind: 'drum' | 'melodic', gm: number): Promise
         // 테스트: beforeEach에서 globalThis에 직접 stub을 심어둔다.
         const patch = (globalThis as Record<string, unknown>)[varName];
         if (!patch) {
-          reject(
-            new Error(`[webaudiofont-bridge] 패치 변수 "${varName}" 로드 실패`),
-          );
+          reject(new Error(`[webaudiofont-bridge] 패치 변수 "${varName}" 로드 실패`));
           return;
         }
         const loaded: LoadedInstrument = { patch, url };
@@ -198,18 +214,69 @@ export async function ensurePatch(kind: 'drum' | 'melodic', gm: number): Promise
 }
 
 /**
- * InstrumentPreset의 drums/bass/guitar 3개 패치를 병렬 로드.
+ * 드럼 개별 노트 패치를 CDN에서 로드(또는 캐시 히트로 즉시 반환).
  *
- * 첫 호출에서 3개 CDN 요청이 동시 발사된다.
+ * surikov 패턴상 드럼은 노트별 개별 파일. kick=36, snare=38, hat=42는
+ * 각각 별도 URL을 가진다.
+ *
+ * @param note - MIDI 노트 번호 (36=kick, 38=snare, 42=hat 등)
+ * @param kit  - 드럼 킷 번호 (0=Standard, 32=Jazz 등)
+ */
+export async function ensureDrumPatch(note: number, kit: number): Promise<LoadedInstrument> {
+  const key = patchKeyDrum(note, kit);
+  const cached = patchCache.get(key);
+  if (cached) return cached;
+
+  await ensureScriptLoaded();
+
+  const player = getPlayer();
+  const ctx = getAudioContext();
+  const { url, varName } = drumPatchUrl(note, kit);
+
+  return new Promise<LoadedInstrument>((resolve, reject) => {
+    try {
+      player.loader.startLoad(ctx, url, varName);
+      player.loader.waitLoad(() => {
+        const patch = (globalThis as Record<string, unknown>)[varName];
+        if (!patch) {
+          reject(new Error(`[webaudiofont-bridge] 드럼 패치 변수 "${varName}" 로드 실패`));
+          return;
+        }
+        const loaded: LoadedInstrument = { patch, url };
+        patchCache.set(key, loaded);
+        resolve(loaded);
+      });
+    } catch (e) {
+      reject(e instanceof Error ? e : new Error(String(e)));
+    }
+  });
+}
+
+// 드럼 MIDI 노트 상수 — GM Channel 10 표준
+const DRUM_NOTE_KICK = 36;
+const DRUM_NOTE_SNARE = 38;
+const DRUM_NOTE_HAT = 42;
+
+/**
+ * InstrumentPreset의 drums(3패치 병렬)/bass/guitar를 병렬 로드.
+ *
+ * 드럼은 kick(36)·snare(38)·hat(42) 3개를 개별 CDN 파일로 로드.
+ * 첫 호출에서 5개 CDN 요청이 동시 발사된다.
  * 이후 같은 preset 재호출 시 캐시 히트로 즉시 반환.
  */
 export async function loadPreset(preset: InstrumentPreset): Promise<LoadedPreset> {
-  const [drums, bass, guitar] = await Promise.all([
-    ensurePatch('drum', preset.drumsKit),
-    ensurePatch('melodic', preset.bass),
-    ensurePatch('melodic', preset.guitar),
+  const [kick, snare, hat, bass, guitar] = await Promise.all([
+    ensureDrumPatch(DRUM_NOTE_KICK,  preset.drumsKit),
+    ensureDrumPatch(DRUM_NOTE_SNARE, preset.drumsKit),
+    ensureDrumPatch(DRUM_NOTE_HAT,   preset.drumsKit),
+    ensurePatch(preset.bass),
+    ensurePatch(preset.guitar),
   ]);
-  return { drums, bass, guitar };
+  return {
+    drums: { kick, snare, hat },
+    bass,
+    guitar,
+  };
 }
 
 /**

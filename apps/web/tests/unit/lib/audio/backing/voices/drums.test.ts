@@ -37,36 +37,46 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+/** 테스트용 LoadedDrumKit 픽스처 — kick/snare/hat 각각 별도 패치 객체. */
+const fakeDrumKit = {
+  kick:  { patch: { kickPatch: true },  url: 'kick-url'  },
+  snare: { patch: { snarePatch: true }, url: 'snare-url' },
+  hat:   { patch: { hatPatch: true },   url: 'hat-url'   },
+};
+
 describe('DrumVoice', () => {
-  it('trigger("kick", preset, time, velocity)는 queueWaveTable을 MIDI 36으로 호출', () => {
+  it('trigger("kick", kit, time, velocity)는 kit.kick.patch를 MIDI 36으로 호출', () => {
     const voice = createDrumVoice();
-    const fakePreset = { patch: { fake: true }, url: 'x' };
-    voice.trigger('kick', fakePreset, 1.5, 0.7);
+    voice.trigger('kick', fakeDrumKit, 1.5, 0.7);
 
     const player = getPlayerInstance();
     expect(player.queueWaveTable).toHaveBeenCalledOnce();
     const args = player.queueWaveTable.mock.calls[0]!;
-    expect(args[2]).toBe(fakePreset.patch);  // patch 객체
-    expect(args[3]).toBe(1.5);               // time
-    expect(args[4]).toBe(36);               // MIDI kick
-    expect(args[6]).toBe(0.7);               // velocity
+    expect(args[2]).toBe(fakeDrumKit.kick.patch); // kick 전용 패치
+    expect(args[3]).toBe(1.5);                    // time
+    expect(args[4]).toBe(36);                     // MIDI kick
+    expect(args[6]).toBe(0.7);                    // velocity
   });
 
-  it('trigger("snare")는 MIDI 38', () => {
+  it('trigger("snare")는 kit.snare.patch + MIDI 38', () => {
     const voice = createDrumVoice();
-    voice.trigger('snare', { patch: {}, url: '' }, 1.0);
-    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[4]).toBe(38);
+    voice.trigger('snare', fakeDrumKit, 1.0);
+    const args = getPlayerInstance().queueWaveTable.mock.calls[0]!;
+    expect(args[2]).toBe(fakeDrumKit.snare.patch);
+    expect(args[4]).toBe(38);
   });
 
-  it('trigger("hat")는 MIDI 42', () => {
+  it('trigger("hat")는 kit.hat.patch + MIDI 42', () => {
     const voice = createDrumVoice();
-    voice.trigger('hat', { patch: {}, url: '' }, 1.0);
-    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[4]).toBe(42);
+    voice.trigger('hat', fakeDrumKit, 1.0);
+    const args = getPlayerInstance().queueWaveTable.mock.calls[0]!;
+    expect(args[2]).toBe(fakeDrumKit.hat.patch);
+    expect(args[4]).toBe(42);
   });
 
   it('default velocity 0.8', () => {
     const voice = createDrumVoice();
-    voice.trigger('kick', { patch: {}, url: '' }, 1.0);
+    voice.trigger('kick', fakeDrumKit, 1.0);
     expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[6]).toBe(0.8);
   });
 

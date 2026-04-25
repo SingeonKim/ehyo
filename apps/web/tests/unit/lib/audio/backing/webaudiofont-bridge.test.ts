@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   __resetWebAudioFontBridgeForTests,
+  ensureDrumPatch,
   ensurePatch,
   ensureScriptLoaded,
   getPlayer,
@@ -45,29 +46,59 @@ afterEach(() => {
 });
 
 describe('webaudiofont-bridge', () => {
-  it('ensurePatch는 startLoad + waitLoad 호출 후 LoadedInstrument 반환', async () => {
-    const result = await ensurePatch('melodic', 27);
+  it('ensurePatch(melodic)는 startLoad + waitLoad 호출 후 LoadedInstrument 반환', async () => {
+    const result = await ensurePatch(27);
     expect(playerInstance.loader.startLoad).toHaveBeenCalledOnce();
     expect(result).toBeDefined();
     expect(typeof result.url).toBe('string');
   });
 
-  it('같은 패치 재요청은 캐시 히트로 startLoad 추가 호출 없음', async () => {
-    await ensurePatch('melodic', 27);
+  it('같은 멜로딕 패치 재요청은 캐시 히트로 startLoad 추가 호출 없음', async () => {
+    await ensurePatch(27);
     playerInstance.loader.startLoad.mockClear();
-    await ensurePatch('melodic', 27);
+    await ensurePatch(27);
     expect(playerInstance.loader.startLoad).not.toHaveBeenCalled();
   });
 
-  it('loadPreset은 drums/bass/guitar 3개 패치 병렬 로드', async () => {
-    (globalThis as Record<string, unknown>)['_drum_0_FluidR3_GM_sf2_file'] = { drum: true };
+  it('ensureDrumPatch(note, kit)는 올바른 URL 패턴으로 startLoad 호출', async () => {
+    // kick(36), kit 0 → URL: 12836_0_FluidR3_GM_sf2_file.js
+    (globalThis as Record<string, unknown>)['_drum_36_0_FluidR3_GM_sf2_file'] = { kick: true };
+    const result = await ensureDrumPatch(36, 0);
+    expect(playerInstance.loader.startLoad).toHaveBeenCalledOnce();
+    const [, url] = playerInstance.loader.startLoad.mock.calls[0]!;
+    expect(url).toContain('12836_0_FluidR3_GM_sf2_file.js');
+    expect(result.patch).toEqual({ kick: true });
+  });
+
+  it('같은 드럼 패치 재요청은 캐시 히트로 startLoad 추가 호출 없음', async () => {
+    (globalThis as Record<string, unknown>)['_drum_36_0_FluidR3_GM_sf2_file'] = { kick: true };
+    await ensureDrumPatch(36, 0);
+    playerInstance.loader.startLoad.mockClear();
+    await ensureDrumPatch(36, 0);
+    expect(playerInstance.loader.startLoad).not.toHaveBeenCalled();
+  });
+
+  it('loadPreset은 drums(kick/snare/hat)/bass/guitar 5개 패치 병렬 로드', async () => {
+    // surikov 드럼 패치: 노트별 개별 파일 stub
+    (globalThis as Record<string, unknown>)['_drum_36_0_FluidR3_GM_sf2_file'] = { kick: true };
+    (globalThis as Record<string, unknown>)['_drum_38_0_FluidR3_GM_sf2_file'] = { snare: true };
+    (globalThis as Record<string, unknown>)['_drum_42_0_FluidR3_GM_sf2_file'] = { hat: true };
     (globalThis as Record<string, unknown>)['_tone_0330_FluidR3_GM_sf2_file'] = { bass: true };
     (globalThis as Record<string, unknown>)['_tone_0270_FluidR3_GM_sf2_file'] = { guitar: true };
 
     const preset = await loadPreset({ drumsKit: 0, bass: 33, guitar: 27, label: 'test' });
-    expect(preset.drums).toBeDefined();
+
+    // drums는 LoadedDrumKit — kick/snare/hat 3개 로드
+    expect(preset.drums.kick).toBeDefined();
+    expect(preset.drums.snare).toBeDefined();
+    expect(preset.drums.hat).toBeDefined();
+    expect(preset.drums.kick.patch).toEqual({ kick: true });
+    expect(preset.drums.snare.patch).toEqual({ snare: true });
+    expect(preset.drums.hat.patch).toEqual({ hat: true });
     expect(preset.bass).toBeDefined();
     expect(preset.guitar).toBeDefined();
+    // 5개 CDN 요청: kick + snare + hat + bass + guitar
+    expect(playerInstance.loader.startLoad).toHaveBeenCalledTimes(5);
   });
 
   it('getPlayer는 동일 player 인스턴스 반환 (싱글턴)', () => {

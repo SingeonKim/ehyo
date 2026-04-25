@@ -64,17 +64,23 @@ vi.mock('@/lib/audio/scheduler/lookahead-scheduler', () => ({
 }));
 
 // loadPreset 모킹 — 즉시 resolve. getPlayer는 installPlayerMock이 설치한 인스턴스 반환
-const fakeDrumsPreset = { patch: { drums: 1 }, url: 'd' };
+// drums는 LoadedDrumKit — kick/snare/hat 각각 별도 패치 객체
+const fakeDrumsKit = {
+  kick:  { patch: { kick: 1 },  url: 'kick-d'  },
+  snare: { patch: { snare: 1 }, url: 'snare-d' },
+  hat:   { patch: { hat: 1 },   url: 'hat-d'   },
+};
 const fakeBassPreset = { patch: { bass: 1 }, url: 'b' };
 const fakeGuitarPreset = { patch: { guitar: 1 }, url: 'g' };
 vi.mock('@/lib/audio/backing/webaudiofont-bridge', () => ({
   getPlayer: vi.fn(() => getPlayerInstance()),
   loadPreset: vi.fn(async () => ({
-    drums: fakeDrumsPreset,
+    drums: fakeDrumsKit,
     bass: fakeBassPreset,
     guitar: fakeGuitarPreset,
   })),
   ensurePatch: vi.fn(),
+  ensureDrumPatch: vi.fn(),
   ensureScriptLoaded: vi.fn(async () => {}),
   __resetWebAudioFontBridgeForTests: vi.fn(),
 }));

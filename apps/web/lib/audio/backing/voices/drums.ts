@@ -14,7 +14,7 @@
  */
 
 import { getAudioContext } from '../../context';
-import { getPlayer, type LoadedInstrument } from '../webaudiofont-bridge';
+import { getPlayer, type LoadedDrumKit } from '../webaudiofont-bridge';
 
 const KICK_MIDI = 36;
 const SNARE_MIDI = 38;
@@ -23,7 +23,14 @@ const HAT_MIDI = 42;
 const NOTE_DURATION_SEC = 0.3; // 퍼커션은 짧게
 
 export interface DrumVoice {
-  trigger(step: 'kick' | 'snare' | 'hat', preset: LoadedInstrument, time: number, velocity?: number): void;
+  /**
+   * 드럼 스텝 트리거.
+   *
+   * kit: LoadedDrumKit — kick/snare/hat 각각이 별도 패치 파일이므로
+   * step에 맞는 패치와 MIDI 노트를 조합해 queueWaveTable을 호출한다.
+   * pitch 인자는 패치 파일이 이미 해당 노트 전용이므로 노트 번호와 일치해야 한다.
+   */
+  trigger(step: 'kick' | 'snare' | 'hat', kit: LoadedDrumKit, time: number, velocity?: number): void;
   /** 즉시 fade out — hardStop에서 already-attacked note 잔향 차단. */
   fadeOut(): void;
   dispose(): void;
@@ -36,9 +43,14 @@ export function createDrumVoice(): DrumVoice {
   gain.connect(ctx.destination);
 
   return {
-    trigger(step, preset, time, velocity = 0.8) {
-      const midi = step === 'kick' ? KICK_MIDI : step === 'snare' ? SNARE_MIDI : HAT_MIDI;
-      getPlayer().queueWaveTable(ctx, gain, preset.patch, time, midi, NOTE_DURATION_SEC, velocity);
+    trigger(step, kit, time, velocity = 0.8) {
+      // step별로 해당 노트 전용 패치와 MIDI 번호를 선택한다.
+      // surikov 패치는 노트별 개별 파일이므로 pitch 인자를 패치 파일의 노트와 일치시킨다.
+      const { patch, midi } =
+        step === 'kick'  ? { patch: kit.kick.patch,  midi: KICK_MIDI  } :
+        step === 'snare' ? { patch: kit.snare.patch, midi: SNARE_MIDI } :
+                           { patch: kit.hat.patch,   midi: HAT_MIDI   };
+      getPlayer().queueWaveTable(ctx, gain, patch, time, midi, NOTE_DURATION_SEC, velocity);
     },
     fadeOut() {
       const t = ctx.currentTime;
