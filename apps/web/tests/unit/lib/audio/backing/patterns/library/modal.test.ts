@@ -60,3 +60,41 @@ describe('modal variants', () => {
     expect(['dorian_groove', 'lydian_dreamy', 'mixolydian_driving']).not.toContain(slot);
   });
 });
+
+// phrygian_dark 테스트용 헬퍼 — 함수 형태로 별도 정의 (위의 tpl4 객체와 구분)
+const makeTpl4 = (default_bpm = 100) => ({
+  bars: 4,
+  default_bpm,
+  progression: Array.from({ length: 4 }, (_, i) => ({ bar: i + 1, chord: 'i' })),
+});
+
+describe('modal selectSlot — phrygian_dark variant', () => {
+  it('모든 idx에서 phrygian_dark 슬롯 사용', () => {
+    for (const i of [0, 1, 2, 3]) {
+      expect(MODAL_RHYTHM.selectSlot(makeTpl4(), i, 'phrygian_dark')).toBe('phrygian_dark');
+    }
+  });
+
+  it('phrygian_dark 패턴 정의됨 (half-time)', () => {
+    const pattern = MODAL_RHYTHM.patterns.phrygian_dark;
+    expect(pattern).toBeDefined();
+    expect(pattern?.drums.kick.length).toBe(1);
+    expect(pattern?.drums.snare.length).toBeGreaterThan(0);
+    expect(pattern?.drums.snare[0]?.time).toBe('0:2:0');
+  });
+});
+
+describe('modal selectSlot — 기존 회귀 (4bar)', () => {
+  it('variant 미지정 시 짝/홀수 toggle (4bar 진행에서도 동일)', () => {
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 0)).toBe('groove_a');
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 1)).toBe('groove_b');
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 2)).toBe('groove_a');
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 3)).toBe('groove_b');
+  });
+
+  it('dorian_groove/lydian_dreamy/mixolydian_driving 분기 유지', () => {
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 0, 'dorian_groove')).toBe('dorian_groove');
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 0, 'lydian_dreamy')).toBe('lydian_dreamy');
+    expect(MODAL_RHYTHM.selectSlot(makeTpl4(), 0, 'mixolydian_driving')).toBe('mixolydian_driving');
+  });
+});

@@ -1,7 +1,7 @@
 /**
  * modal.ts — vamp toggle (짝/홀수 alternate) + 3 variant 슬롯.
  *
- * 슬롯: groove_a, groove_b (기본 toggle), dorian_groove, lydian_dreamy, mixolydian_driving.
+ * 슬롯: groove_a, groove_b (기본 toggle), dorian_groove, lydian_dreamy, mixolydian_driving, phrygian_dark.
  * variant가 지정되면 해당 슬롯으로 직접 라우팅. 미지정 시 기존 toggle 동작 유지.
  */
 
@@ -120,6 +120,43 @@ export const MODAL_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // phrygian_dark: half-time + sub16 ghost snare. Spanish/exotic 정서.
+    // phrygian-vamp 카드용. instrumentOverrides에서 distortion guitar 권장.
+    phrygian_dark: {
+      drums: {
+        // half-time kick 1박만
+        kick: [{ time: '0:0:0' }],
+        // half-time snare 3박 + 4박-and ghost
+        snare: [
+          { time: '0:2:0', velocity: 0.55 },
+          { time: '0:3:2', velocity: 0.3 },
+        ],
+        // sub16 ghost hat 일부만 (어두운 분위기 - sparse)
+        hat: [
+          { time: '0:0:0', velocity: 0.4 },
+          { time: '0:0:2', velocity: 0.3 },
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:2:0', velocity: 0.5 },
+          { time: '0:2:2', velocity: 0.3 },
+          { time: '0:3:0', velocity: 0.4 },
+          { time: '0:3:2', velocity: 0.3 },
+        ],
+      },
+      bass: {
+        // 1박 강세 + 3박
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.7 },
+        ],
+      },
+      // half-time strums: 1박, 3박, 4박-and (Spanish flamenco 느낌)
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.7 },
+        { time: '0:2:0', direction: 'down', velocity: 0.65 },
+        { time: '0:3:2', direction: 'up', velocity: 0.5 },
+      ],
+    },
+
     // straight 8th hat + 4분주 bass + heavier guitar — mixolydian driving feel
     mixolydian_driving: {
       drums: {
@@ -165,6 +202,8 @@ export const MODAL_RHYTHM: CategoryRhythm = {
         return 'lydian_dreamy';
       case 'mixolydian_driving':
         return 'mixolydian_driving';
+      case 'phrygian_dark':
+        return 'phrygian_dark';
       default:
         // 기존 vamp toggle: 짝수 → groove_a, 홀수 → groove_b
         return idx % 2 === 0 ? 'groove_a' : 'groove_b';
