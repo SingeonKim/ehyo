@@ -1,38 +1,40 @@
 /**
- * GM 드럼킷 샘플 voice (Sprint 2-4).
- * Sprint 2-3의 합성 드럼(MembraneSynth/NoiseSynth/MetalSynth)을 대체.
+ * GM 드럼킷 voice — Sprint 2-8 PR-A에서 webaudiofont에서 smplr DrumMachine으로 교체.
  *
- * GM 채널 10 표준 노트 매핑: kick=36, snare=38, hat=42.
- * 모든 카테고리에서 동일 매핑 사용 (Standard Kit 기준; Jazz Kit 등도 동일).
+ * voice는 stateless: DrumMachine 인스턴스를 매 trigger마다 인자로 받음.
+ * 카드(카테고리) 전환 시 voice 객체 재사용, drumMachine만 swap.
  *
- * voice는 stateless: preset(LoadedInstrument)을 매 trigger마다 인자로 받음.
- * 카드(카테고리) 전환 시 voice 객체 재사용, preset만 swap.
- *
- * dry GainNode가 destination 사이에 끼워져 있어, hardStop 시 voice.fadeOut()이
- * 10ms ramp로 audio를 끊는다 (WebAudioFont의 cancelQueue가 already-attacked
- * note를 release하지 못하는 한계 보완).
+ * note는 string ('kick', 'snare', 'hat') — DrumMachine의 sample group name.
+ * velocity는 0~1 패턴 데이터를 0~127 MIDI 범위로 변환해 smplr에 전달한다.
  */
 
+import type { DrumMachine } from 'smplr';
+
 import { getAudioContext } from '../../context';
-import { getPlayer, type LoadedDrumKit } from '../webaudiofont-bridge';
 
-const KICK_MIDI = 36;
-const SNARE_MIDI = 38;
-const HAT_MIDI = 42;
-
-const NOTE_DURATION_SEC = 0.3; // 퍼커션은 짧게
+/** smplr Smplr.start()가 반환하는 StopFn. 호출 시 미예약된 이벤트는 큐에서 제거,
+ *  이미 재생된 voice는 stopById로 정지 (smplr 0.20.0 dist L1019-1031). */
+type StopFn = (time?: number) => void;
 
 export interface DrumVoice {
   /**
    * 드럼 스텝 트리거.
    *
-   * kit: LoadedDrumKit — kick/snare/hat 각각이 별도 패치 파일이므로
-   * step에 맞는 패치와 MIDI 노트를 조합해 queueWaveTable을 호출한다.
-   * pitch 인자는 패치 파일이 이미 해당 노트 전용이므로 노트 번호와 일치해야 한다.
+   * step: 'kick' | 'snare' | 'hat' — DrumMachine의 sample group name.
+   * drumMachine: smplr DrumMachine 인스턴스.
+   * velocity: 0~1 패턴 범위 — 내부에서 0~127로 변환.
    */
-  trigger(step: 'kick' | 'snare' | 'hat', kit: LoadedDrumKit, time: number, velocity?: number): void;
+  trigger(
+    step: 'kick' | 'snare' | 'hat',
+    drumMachine: DrumMachine,
+    time: number,
+    velocity?: number,
+  ): void;
   /** 즉시 fade out — hardStop에서 already-attacked note 잔향 차단. */
   fadeOut(): void;
+  /** 모든 예약/재생 중인 음을 즉시 취소·정지. smplr Smplr.stop()은 큐를 비우지
+   *  않으므로 trigger마다 모은 StopFn을 호출하는 것이 신뢰 가능한 경로. */
+  cancelScheduled(): void;
   dispose(): void;
 }
 
@@ -46,15 +48,18 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
   gain.gain.value = 1.0;
   gain.connect(destination ?? ctx.destination);
 
+  // 진행 중 세션의 StopFn 누적. cancelScheduled에서 일괄 호출 후 비움.
+  const pendingStops: StopFn[] = [];
+
   return {
-    trigger(step, kit, time, velocity = 0.8) {
-      // step별로 해당 노트 전용 패치와 MIDI 번호를 선택한다.
-      // surikov 패치는 노트별 개별 파일이므로 pitch 인자를 패치 파일의 노트와 일치시킨다.
-      const { patch, midi } =
-        step === 'kick'  ? { patch: kit.kick.patch,  midi: KICK_MIDI  } :
-        step === 'snare' ? { patch: kit.snare.patch, midi: SNARE_MIDI } :
-                           { patch: kit.hat.patch,   midi: HAT_MIDI   };
-      getPlayer().queueWaveTable(ctx, gain, patch, time, midi, NOTE_DURATION_SEC, velocity);
+    trigger(step, drumMachine, time, velocity = 0.8) {
+      // velocity 0~1을 smplr 요구 0~127 범위로 변환
+      const stop = drumMachine.start({
+        note: step,
+        time,
+        velocity: Math.max(0, Math.min(127, Math.round(velocity * 127))),
+      }) as unknown as StopFn;
+      pendingStops.push(stop);
     },
     fadeOut() {
       const t = ctx.currentTime;
@@ -66,6 +71,12 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
         gain.gain.cancelScheduledValues(ctx.currentTime);
         gain.gain.setValueAtTime(1.0, ctx.currentTime);
       }, 100);
+    },
+    cancelScheduled() {
+      for (const stop of pendingStops) {
+        try { stop(); } catch { /* StopFn은 idempotent여야 — 이미 정지된 voice는 무시 */ }
+      }
+      pendingStops.length = 0;
     },
     dispose() {
       gain.disconnect();

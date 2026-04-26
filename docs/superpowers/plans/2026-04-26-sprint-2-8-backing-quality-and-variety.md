@@ -1024,19 +1024,33 @@ describe('CATEGORY_BUNDLES', () => {
     });
   }
 
-  it('jazz는 jazz-brush DrumMachine', () => {
-    expect(CATEGORY_BUNDLES.jazz.drums.machine).toBe('jazz');
+  it('jazz는 TR-808 (brush 대체) + jazz guitar + acoustic bass', () => {
+    expect(CATEGORY_BUNDLES.jazz.drums.machine).toBe('TR-808');
+    expect(CATEGORY_BUNDLES.jazz.guitar.instrument).toBe('electric_guitar_jazz');
+    expect(CATEGORY_BUNDLES.jazz.bass.instrument).toBe('acoustic_bass');
   });
 
-  it('funk는 shaker aux 포함', () => {
+  it('funk는 TR-808 + shaker aux', () => {
+    expect(CATEGORY_BUNDLES.funk.drums.machine).toBe('TR-808');
     expect(CATEGORY_BUNDLES.funk.aux).toBeDefined();
     expect(CATEGORY_BUNDLES.funk.aux!.kind).toBe('shaker');
   });
 
-  it('bossa는 clave aux + nylon guitar', () => {
+  it('bossa는 LM-2 + clave aux + acoustic_guitar_nylon', () => {
+    expect(CATEGORY_BUNDLES.bossa.drums.machine).toBe('LM-2');
     expect(CATEGORY_BUNDLES.bossa.aux).toBeDefined();
     expect(CATEGORY_BUNDLES.bossa.aux!.kind).toBe('clave');
-    expect(CATEGORY_BUNDLES.bossa.guitar.instrument).toBe('nylon_guitar');
+    expect(CATEGORY_BUNDLES.bossa.guitar.instrument).toBe('acoustic_guitar_nylon');
+  });
+
+  it('rock은 Roland CR-8000', () => {
+    expect(CATEGORY_BUNDLES.rock.drums.machine).toBe('Roland CR-8000');
+  });
+
+  it('나머지(pop/blues/folk/minor/modal)는 LM-2 baseline', () => {
+    for (const cat of ['pop', 'blues', 'folk', 'minor', 'modal'] as const) {
+      expect(CATEGORY_BUNDLES[cat].drums.machine, cat).toBe('LM-2');
+    }
   });
 
   it('알려지지 않은 카테고리 → pop fallback', () => {
@@ -1055,68 +1069,73 @@ describe('CATEGORY_BUNDLES', () => {
  * 정확한 식별자 문자열은 docs/superpowers/notes/2026-04-26-smplr-spike.md 참조.
  */
 
+export type DrumMachineName = 'TR-808' | 'Casio-RZ1' | 'LM-2' | 'MFB-512' | 'Roland CR-8000';
+
 export type InstrumentBundle = {
   label: string;
-  drums: { machine: 'acoustic' | 'jazz' | 'TR-808' | 'lm2'; volume?: number };
+  drums: { machine: DrumMachineName; volume?: number };
   bass: { instrument: string; octaveShift?: number };
   guitar: { instrument: string; octaveShift?: number };
   aux?: { kind: 'shaker' | 'clave'; pattern: 'bossa' | 'funk-16' };
 };
 
+// spike 결과 반영 (2026-04-26): smplr DrumMachine은 jazz brush·acoustic 미지원.
+// LM-2가 5종 중 가장 어쿠스틱-인접한 음색으로 baseline. CR-8000은 록 정체성, TR-808은 펑크.
+// jazz는 brush 부재로 TR-808 폴백 — 진짜 jazz brush는 후속 Sprint(Sampler + 외부 샘플) 분리.
 export const CATEGORY_BUNDLES = {
   pop: {
     label: 'Pop · Clean Electric + Finger Bass',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'LM-2' },
     bass: { instrument: 'electric_bass_finger', octaveShift: -2 },
     guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
   },
   rock: {
     label: 'Rock · Clean Electric + Pick Bass',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'Roland CR-8000' },
     bass: { instrument: 'electric_bass_pick', octaveShift: -2 },
     guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
   },
   funk: {
     label: 'Funk · Muted Electric + Shaker',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'TR-808' },
     bass: { instrument: 'electric_bass_pick', octaveShift: -2 },
     guitar: { instrument: 'electric_guitar_muted', octaveShift: -1 },
     aux: { kind: 'shaker', pattern: 'funk-16' },
   },
   jazz: {
-    label: 'Jazz · Brush + Acoustic Bass',
-    drums: { machine: 'jazz' },
+    label: 'Jazz · Jazz Guitar + Acoustic Bass (TR-808 brush 대체)',
+    drums: { machine: 'TR-808' },
     bass: { instrument: 'acoustic_bass', octaveShift: -2 },
     guitar: { instrument: 'electric_guitar_jazz', octaveShift: -1 },
   },
   blues: {
     label: 'Blues · Overdrive + Finger Bass',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'LM-2' },
     bass: { instrument: 'electric_bass_finger', octaveShift: -2 },
     guitar: { instrument: 'overdriven_guitar', octaveShift: -1 },
   },
   folk: {
     label: 'Folk · Steel Acoustic + Finger Bass',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'LM-2' },
     bass: { instrument: 'electric_bass_finger', octaveShift: -2 },
     guitar: { instrument: 'acoustic_guitar_steel', octaveShift: -1 },
   },
   bossa: {
     label: 'Bossa · Nylon + Acoustic Bass + Clave',
-    drums: { machine: 'acoustic', volume: 0.7 },
+    drums: { machine: 'LM-2', volume: 0.7 },
     bass: { instrument: 'acoustic_bass', octaveShift: -2 },
-    guitar: { instrument: 'nylon_guitar', octaveShift: -1 },
+    guitar: { instrument: 'acoustic_guitar_nylon', octaveShift: -1 },
     aux: { kind: 'clave', pattern: 'bossa' },
   },
   minor: {
     label: 'Minor · Clean Electric + Finger Bass',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'LM-2' },
     bass: { instrument: 'electric_bass_finger', octaveShift: -2 },
     guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
   },
   modal: {
     label: 'Modal · Clean Electric + Finger Bass',
-    drums: { machine: 'acoustic' },
+    drums: { machine: 'LM-2' },
     bass: { instrument: 'electric_bass_finger', octaveShift: -2 },
     guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
   },

@@ -1,58 +1,89 @@
+/**
+ * BassVoice 단위 테스트 — Sprint 2-8 PR-A smplr 마이그레이션.
+ *
+ * webaudiofont 기반 queueWaveTable 검증 → smplr Soundfont.start() 검증으로 교체.
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  getPlayerInstance,
-  installPlayerMock,
-  makeAudioContextMock,
-  resetPlayerInstance,
-} from '../voice-mock-helpers';
+import { makeSoundfontMock, makeAudioContextMock } from '../voice-mock-helpers';
 
 let mockCtx: AudioContext;
 vi.mock('@/lib/audio/context', () => ({
   getAudioContext: vi.fn(() => mockCtx),
 }));
 
-vi.mock('@/lib/audio/backing/webaudiofont-bridge', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/audio/backing/webaudiofont-bridge')>();
-  return actual;
-});
-
-import { __resetWebAudioFontBridgeForTests } from '@/lib/audio/backing/webaudiofont-bridge';
 import { createBassVoice } from '@/lib/audio/backing/voices/bass';
 
 beforeEach(() => {
   mockCtx = makeAudioContextMock();
-  installPlayerMock();
-  __resetWebAudioFontBridgeForTests();
-  installPlayerMock();
 });
 
 afterEach(() => {
-  resetPlayerInstance();
   vi.clearAllMocks();
 });
 
-describe('BassVoice', () => {
-  it('trigger(48, preset, 0.5, 1.0, 0.9)는 queueWaveTable을 인자대로 호출', () => {
+describe('BassVoice (smplr)', () => {
+  it('trigger(midi, sf, durationSec, time, velocity)는 sf.start를 정확한 인자로 호출', () => {
+    const sf = makeSoundfontMock();
     const voice = createBassVoice();
-    voice.trigger(48, { patch: { p: 1 }, url: '' }, 0.5, 1.0, 0.9);
-    const args = getPlayerInstance().queueWaveTable.mock.calls[0]!;
-    expect(args[3]).toBe(1.0);  // time
-    expect(args[4]).toBe(48);   // midi
-    expect(args[5]).toBe(0.5);  // durationSec
-    expect(args[6]).toBe(0.9);  // velocity
+    voice.trigger(48, sf as never, 0.5, 1.0, 0.9);
+    expect(sf.start).toHaveBeenCalledWith({
+      note: 48,
+      time: 1.0,
+      duration: 0.5,
+      velocity: Math.round(0.9 * 127),
+    });
   });
 
-  it('default velocity 0.9', () => {
+  it('default velocity 0.9 → 114 (=round(0.9*127))', () => {
+    const sf = makeSoundfontMock();
     const voice = createBassVoice();
-    voice.trigger(40, { patch: {}, url: '' }, 0.5, 1.0);
-    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[6]).toBe(0.9);
+    voice.trigger(40, sf as never, 0.5, 1.0);
+    expect(sf.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: Math.round(0.9 * 127) }),
+    );
   });
 
-  it('dispose는 GainNode disconnect', () => {
+  it('velocity 0.5 → 64 (=round(0.5*127))', () => {
+    const sf = makeSoundfontMock();
+    const voice = createBassVoice();
+    voice.trigger(36, sf as never, 0.5, 0.0, 0.5);
+    expect(sf.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: Math.round(0.5 * 127) }),
+    );
+  });
+
+  it('velocity 0.7 → 89 (=round(0.7*127))', () => {
+    const sf = makeSoundfontMock();
+    const voice = createBassVoice();
+    voice.trigger(36, sf as never, 0.5, 0.0, 0.7);
+    expect(sf.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: Math.round(0.7 * 127) }),
+    );
+  });
+
+  it('velocity > 1 클램핑 → 최대 127', () => {
+    const sf = makeSoundfontMock();
+    const voice = createBassVoice();
+    voice.trigger(36, sf as never, 0.5, 0.0, 2.0);
+    expect(sf.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: 127 }),
+    );
+  });
+
+  it('dispose는 GainNode disconnect 호출', () => {
     const voice = createBassVoice();
     voice.dispose();
     const gainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
     expect(gainResult.disconnect).toHaveBeenCalled();
+  });
+
+  it('fadeOut은 gain을 0으로 ramp + dispose 호출 안 함', () => {
+    const voice = createBassVoice();
+    voice.fadeOut();
+    const gainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(gainResult.gain.linearRampToValueAtTime).toHaveBeenCalled();
+    expect(gainResult.disconnect).not.toHaveBeenCalled();
   });
 });

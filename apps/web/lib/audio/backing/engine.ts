@@ -1,11 +1,11 @@
 /**
- * 멀티트랙 backing 엔진 — Sprint 2-4 재작성 (WebAudioFont).
+ * 멀티트랙 backing 엔진 — Sprint 2-8 PR-A에서 WebAudioFont → smplr으로 atomic migration.
  *
- * 핵심 변화:
- *   - Tone.Transport → BarScheduler (Chris Wilson lookahead 위)
- *   - 합성 voice → WebAudioFont 샘플 voice (drums/bass/guitar)
- *   - 카테고리별 InstrumentPreset (lazy 로드, 캐시)
- *   - BPM 런타임 변경 (setBpm/resetBpmToDefault)
+ * 핵심 변화 (Sprint 2-8 PR-A):
+ *   - loadPreset / getPlayer → loadBundle (smplr-bridge)
+ *   - voice trigger 시그니처: LoadedPreset/LoadedDrumKit → Soundfont/DrumMachine
+ *   - hardStop에서 getPlayer().cancelQueue(ctx) 제거 — smplr은 queue 개념 없음
+ *   - aux voice 추가 (funk/bossa 패턴이 PR-C에서 사용 시작)
  *
  * 4.2박 회귀 차단:
  *   onBar 콜백 안 setState를 setTimeout(delay)으로 분리. 오디오 예약 블록은 동기,
@@ -43,11 +43,12 @@ import { createLookaheadScheduler } from '../scheduler/lookahead-scheduler';
 import { BACKBEAT_BASS, BACKBEAT_DRUMS } from './patterns/backbeat';
 import { EIGHTH_STRUM } from './patterns/strumming';
 import { parseBeatStep } from './patterns/types';
-import { getPreset } from './presets';
+import { getBundle } from './presets';
+import { loadBundle, type LoadedBundle } from './smplr-bridge';
+import { createAuxVoice, type AuxVoice } from './voices/aux';
 import { createBassVoice, type BassVoice } from './voices/bass';
 import { createDrumVoice, type DrumVoice } from './voices/drums';
 import { createGuitarVoice, type GuitarVoice } from './voices/guitar';
-import { getPlayer, loadPreset, type LoadedPreset } from './webaudiofont-bridge';
 
 export type BackingState =
   | { status: 'idle' }
@@ -116,6 +117,7 @@ function createEngine(): BackingEngine {
   let drums: DrumVoice | null = null;
   let bass: BassVoice | null = null;
   let guitar: GuitarVoice | null = null;
+  let aux: AuxVoice | null = null;
   let scheduler: BarScheduler | null = null;
 
   /**
@@ -136,7 +138,7 @@ function createEngine(): BackingEngine {
   let currentKeyRoot: PitchClass = 0;
   let currentBpm = 90;
   let currentDefaultBpm = 90;
-  let currentLoadedPreset: LoadedPreset | null = null;
+  let currentLoadedBundle: LoadedBundle | null = null;
 
   /** voice 객체를 lazy 생성. start/stop 사이클에서 재사용.
    *  마스터 게인을 먼저 만들고 모든 voice가 그것을 destination으로 사용한다. */
@@ -150,32 +152,40 @@ function createEngine(): BackingEngine {
     if (!drums) drums = createDrumVoice(masterGain);
     if (!bass) bass = createBassVoice(masterGain);
     if (!guitar) guitar = createGuitarVoice(masterGain);
-    return { drums, bass, guitar };
+    if (!aux) aux = createAuxVoice(masterGain);
+    return { drums, bass, guitar, aux };
   };
 
-  /** 재생 중인 voice의 gain을 10ms ramp로 끊음. WebAudioFont cancelQueue가
-   *  이미 attack된 노트를 release하지 못하는 한계를 보완. */
+  /** 재생 중인 voice의 gain을 10ms ramp로 끊음. */
   const fadeOutVoices = () => {
     drums?.fadeOut();
     bass?.fadeOut();
     guitar?.fadeOut();
+    aux?.fadeOut();
   };
 
-  /** 스케줄러를 멈추고 WebAudioFont 큐도 취소. voice는 fadeOut만. */
+  /** 스케줄러를 멈추고 진행 중인 모든 음을 즉시 정지.
+   *
+   *  smplr Smplr.stop()은 *재생 중인 voice만* 정지하고 *내부 스케줄러 큐의 미예약
+   *  이벤트는 비우지 않는다* (dist/index.js:1041-1052). 따라서 ⏸ 누른 시점에 이미
+   *  start({time: future})로 예약된 노트 한 마디 분량이 그대로 발화 → "한 마디 잔향
+   *  + 다른 카드 전환 시 이중 재생" 버그의 원인.
+   *
+   *  올바른 경로: smplr Smplr.start()가 반환하는 StopFn(dist/index.js:1019-1031)을
+   *  voice가 매 trigger마다 모아두고, hardStop에서 일괄 호출. StopFn은
+   *  schedulerStop() + voices.stopById()를 모두 처리해 미예약/재생 양쪽 정리. */
   const hardStop = () => {
     scheduler?.stop();
     scheduler = null;
     // pending setState timer를 모두 취소 — stop 후 playing 상태가 뒤늦게 dispatch되는 것을 막음
     for (const id of pendingStateUpdates) clearTimeout(id);
     pendingStateUpdates.clear();
-    try {
-      const player = getPlayer();
-      const ctx = getAudioContext();
-      player.cancelQueue(ctx);
-    } catch (e) {
-      // player 미초기화·미로드 등 — silent swallow는 회귀 추적을 막으니 단서만 남김.
-      console.warn('[backing] cancelQueue raised:', e);
-    }
+    // 각 voice가 trigger마다 모아둔 StopFn을 호출 — 미예약 + 재생 양쪽 정리.
+    drums?.cancelScheduled();
+    bass?.cancelScheduled();
+    guitar?.cancelScheduled();
+    aux?.cancelScheduled();
+    // gain fade는 보조: StopFn이 미처 잡지 못한 attack release 잔향 차단.
     fadeOutVoices();
   };
 
@@ -203,10 +213,10 @@ function createEngine(): BackingEngine {
       return;
     }
 
-    const preset = getPreset(template.category ?? 'pop');
-    let loaded: LoadedPreset;
+    const bundle = getBundle(template.category ?? 'pop');
+    let loaded: LoadedBundle;
     try {
-      loaded = await loadPreset(preset);
+      loaded = await loadBundle(ctx, bundle);
     } catch (e) {
       setState({
         status: 'error',
@@ -215,7 +225,7 @@ function createEngine(): BackingEngine {
       return;
     }
 
-    currentLoadedPreset = loaded;
+    currentLoadedBundle = loaded;
     currentTemplate = template;
     currentKeyRoot = keyRoot;
     currentDefaultBpm = template.default_bpm;
@@ -232,7 +242,7 @@ function createEngine(): BackingEngine {
 
     scheduler.start(currentBpm, 4, (eventTime, barIndexAbs) => {
       const tpl = currentTemplate;
-      if (!tpl || !currentLoadedPreset) return;
+      if (!tpl || !currentLoadedBundle) return;
 
       // ── 1. 오디오 예약 블록 (동기) ──────────────────────────────────────────
       // 4.2박 회귀 차단: 이 블록 안에서는 setState 절대 금지.
@@ -253,28 +263,29 @@ function createEngine(): BackingEngine {
       const midi = chordSymbolToMidi(symbol, currentKeyRoot);
 
       if (midi) {
-        const preset = currentLoadedPreset;
+        const loaded = currentLoadedBundle;
         // parseBeatStep 결과는 마디 시작으로부터의 상대 시각(초) → eventTime에 더해 절대 시각
         const t = (notation: string) => eventTime + parseBeatStep(notation, bpm);
 
-        // drums: kick 2회(1박·3박) + snare 2회(2박·4박) + hat 8회 = 12회 queueWaveTable
-        for (const s of BACKBEAT_DRUMS.kick)  voices.drums.trigger('kick',  preset.drums, t(s.time), s.velocity);
-        for (const s of BACKBEAT_DRUMS.snare) voices.drums.trigger('snare', preset.drums, t(s.time), s.velocity);
-        for (const s of BACKBEAT_DRUMS.hat)   voices.drums.trigger('hat',   preset.drums, t(s.time), s.velocity);
+        // drums: kick 2회(1박·3박) + snare 2회(2박·4박) + hat 8회 = 12회 trigger
+        // smplr DrumMachine은 sample group name ('kick'/'snare'/'hat')으로 트리거
+        for (const s of BACKBEAT_DRUMS.kick)  voices.drums.trigger('kick',  loaded.drums, t(s.time), s.velocity);
+        for (const s of BACKBEAT_DRUMS.snare) voices.drums.trigger('snare', loaded.drums, t(s.time), s.velocity);
+        for (const s of BACKBEAT_DRUMS.hat)   voices.drums.trigger('hat',   loaded.drums, t(s.time), s.velocity);
 
-        // bass: 루트 2옥타브 다운, 1박·3박 2회 queueWaveTable
-        // -12는 C3 부근(midrange) — 일반 베이스 기타 컴핑 음역(E1~G3)보다 높아 가벼움.
-        // -24로 C2 부근까지 내려야 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
+        // bass: 루트 2옥타브 다운, 1박·3박 2회 trigger
+        // -24로 C2 부근 — 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
         const bassMidi = midi[0]! - 24;
-        for (const s of BACKBEAT_BASS.steps) voices.bass.trigger(bassMidi, preset.bass, beatSec, t(s.time), s.velocity);
+        for (const s of BACKBEAT_BASS.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s.time), s.velocity);
 
-        // guitar: EIGHTH_STRUM 6스텝 — down/up 방향으로 queueStrumDown/queueStrumUp
-        // 코드 톤을 1옥타브 다운 — chordSymbolToMidi 기본 옥타브(C4=60) 기준은 실제
-        // 기타 컴핑 음역대(E2~E5)보다 높아 "쇠 같은" 가벼운 소리. 한 옥타브 내려
-        // C3 부근으로 옮기면 실제 어쿠스틱/일렉기타 컴핑 음역과 맞는다.
+        // guitar: EIGHTH_STRUM 6스텝 — down/up 방향으로 12ms 시간차 strum
+        // 코드 톤을 1옥타브 다운 — C3 부근으로 옮겨 어쿠스틱/일렉기타 컴핑 음역과 맞춤.
         const guitarMidi = midi.map((n) => n - 12);
         for (const s of EIGHTH_STRUM)
-          voices.guitar.strum(s.direction, guitarMidi, preset.guitar, strumDurSec, t(s.time), s.velocity);
+          voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s.time), s.velocity);
+
+        // aux: funk(shaker)/bossa(clave) 패턴 — PR-C에서 패턴 데이터가 추가될 때 활성화.
+        // loaded.aux가 존재하면 트리거할 수 있으나 현재 패턴이 없으므로 호출하지 않는다.
       }
 
       // ── 2. 상태 갱신 — eventTime까지 대기 후 setState. UI/audio 위상 일치. ──
@@ -350,6 +361,7 @@ function createEngine(): BackingEngine {
     drums?.dispose(); drums = null;
     bass?.dispose(); bass = null;
     guitar?.dispose(); guitar = null;
+    aux?.dispose(); aux = null;
     if (masterGain) {
       masterGain.disconnect();
       masterGain = null;

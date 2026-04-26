@@ -29,14 +29,21 @@
 
 | 축 | 선택 | 이유 |
 |---|---|---|
-| 음질 강화 방향 | 사운드폰트 교체 + 마스터 이펙트 둘 다 | 결손(jazz brush) 해소 + 평탄화·공간감 동시 |
-| 사운드 라이브러리 | smplr (Soundfont + DrumMachine) | 동일 sf2 CDN 재사용 + 재즈 브러시 내장 + Reverb 헬퍼 |
+| 음질 강화 방향 | 사운드폰트 교체 + 마스터 이펙트 둘 다 | 평탄화·공간감 + Soundfont 음색 정합성 |
+| 사운드 라이브러리 | smplr (Soundfont + DrumMachine + Reverb) | gleitz/smpldsnds CDN 재사용 + Reverb 헬퍼 + send-bus FX 라우팅 |
 | 리듬 변화 수준 | 도메인 기반 다중 패턴 + selectSlot 함수 | 단순 groove/pickup 두 종 이상 — 카테고리당 2~4 슬롯 |
 | 카탈로그 증가 | 10 → 17 (+7) | blues +5, funk +1 NEW, bossa +1 NEW |
 | 마스터 FX | Compressor + 짧은 Reverb (wet 0.18) | 카테고리별 wet 조정은 Sprint 2-9로 미룸 |
 
+### Spike 결과 반영 — Jazz Brush 목표 보류 (2026-04-26)
+
+A1 spike 결과 smplr 0.20.0 DrumMachine은 5개 kit (`TR-808`, `Casio-RZ1`, `LM-2`, `MFB-512`, `Roland CR-8000`)만 지원한다. **jazz brush 및 acoustic kit 부재**. surikov CDN의 kit=32 결손 문제가 smplr에서도 동일하게 존재.
+
+사용자 결정: **jazz brush 복원 목표 포기** → Sprint 2-8 다른 축(마스터 FX, 리듬 패턴, 카탈로그)에 집중. jazz 카드는 `TR-808`로 대체. 진짜 jazz brush 복원은 별도 Sprint에서 `Sampler` + 외부 CC0 샘플 또는 FluidR3_GM MIDI ch10 spike로 분리.
+
 ### 비-목표 (이번 스프린트 X)
 
+- **Jazz brush 복원** (smplr DrumMachine 한계로 후속 Sprint 분리)
 - voice별 EQ
 - 카테고리별 reverb wet 레벨 차등 (→ Sprint 2-9)
 - humanize / velocity 레이어 다양화
@@ -86,26 +93,29 @@ ChannelSplitter (구현은 dryGain + wetGain 두 갈래로 분기)
 ```ts
 type InstrumentBundle = {
   label: string;
-  drums: { machine: 'acoustic' | 'jazz-brush' | 'tr808' | 'lm2'; volume?: number };
+  // smplr DrumMachine 5개 kit 중 선택. spike에서 jazz/acoustic 부재 확인.
+  drums: { machine: 'TR-808' | 'Casio-RZ1' | 'LM-2' | 'MFB-512' | 'Roland CR-8000'; volume?: number };
   bass:  { instrument: string; octaveShift?: number };
   guitar: { instrument: string; octaveShift?: number };
   aux?:  { kind: 'shaker' | 'clave'; pattern: 'bossa' | 'funk-16' };
 };
 ```
 
-카테고리 → 번들 매핑:
+카테고리 → 번들 매핑 (spike 결과 반영, smplr getSoundfontNames() 기준):
 
 | category | drums | bass | guitar | aux |
 |---|---|---|---|---|
-| pop | acoustic | electric_finger | clean_electric | – |
-| rock | acoustic | electric_pick | clean_electric | – |
-| funk | acoustic | electric_pick | muted_electric | shaker(funk-16) |
-| jazz | **jazz-brush** | acoustic_upright | jazz_guitar | – |
-| blues | acoustic | electric_finger | overdrive | – |
-| folk | acoustic | electric_finger | steel_acoustic | – |
-| bossa | acoustic (soft) | acoustic_upright | nylon | clave(bossa) |
-| minor | acoustic | electric_finger | clean_electric | – |
-| modal | acoustic | electric_finger | clean_electric | – |
+| pop | LM-2 | electric_bass_finger | electric_guitar_clean | – |
+| rock | Roland CR-8000 | electric_bass_pick | electric_guitar_clean | – |
+| funk | TR-808 | electric_bass_pick | electric_guitar_muted | shaker(funk-16) |
+| jazz | TR-808 (brush 대체) | acoustic_bass | electric_guitar_jazz | – |
+| blues | LM-2 | electric_bass_finger | overdriven_guitar | – |
+| folk | LM-2 | electric_bass_finger | acoustic_guitar_steel | – |
+| bossa | LM-2 (soft) | acoustic_bass | **acoustic_guitar_nylon** | clave(bossa) |
+| minor | LM-2 | electric_bass_finger | electric_guitar_clean | – |
+| modal | LM-2 | electric_bass_finger | electric_guitar_clean | – |
+
+선택 근거: LM-2(Linn Drum)가 5종 중 가장 어쿠스틱-인접한 따뜻한 음색이라 pop·blues·folk·minor·modal·bossa의 baseline. Roland CR-8000은 80년대 록 드럼 머신 정체성. TR-808은 funk 의 정체성 일치 + jazz는 brush 부재로 폴백. 모든 instrument 식별자는 smplr 0.20.0의 `getSoundfontNames()` 정확한 이름 사용 (spike 메모 참조).
 
 `aux` voice는 funk·bossa만 — voice 인터페이스 동일(`playAux(time, vel)`).
 

@@ -52,3 +52,4 @@ __pycache__/
 venv/
 .env.local
 uv.lock
+.claude/scheduled_tasks.lock

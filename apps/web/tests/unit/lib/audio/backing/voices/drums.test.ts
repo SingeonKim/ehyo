@@ -1,83 +1,96 @@
+/**
+ * DrumVoice 단위 테스트 — Sprint 2-8 PR-A smplr 마이그레이션.
+ *
+ * webaudiofont 기반 queueWaveTable 검증 → smplr DrumMachine.start() 검증으로 교체.
+ */
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  getPlayerInstance,
-  installPlayerMock,
-  makeAudioContextMock,
-  resetPlayerInstance,
-} from '../voice-mock-helpers';
+import { makeDrumMachineMock, makeAudioContextMock } from '../voice-mock-helpers';
 
 let mockCtx: AudioContext;
 vi.mock('@/lib/audio/context', () => ({
   getAudioContext: vi.fn(() => mockCtx),
 }));
 
-// webaudiofont-bridge의 getPlayer()가 globalThis.WebAudioFontPlayer 인스턴스를
-// 반환하도록, bridge 자체는 실제 구현 그대로 두고 globalThis만 mock으로 교체한다.
-// bridge 내부 캐시(_player)를 격리하기 위해 테스트마다 reset 함수도 호출.
-vi.mock('@/lib/audio/backing/webaudiofont-bridge', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/audio/backing/webaudiofont-bridge')>();
-  return actual;
-});
-
-import { __resetWebAudioFontBridgeForTests } from '@/lib/audio/backing/webaudiofont-bridge';
 import { createDrumVoice } from '@/lib/audio/backing/voices/drums';
 
 beforeEach(() => {
   mockCtx = makeAudioContextMock();
-  installPlayerMock();
-  // bridge 싱글턴 player 캐시 초기화 (새 globalThis mock 인식)
-  __resetWebAudioFontBridgeForTests();
-  // installPlayerMock이 globalThis에 새 mock을 심었으므로 다시 주입
-  installPlayerMock();
 });
 
 afterEach(() => {
-  resetPlayerInstance();
   vi.clearAllMocks();
 });
 
-/** 테스트용 LoadedDrumKit 픽스처 — kick/snare/hat 각각 별도 패치 객체. */
-const fakeDrumKit = {
-  kick:  { patch: { kickPatch: true },  url: 'kick-url'  },
-  snare: { patch: { snarePatch: true }, url: 'snare-url' },
-  hat:   { patch: { hatPatch: true },   url: 'hat-url'   },
-};
-
-describe('DrumVoice', () => {
-  it('trigger("kick", kit, time, velocity)는 kit.kick.patch를 MIDI 36으로 호출', () => {
+describe('DrumVoice (smplr)', () => {
+  it('trigger("kick", dm, time, vel)는 dm.start({note: "kick", time, velocity: vel*127})', () => {
+    const dm = makeDrumMachineMock();
     const voice = createDrumVoice();
-    voice.trigger('kick', fakeDrumKit, 1.5, 0.7);
-
-    const player = getPlayerInstance();
-    expect(player.queueWaveTable).toHaveBeenCalledOnce();
-    const args = player.queueWaveTable.mock.calls[0]!;
-    expect(args[2]).toBe(fakeDrumKit.kick.patch); // kick 전용 패치
-    expect(args[3]).toBe(1.5);                    // time
-    expect(args[4]).toBe(36);                     // MIDI kick
-    expect(args[6]).toBe(0.7);                    // velocity
+    voice.trigger('kick', dm as never, 1.5, 0.7);
+    expect(dm.start).toHaveBeenCalledWith({
+      note: 'kick',
+      time: 1.5,
+      velocity: Math.round(0.7 * 127),
+    });
   });
 
-  it('trigger("snare")는 kit.snare.patch + MIDI 38', () => {
+  it('trigger("snare", ...)는 dm.start({note: "snare", ...})', () => {
+    const dm = makeDrumMachineMock();
     const voice = createDrumVoice();
-    voice.trigger('snare', fakeDrumKit, 1.0);
-    const args = getPlayerInstance().queueWaveTable.mock.calls[0]!;
-    expect(args[2]).toBe(fakeDrumKit.snare.patch);
-    expect(args[4]).toBe(38);
+    voice.trigger('snare', dm as never, 2.0, 0.5);
+    expect(dm.start).toHaveBeenCalledWith({
+      note: 'snare',
+      time: 2.0,
+      velocity: Math.round(0.5 * 127),
+    });
   });
 
-  it('trigger("hat")는 kit.hat.patch + MIDI 42', () => {
+  it('trigger("hat", ...)는 dm.start({note: "hat", ...})', () => {
+    const dm = makeDrumMachineMock();
     const voice = createDrumVoice();
-    voice.trigger('hat', fakeDrumKit, 1.0);
-    const args = getPlayerInstance().queueWaveTable.mock.calls[0]!;
-    expect(args[2]).toBe(fakeDrumKit.hat.patch);
-    expect(args[4]).toBe(42);
+    voice.trigger('hat', dm as never, 3.0, 0.6);
+    expect(dm.start).toHaveBeenCalledWith({
+      note: 'hat',
+      time: 3.0,
+      velocity: Math.round(0.6 * 127),
+    });
   });
 
-  it('default velocity 0.8', () => {
+  it('default velocity 0.8 → 102 (=round(0.8*127))', () => {
+    const dm = makeDrumMachineMock();
     const voice = createDrumVoice();
-    voice.trigger('kick', fakeDrumKit, 1.0);
-    expect(getPlayerInstance().queueWaveTable.mock.calls[0]?.[6]).toBe(0.8);
+    voice.trigger('snare', dm as never, 1.0);
+    expect(dm.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: Math.round(0.8 * 127) }),
+    );
+  });
+
+  it('velocity 0.5 → 64 (=round(0.5*127))', () => {
+    const dm = makeDrumMachineMock();
+    const voice = createDrumVoice();
+    voice.trigger('kick', dm as never, 0.0, 0.5);
+    expect(dm.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: Math.round(0.5 * 127) }),
+    );
+  });
+
+  it('velocity > 1 클램핑 → 최대 127', () => {
+    const dm = makeDrumMachineMock();
+    const voice = createDrumVoice();
+    voice.trigger('kick', dm as never, 0.0, 2.0);
+    expect(dm.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: 127 }),
+    );
+  });
+
+  it('velocity < 0 클램핑 → 최소 0', () => {
+    const dm = makeDrumMachineMock();
+    const voice = createDrumVoice();
+    voice.trigger('kick', dm as never, 0.0, -0.5);
+    expect(dm.start).toHaveBeenCalledWith(
+      expect.objectContaining({ velocity: 0 }),
+    );
   });
 
   it('dispose는 GainNode disconnect 호출', () => {

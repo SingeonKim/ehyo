@@ -1,24 +1,33 @@
 /**
- * 기타 strumming voice — Sprint 2-3의 keys.ts(PolySynth 블록 코드) 대체.
+ * Guitar strumming voice — Sprint 2-8 PR-A.
  *
- * WebAudioFont의 queueStrumDown/Up이 코드 톤 배열을 시간차로 훑어줌(자동
- * 슬라이스). durationSec은 caller(engine)가 BPM 비례로 계산해 넘긴다 —
- * 일반적으로 min(0.4, beatSec * 0.4). 그래야 빠른 BPM에서 strum이 박을 넘지 않음.
+ * smplr Soundfont는 queueStrumDown/Up 같은 strum 헬퍼가 없다. 6음을 12ms
+ * 간격으로 시간차 트리거해 strum 효과를 직접 합성한다.
+ * down = 저음 먼저(오름차순), up = 고음 먼저(내림차순).
+ *
+ * velocity는 0~1 패턴 데이터를 0~127 MIDI 범위로 변환해 smplr에 전달한다.
  */
 
+import type { Soundfont } from 'smplr';
+
 import { getAudioContext } from '../../context';
-import { getPlayer, type LoadedInstrument } from '../webaudiofont-bridge';
+
+const STRUM_STAGGER_SEC = 0.012; // 12ms per string — 일반 다운 스트럼 속도
+
+type StopFn = (time?: number) => void;
 
 export interface GuitarVoice {
   strum(
     direction: 'down' | 'up',
-    midiNotes: number[],
-    preset: LoadedInstrument,
+    midiNotes: readonly number[],
+    soundfont: Soundfont,
     durationSec: number,
     time: number,
     velocity?: number,
   ): void;
   fadeOut(): void;
+  /** 모든 예약/재생 중인 음 즉시 취소. drums.ts 주석 참조. */
+  cancelScheduled(): void;
   dispose(): void;
 }
 
@@ -29,14 +38,24 @@ export function createGuitarVoice(destination?: AudioNode): GuitarVoice {
   gain.gain.value = 1.0;
   gain.connect(destination ?? ctx.destination);
 
+  const pendingStops: StopFn[] = [];
+
   return {
-    strum(direction, midiNotes, preset, durationSec, time, velocity = 0.6) {
-      const player = getPlayer();
-      if (direction === 'down') {
-        player.queueStrumDown(ctx, gain, preset.patch, time, midiNotes, durationSec, velocity);
-      } else {
-        player.queueStrumUp(ctx, gain, preset.patch, time, midiNotes, durationSec, velocity);
-      }
+    strum(direction, midiNotes, soundfont, durationSec, time, velocity = 0.6) {
+      // down: 저음 → 고음(오름차순), up: 고음 → 저음(내림차순)
+      const sorted = [...midiNotes].sort((a, b) => a - b);
+      const order = direction === 'down' ? sorted : sorted.reverse();
+      // velocity 0~1을 smplr 요구 0~127 범위로 변환 (루프 밖에서 1회만 계산)
+      const v = Math.max(0, Math.min(127, Math.round(velocity * 127)));
+      order.forEach((note, i) => {
+        const stop = soundfont.start({
+          note,
+          time: time + i * STRUM_STAGGER_SEC,
+          duration: durationSec,
+          velocity: v,
+        }) as unknown as StopFn;
+        pendingStops.push(stop);
+      });
     },
     fadeOut() {
       const t = ctx.currentTime;
@@ -48,6 +67,12 @@ export function createGuitarVoice(destination?: AudioNode): GuitarVoice {
         gain.gain.cancelScheduledValues(ctx.currentTime);
         gain.gain.setValueAtTime(1.0, ctx.currentTime);
       }, 100);
+    },
+    cancelScheduled() {
+      for (const stop of pendingStops) {
+        try { stop(); } catch { /* idempotent */ }
+      }
+      pendingStops.length = 0;
     },
     dispose() {
       gain.disconnect();
