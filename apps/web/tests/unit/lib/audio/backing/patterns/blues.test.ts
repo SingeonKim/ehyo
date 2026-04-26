@@ -23,8 +23,9 @@ describe('blues selectSlot — shuffle12bar variant (default)', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12, 8, 'shuffle12bar')).toBe('tension');
   });
 
-  it('idx 9 → release (IV7 풀어줌)', () => {
-    expect(BLUES_RHYTHM.selectSlot(tpl12, 9, 'shuffle12bar')).toBe('release');
+  it('idx 9 (IV7 마디) → 일반 alternating (release 슬롯 제거됨)', () => {
+    // 사용자 검수 결과: 10마디(idx=9) 다이나믹 원복 — 짝/홀 alternating에 위임
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 9, 'shuffle12bar')).toBe('groove_b');
   });
 
   it('idx 10 → resolve (I7 안정)', () => {
@@ -109,10 +110,16 @@ describe('blues patterns presence', () => {
     }
   });
 
-  it('groove_a hat uses sub16 with off-beat at sub 2 (swing 0.66 friendly)', () => {
+  it('groove_a hat uses triplet8 12-step (long-mid-short × 4박)', () => {
     const hat = BLUES_RHYTHM.patterns.groove_a?.drums.hat ?? [];
-    expect(hat.length).toBe(8);
-    expect(hat.some((s) => s.time.endsWith(':2'))).toBe(true);
+    expect(hat.length).toBe(12);
+    expect(hat.every((s) => s.unit === 'triplet8')).toBe(true);
+  });
+
+  it('groove_b16 (straight_shuffle) hat uses triplet8 12-step (16th → triplet 변경)', () => {
+    const hat = BLUES_RHYTHM.patterns.groove_b16?.drums.hat ?? [];
+    expect(hat.length).toBe(12);
+    expect(hat.every((s) => s.unit === 'triplet8')).toBe(true);
   });
 
   it('slow_groove ride uses triplet8 unit', () => {

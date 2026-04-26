@@ -23,20 +23,26 @@ export const BLUES_RHYTHM: CategoryRhythm = {
   },
   patterns: {
     // ── shuffle12bar variant ─────────────────────────────────────────
+    // hat은 12/8 정통 셔플 — 각 박마다 triplet8 long/mid(ghost)/short 3음.
+    // sub16 + swing보다 sub 1(가운데 ghost)이 명시되어 12/8 feel 더 풍부.
     groove_a: {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
         snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
-        // sub 0 + sub 2(8분 off-beat). swing 0.66 적용 시 sub 2가 0.66박 위치로 밀려 long-short feel.
+        // 12/8 셔플 — triplet8 long(0.55) + mid ghost(0.32) + short(0.45)
         hat: [
-          { time: '0:0:0', velocity: 0.55 },
-          { time: '0:0:2', velocity: 0.55 },
-          { time: '0:1:0', velocity: 0.55 },
-          { time: '0:1:2', velocity: 0.55 },
-          { time: '0:2:0', velocity: 0.55 },
-          { time: '0:2:2', velocity: 0.55 },
-          { time: '0:3:0', velocity: 0.55 },
-          { time: '0:3:2', velocity: 0.55 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
@@ -57,16 +63,20 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
         snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
-        // off-beat을 0.7로 강조
+        // 12/8 셔플 — short(트리플렛 3번째 음)을 0.6으로 강조한 groove_b 변주
         hat: [
-          { time: '0:0:0', velocity: 0.55 },
-          { time: '0:0:2', velocity: 0.7 },
-          { time: '0:1:0', velocity: 0.55 },
-          { time: '0:1:2', velocity: 0.7 },
-          { time: '0:2:0', velocity: 0.55 },
-          { time: '0:2:2', velocity: 0.7 },
-          { time: '0:3:0', velocity: 0.55 },
-          { time: '0:3:2', velocity: 0.7 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.6 },
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
@@ -87,15 +97,20 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
         snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        // 12/8 셔플 — groove_a와 동일 (IV 진입 직전이라도 hat 그루브 유지)
         hat: [
-          { time: '0:0:0', velocity: 0.55 },
-          { time: '0:0:2', velocity: 0.55 },
-          { time: '0:1:0', velocity: 0.55 },
-          { time: '0:1:2', velocity: 0.55 },
-          { time: '0:2:0', velocity: 0.55 },
-          { time: '0:2:2', velocity: 0.55 },
-          { time: '0:3:0', velocity: 0.55 },
-          { time: '0:3:2', velocity: 0.55 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
         ],
       },
       bass: {
@@ -124,16 +139,20 @@ export const BLUES_RHYTHM: CategoryRhythm = {
           { time: '0:2:2', velocity: 0.6 },
           { time: '0:3:0' },
         ],
-        // hat velocity 0.6으로 약간 강조
+        // 12/8 셔플 — long 0.6, mid ghost 0.35, short 0.5 (turnaround climax dynamic)
         hat: [
-          { time: '0:0:0', velocity: 0.6 },
-          { time: '0:0:2', velocity: 0.6 },
-          { time: '0:1:0', velocity: 0.6 },
-          { time: '0:1:2', velocity: 0.6 },
-          { time: '0:2:0', velocity: 0.6 },
-          { time: '0:2:2', velocity: 0.6 },
-          { time: '0:3:0', velocity: 0.6 },
-          { time: '0:3:2', velocity: 0.6 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.5 },
         ],
       },
       bass: {
@@ -165,15 +184,20 @@ export const BLUES_RHYTHM: CategoryRhythm = {
           { time: '0:2:2', velocity: 0.65 },
         ],
         snare: [{ time: '0:1:0' }, { time: '0:3:0' }, { time: '0:3:2', velocity: 0.55 }],
+        // 12/8 셔플 — tension dynamics (long 0.65, mid 0.4, short 0.55)
         hat: [
-          { time: '0:0:0', velocity: 0.65 },
-          { time: '0:0:2', velocity: 0.6 },
-          { time: '0:1:0', velocity: 0.65 },
-          { time: '0:1:2', velocity: 0.6 },
-          { time: '0:2:0', velocity: 0.65 },
-          { time: '0:2:2', velocity: 0.6 },
-          { time: '0:3:0', velocity: 0.65 },
-          { time: '0:3:2', velocity: 0.6 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.4 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.4 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.4 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.4 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.55 },
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
@@ -190,50 +214,25 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       ],
     },
 
-    // bar 10 (IV7): 풀어줌 — dynamic 살짝 낮춤
-    release: {
-      drums: {
-        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
-        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
-        hat: [
-          { time: '0:0:0', velocity: 0.45 },
-          { time: '0:0:2', velocity: 0.4 },
-          { time: '0:1:0', velocity: 0.45 },
-          { time: '0:1:2', velocity: 0.4 },
-          { time: '0:2:0', velocity: 0.45 },
-          { time: '0:2:2', velocity: 0.4 },
-          { time: '0:3:0', velocity: 0.45 },
-          { time: '0:3:2', velocity: 0.4 },
-        ],
-      },
-      bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
-      // 8분 down/up 약하게 — 풀어주는 느낌
-      guitar: [
-        { time: '0:0:0', direction: 'down', velocity: 0.45 },
-        { time: '0:0:2', direction: 'up', velocity: 0.38 },
-        { time: '0:1:0', direction: 'down', velocity: 0.45 },
-        { time: '0:1:2', direction: 'up', velocity: 0.38 },
-        { time: '0:2:0', direction: 'down', velocity: 0.45 },
-        { time: '0:2:2', direction: 'up', velocity: 0.38 },
-        { time: '0:3:0', direction: 'down', velocity: 0.45 },
-        { time: '0:3:2', direction: 'up', velocity: 0.38 },
-      ],
-    },
-
     // bar 11 (I7): 안정 — 가라앉음, 4분주 단순화 (turnaround 직전 평이)
     resolve: {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
         snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        // 12/8 셔플 — resolve dynamics (groove_a와 거의 동일, 안정 평이)
         hat: [
-          { time: '0:0:0', velocity: 0.5 },
-          { time: '0:0:2', velocity: 0.5 },
-          { time: '0:1:0', velocity: 0.5 },
-          { time: '0:1:2', velocity: 0.5 },
-          { time: '0:2:0', velocity: 0.5 },
-          { time: '0:2:2', velocity: 0.5 },
-          { time: '0:3:0', velocity: 0.5 },
-          { time: '0:3:2', velocity: 0.5 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
@@ -351,28 +350,26 @@ export const BLUES_RHYTHM: CategoryRhythm = {
     },
 
     // ── straight_shuffle variant ─────────────────────────────────────
+    // shuffle_minor_blues 카드용 — Sprint 9 PR-D 후속에서 hat을 triplet8 12-step
+    // (각 박마다 long-mid-short 3음 모두)으로 변경. 정통 12/8 셔플 표현.
     groove_b16: {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
         snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
-        // 16th hat — sub 0/1/2/3 모두 (swing 0.66 적용 시 sub 2만 밀림)
+        // 12/8 셔플 ride — long(0.55) + mid ghost(0.35) + short(0.5)
         hat: [
-          { time: '0:0:0', velocity: 0.55 },
-          { time: '0:0:1', velocity: 0.4 },
-          { time: '0:0:2', velocity: 0.55 },
-          { time: '0:0:3', velocity: 0.4 },
-          { time: '0:1:0', velocity: 0.55 },
-          { time: '0:1:1', velocity: 0.4 },
-          { time: '0:1:2', velocity: 0.55 },
-          { time: '0:1:3', velocity: 0.4 },
-          { time: '0:2:0', velocity: 0.55 },
-          { time: '0:2:1', velocity: 0.4 },
-          { time: '0:2:2', velocity: 0.55 },
-          { time: '0:2:3', velocity: 0.4 },
-          { time: '0:3:0', velocity: 0.55 },
-          { time: '0:3:1', velocity: 0.4 },
-          { time: '0:3:2', velocity: 0.55 },
-          { time: '0:3:3', velocity: 0.4 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.5 },
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
@@ -512,8 +509,9 @@ export const BLUES_RHYTHM: CategoryRhythm = {
 
   /**
    * variant 라우팅 (12bar 구조 기준):
-   *  - 'shuffle12bar'(default): 9~12마디 4-way 변주
-   *      idx 3 iv_pickup, 8 tension, 9 release, 10 resolve, 11 turnaround,
+   *  - 'shuffle12bar'(default): 9·11·12마디만 변주 (긴장-안정-턴어라운드).
+   *    10마디(IV7)는 사용자 검수 결과 다이나믹 원복 — 일반 짝/홀 alternating에 위임.
+   *      idx 3 iv_pickup, 8 tension, 10 resolve, 11 turnaround,
    *      else 짝수 groove_a / 홀수 groove_b
    *  - 'slow' → 모든 idx → slow_groove
    *  - 'hard_bop' → 10/11 → hb_turnaround, else hb_walk
@@ -541,10 +539,9 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       case 'jump':
         return local === 10 || local === 11 ? 'jump_turnaround' : 'jump_drive';
       default:
-        // shuffle12bar: 9~12마디 빌드업 (긴장-풀어줌-안정-턴어라운드)
+        // shuffle12bar: 9·11·12마디 빌드업 (10마디는 alternating에 위임)
         if (local === 3) return 'iv_pickup';
         if (local === 8) return 'tension';
-        if (local === 9) return 'release';
         if (local === 10) return 'resolve';
         if (local === 11) return 'turnaround';
         return local % 2 === 0 ? 'groove_a' : 'groove_b';

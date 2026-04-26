@@ -23,13 +23,14 @@ describe('BLUES_RHYTHM.selectSlot', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 15)).toBe('iv_pickup');
   });
 
-  // Sprint 9 PR-D 후속(hotfix): 9~12마디 4-way 변주(tension/release/resolve/turnaround)
+  // Sprint 9 PR-D 후속(hotfix): 9·11·12마디 변주(tension/resolve/turnaround).
+  // 10마디(idx=9, IV7)는 사용자 검수 결과 다이나믹 원복 — 짝/홀 alternating에 위임.
   it('12bar: idx=8 → tension (V7 빌드업)', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 8)).toBe('tension');
   });
 
-  it('12bar: idx=9 → release (IV7 풀어줌)', () => {
-    expect(BLUES_RHYTHM.selectSlot(tpl12(), 9)).toBe('release');
+  it('12bar: idx=9 (IV7 마디) → 일반 alternating', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12(), 9)).toBe('groove_b');
   });
 
   it('12bar: idx=10 → resolve (I7 안정)', () => {
