@@ -58,3 +58,28 @@ describe('folk selectSlot — folk_strum variant', () => {
     expect(FOLK_RHYTHM.patterns.folk_strum?.drums.kick.length).toBeGreaterThan(0);
   });
 });
+
+describe('folk selectSlot — ballad_pick variant', () => {
+  it('모든 idx에서 ballad_pick 슬롯 사용', () => {
+    const tpl8 = {
+      bars: 8,
+      default_bpm: 70,
+      progression: Array.from({ length: 8 }, (_, i) => ({ bar: i + 1, chord: 'I' })),
+    };
+    for (const i of [0, 3, 7]) {
+      expect(FOLK_RHYTHM.selectSlot(tpl8, i, 'ballad_pick')).toBe('ballad_pick');
+    }
+  });
+
+  it('ballad_pick은 kick 1박만 (half-time)', () => {
+    const kick = FOLK_RHYTHM.patterns.ballad_pick?.drums.kick ?? [];
+    expect(kick.length).toBe(1);
+    expect(kick[0]?.time).toBe('0:0:0');
+  });
+
+  it('ballad_pick snare는 3박 backbeat (half-time 백비트)', () => {
+    const snare = FOLK_RHYTHM.patterns.ballad_pick?.drums.snare ?? [];
+    expect(snare.length).toBe(1);
+    expect(snare[0]?.time).toBe('0:2:0');
+  });
+});
