@@ -78,7 +78,7 @@ export interface CategoryRhythm {
  *
  * opts.unit:
  *  - 'sub16'(default): 16분 sub. swing이 0.5 초과면 sub 2를 swing 비율로 밀기.
- *  - 'triplet8': 8분 트리플렛 sub(0/1/2 → 0/1/3/2/3박). swing 무시.
+ *  - 'triplet8': 8분 트리플렛 sub(0/1/2 → 0박 / 1/3박 / 2/3박). swing 무시.
  *
  * opts.swing: 0.5(straight) ~ 0.75(hard shuffle). default 0.5(회귀 안전).
  */
