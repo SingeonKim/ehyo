@@ -84,7 +84,7 @@ const { fakeFxChain, fakeCreateMasterFxChain } = vi.hoisted(() => {
     input: { connect: vi.fn(), disconnect: vi.fn() } as unknown as GainNode,
     compressor: {} as unknown as DynamicsCompressorNode,
     dryGain: {} as unknown as GainNode,
-    wetGain: {} as unknown as GainNode,
+    wetGain: { gain: { setValueAtTime: vi.fn() } } as unknown as GainNode,
     reverb: {} as never,
     dispose: vi.fn(),
   };

@@ -23,13 +23,17 @@ export interface DrumVoice {
    * step: 'kick' | 'snare' | 'hat' — DrumMachine의 sample group name.
    * drumMachine: smplr DrumMachine 인스턴스.
    * velocity: 0~1 패턴 범위 — 내부에서 0~127로 변환.
+   * velocityScale: 카드 프로파일 배율(0~1), default 1. velocity와 곱해 clamp 후 변환.
    */
   trigger(
     step: 'kick' | 'snare' | 'hat',
     drumMachine: DrumMachine,
     time: number,
     velocity?: number,
+    velocityScale?: number,
   ): void;
+  /** voice 내부 GainNode 스케일 즉시 세팅. 카드 시작 시 프로파일 voiceGain 적용. */
+  setVoiceGain(scale: number): void;
   /** 즉시 fade out — hardStop에서 already-attacked note 잔향 차단. */
   fadeOut(): void;
   /** 모든 예약/재생 중인 음을 즉시 취소·정지. smplr Smplr.stop()은 큐를 비우지
@@ -52,14 +56,21 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
   const pendingStops: StopFn[] = [];
 
   return {
-    trigger(step, drumMachine, time, velocity = 0.8) {
-      // velocity 0~1을 smplr 요구 0~127 범위로 변환
+    trigger(step, drumMachine, time, velocity = 0.8, velocityScale = 1) {
+      // velocity × velocityScale를 [0,1]로 clamp한 뒤 smplr 요구 0~127 범위로 변환
+      const scaled = Math.max(0, Math.min(1, velocity * velocityScale));
       const stop = drumMachine.start({
         note: step,
         time,
-        velocity: Math.max(0, Math.min(127, Math.round(velocity * 127))),
+        velocity: Math.max(0, Math.min(127, Math.round(scaled * 127))),
       }) as unknown as StopFn;
       pendingStops.push(stop);
+    },
+    setVoiceGain(scale: number) {
+      // 카드 시작 시 프로파일 voiceGain을 즉시 반영 — ramp 없이 setValueAtTime 사용
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(Math.max(0, scale), t);
     },
     fadeOut() {
       const t = ctx.currentTime;

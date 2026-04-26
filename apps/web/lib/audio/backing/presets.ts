@@ -97,3 +97,71 @@ export const CATEGORY_BUNDLES = {
 export function getBundle(category: string): InstrumentBundle {
   return (CATEGORY_BUNDLES as Record<string, InstrumentBundle>)[category] ?? CATEGORY_BUNDLES.pop;
 }
+
+/**
+ * Sprint 9 — 카테고리별 default tone profile.
+ *
+ * voice trigger 시 velocity에 velocityScale 곱, voice gain에 voiceGain 적용,
+ * fxChain.wetGain에 reverbWet setValueAtTime. 카드별 부분 override는 CardProfile.
+ */
+export type ToneProfile = {
+  velocityScale: number;
+  voiceGain: { drums: number; bass: number; guitar: number; aux: number };
+  reverbWet: number;
+};
+
+export const CATEGORY_TONE_DEFAULTS: Readonly<Record<keyof typeof CATEGORY_BUNDLES, ToneProfile>> =
+  {
+    pop: {
+      velocityScale: 1.0,
+      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.18,
+    },
+    rock: {
+      velocityScale: 1.1,
+      voiceGain: { drums: 1.05, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.14,
+    },
+    funk: {
+      velocityScale: 1.05,
+      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.12,
+    },
+    jazz: {
+      velocityScale: 0.95,
+      voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.22,
+    },
+    blues: {
+      velocityScale: 1.0,
+      voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.05, aux: 1.0 },
+      reverbWet: 0.22,
+    },
+    folk: {
+      velocityScale: 0.95,
+      voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.18,
+    },
+    bossa: {
+      velocityScale: 0.9,
+      voiceGain: { drums: 0.9, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.20,
+    },
+    minor: {
+      velocityScale: 1.0,
+      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.18,
+    },
+    modal: {
+      velocityScale: 1.0,
+      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
+      reverbWet: 0.18,
+    },
+  };
+
+/** 알려지지 않은 카테고리는 pop default. */
+export function getCategoryToneDefault(category: string): ToneProfile {
+  return (
+    (CATEGORY_TONE_DEFAULTS as Record<string, ToneProfile>)[category] ?? CATEGORY_TONE_DEFAULTS.pop
+  );
+}

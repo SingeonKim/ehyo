@@ -22,7 +22,15 @@ const AUX_NOTE_BY_KIND = { shaker: 60, clave: 75 } as const;
 type StopFn = (time?: number) => void;
 
 export interface AuxVoice {
-  trigger(soundfont: Soundfont, kind: 'shaker' | 'clave', time: number, velocity?: number): void;
+  trigger(
+    soundfont: Soundfont,
+    kind: 'shaker' | 'clave',
+    time: number,
+    velocity?: number,
+    velocityScale?: number,
+  ): void;
+  /** voice 내부 GainNode 스케일 즉시 세팅. 카드 시작 시 프로파일 voiceGain 적용. */
+  setVoiceGain(scale: number): void;
   fadeOut(): void;
   /** 모든 예약/재생 중인 음 즉시 취소. drums.ts 주석 참조. */
   cancelScheduled(): void;
@@ -46,15 +54,22 @@ export function createAuxVoice(destination?: AudioNode): AuxVoice {
   const pendingStops: StopFn[] = [];
 
   return {
-    trigger(soundfont, kind, time, velocity = AUX_DEFAULT_VELOCITY) {
-      // velocity 0~1을 smplr 요구 0~127 범위로 변환
+    trigger(soundfont, kind, time, velocity = AUX_DEFAULT_VELOCITY, velocityScale = 1) {
+      // velocity × velocityScale를 [0,1]로 clamp한 뒤 smplr 요구 0~127 범위로 변환
+      const scaled = Math.max(0, Math.min(1, velocity * velocityScale));
       const stop = soundfont.start({
         note: AUX_NOTE_BY_KIND[kind],
         time,
         duration: AUX_NOTE_DURATION_SEC,
-        velocity: Math.max(0, Math.min(127, Math.round(velocity * 127))),
+        velocity: Math.max(0, Math.min(127, Math.round(scaled * 127))),
       }) as unknown as StopFn;
       pendingStops.push(stop);
+    },
+    setVoiceGain(scale: number) {
+      // 카드 시작 시 프로파일 voiceGain을 즉시 반영 — ramp 없이 setValueAtTime 사용
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(Math.max(0, scale), t);
     },
     fadeOut() {
       const t = ctx.currentTime;
