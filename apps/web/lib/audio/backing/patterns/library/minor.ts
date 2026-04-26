@@ -104,7 +104,7 @@ export const MINOR_RHYTHM: CategoryRhythm = {
    * 마지막 마디 → pickup.
    * BPM 90 이하 → sparse 16th, 91 이상 → 8th.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return tpl.default_bpm <= 90 ? 'groove_16th_sparse' : 'groove_8th';

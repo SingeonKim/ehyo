@@ -96,7 +96,7 @@ export const FOLK_RHYTHM: CategoryRhythm = {
   /**
    * 마지막 마디 → pickup. 짝수 → picking, 홀수 → strum_8th.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return local % 2 === 0 ? 'picking' : 'strum_8th';

@@ -162,7 +162,7 @@ export const FUNK_RHYTHM: CategoryRhythm = {
    * 1마디 vamp 특별 처리: 4사이클 마지막 = pickup, 8마디 블록 내 a/b alternate.
    * 다중 마디: 마지막 마디 = pickup_one, 나머지 짝/홀수 alternate.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     if (tpl.bars === 1) {
       if (idx % 4 === 3) return 'pickup_one';
       return idx % 8 < 4 ? 'groove_a' : 'groove_b';

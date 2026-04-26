@@ -99,7 +99,7 @@ export const JAZZ_RHYTHM: CategoryRhythm = {
    * 마지막 마디 → walk_approach (chromatic approach로 반복 진입).
    * 나머지 → walk.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'walk_approach';
     return 'walk';

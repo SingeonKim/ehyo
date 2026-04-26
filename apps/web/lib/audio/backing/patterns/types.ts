@@ -58,18 +58,22 @@ export type BarPattern = {
 };
 
 /**
- * 카테고리별 리듬 정의.
+ * 카테고리별 리듬 정의 — Sprint 9에서 swing/variant 확장.
  *
- * patterns: 슬롯 이름 → BarPattern. 슬롯 이름은 카테고리가 자유롭게 정의
- *   (e.g. 'groove_a', 'turnaround', 'iv_pickup', 'clave_3_2').
- * selectSlot: 도메인 규칙으로 (template, barIndexAbs) → 슬롯 이름.
- *   결정론 — 같은 인자는 항상 같은 슬롯을 반환해야 한다.
+ * patterns: 슬롯 이름 → BarPattern.
+ * swing?: 글로벌 그루브 캐릭터. 미지정 = 0.5(straight).
+ *   variant별 override가 default와 다른 경우만 perVariant에 등록.
+ * selectSlot: (tpl, barIndexAbs, variant?) → 슬롯 이름.
+ *   variant는 카드 프로필이 흘려준 값. 카테고리는 무시하거나 풀 분기에 사용.
+ *   결정론 — 같은 인자는 항상 같은 슬롯.
  */
 export interface CategoryRhythm {
   patterns: Readonly<Record<string, BarPattern>>;
+  swing?: { default: number; perVariant?: Record<string, number> };
   selectSlot: (
     tpl: { bars: number; default_bpm: number; progression: ReadonlyArray<{ chord: string }> },
     barIndexAbs: number,
+    variant?: string,
   ) => string;
 }
 

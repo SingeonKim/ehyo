@@ -69,5 +69,5 @@ export const MODAL_RHYTHM: CategoryRhythm = {
   },
 
   /** 단순 짝/홀수 toggle — turnaround 없음. */
-  selectSlot: (_tpl, idx) => (idx % 2 === 0 ? 'groove_a' : 'groove_b'),
+  selectSlot: (_tpl, idx, _variant) => (idx % 2 === 0 ? 'groove_a' : 'groove_b'),
 };
