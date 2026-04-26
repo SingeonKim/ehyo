@@ -16,6 +16,46 @@ import { getAudioContext } from '../../context';
  *  이미 재생된 voice는 stopById로 정지 (smplr 0.20.0 dist L1019-1031). */
 type StopFn = (time?: number) => void;
 
+/**
+ * smplr DrumMachine kit별 'hat' / 'snare' sample 이름 동적 lookup.
+ *
+ * 문제: 우리 패턴 데이터는 추상 이름('kick'/'snare'/'hat') 사용. smplr은 sample
+ * 이름 자체 + 첫 base group을 alias로 등록(예: LM-2의 'hhclosed-long' → 'hhclosed'
+ * alias). 그러나 LM-2에 'hat'은 없고 'hhclosed'만 있어 'hat' 호출 시 *무음*.
+ * 'kick'은 LM-2 samples에 그대로 있어 작동, 'snare'는 'snare-h' 첫 sample이
+ * 'snare' alias로 매핑되어 작동.
+ *
+ * 해결: drumMachine.sampleNames에서 hi-hat 후보를 찾아 캐싱.
+ * kit별로 'hhclosed'(LM-2), 'hh-c'(가능), 'closed-hat' 등 다양 → 우선순위 lookup.
+ */
+const HAT_NOTE_CACHE = new WeakMap<DrumMachine, string>();
+function resolveHatNote(dm: DrumMachine): string {
+  const cached = HAT_NOTE_CACHE.get(dm);
+  if (cached) return cached;
+  // 일부 mock이나 비정상 인스턴스에서 sampleNames 미정의 가드.
+  const names = dm.sampleNames ?? [];
+  // 'hhclosed-short'를 'hhclosed-long'/'hhclosed'보다 우선 — 짧고 밝은 음색이
+  // 트리플렛 빠른 retrigger와 셔플 ride feel에 더 적합.
+  const resolved =
+    names.find((n) => n === 'hat') ??
+    names.find((n) => n === 'hhclosed-short') ??
+    names.find((n) => n === 'hhclosed') ??
+    names.find((n) => n === 'hh-c' || n === 'closed-hat' || n === 'hi-hat') ??
+    names.find((n) => n.startsWith('hhclosed')) ??
+    names.find((n) => n.startsWith('hh') && !n.includes('open')) ??
+    names.find((n) => n.includes('hihat')) ??
+    'hat'; // fallback (이 경우 무음 가능성 — 새 kit 추가 시 lookup 보강)
+  HAT_NOTE_CACHE.set(dm, resolved);
+  return resolved;
+}
+
+/**
+ * hat sample 전역 attenuation — 패턴 데이터의 dynamics는 보존하되 voice 레벨에서
+ * 일괄 -30%. closed hat sample이 kick/snare 대비 너무 도드라지는 경향을 균형.
+ * 카드별 미세 조정 필요 시 toneProfile.voiceGain.drums로 보강.
+ */
+const HAT_VELOCITY_SCALE = 0.7;
+
 export interface DrumVoice {
   /**
    * 드럼 스텝 트리거.
@@ -57,10 +97,14 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
 
   return {
     trigger(step, drumMachine, time, velocity = 0.8, velocityScale = 1) {
-      // velocity × velocityScale를 [0,1]로 clamp한 뒤 smplr 요구 0~127 범위로 변환
-      const scaled = Math.max(0, Math.min(1, velocity * velocityScale));
+      // hat은 closed hi-hat sample 도드라짐 완화 위해 voice 레벨에서 -30% attenuate.
+      const stepScale = step === 'hat' ? HAT_VELOCITY_SCALE : 1;
+      // velocity × velocityScale × stepScale → [0,1] clamp → smplr 요구 0~127 범위
+      const scaled = Math.max(0, Math.min(1, velocity * velocityScale * stepScale));
+      // 'hat'은 kit별 sample 이름이 다르므로 동적 lookup. 'kick'/'snare'는 그대로.
+      const noteName = step === 'hat' ? resolveHatNote(drumMachine) : step;
       const stop = drumMachine.start({
-        note: step,
+        note: noteName,
         time,
         velocity: Math.max(0, Math.min(127, Math.round(scaled * 127))),
       }) as unknown as StopFn;

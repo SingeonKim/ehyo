@@ -46,14 +46,16 @@ describe('DrumVoice (smplr)', () => {
     });
   });
 
-  it('trigger("hat", ...)는 dm.start({note: "hat", ...})', () => {
+  it('trigger("hat", ...)는 sample 동적 lookup("hhclosed") + voice 레벨 -30% attenuation', () => {
+    // 실제 LM-2 sample 이름은 'hhclosed'. hat은 closed hi-hat 도드라짐 완화 위해
+    // voice 레벨에서 0.7 배율 (HAT_VELOCITY_SCALE) 자동 적용.
     const dm = makeDrumMachineMock();
     const voice = createDrumVoice();
     voice.trigger('hat', dm as never, 3.0, 0.6);
     expect(dm.start).toHaveBeenCalledWith({
-      note: 'hat',
+      note: 'hhclosed',
       time: 3.0,
-      velocity: Math.round(0.6 * 127),
+      velocity: Math.round(0.6 * 0.7 * 127),
     });
   });
 

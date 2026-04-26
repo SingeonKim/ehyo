@@ -4,6 +4,8 @@
  */
 
 import { apiFetch, type GetResponse } from './client';
+// dev 전용 정합성 가드 — production 빌드 시 dead-code-eliminate 대상
+import { __assertCardProfilesMatch } from '@/lib/audio/backing/card-profiles';
 
 export type ProgressionTemplate = GetResponse<'/api/v1/progression-templates/{slug}'>;
 
@@ -14,12 +16,20 @@ export interface ListParams {
 export async function listProgressionTemplates(
   params: ListParams = {},
 ): Promise<ProgressionTemplate[]> {
-  return apiFetch<ProgressionTemplate[]>('/api/v1/progression-templates', {
+  const templates = await apiFetch<ProgressionTemplate[]>('/api/v1/progression-templates', {
     params: { category: params.category },
     // 카탈로그는 거의 정적 — 빌드 타임 캐시, 60s revalidate로 seed 변경 반영 여유.
     cache: 'force-cache',
     next: { revalidate: 60 },
   });
+
+  // dev에서만 실행: 백엔드 카탈로그 슬러그와 CARD_PROFILES 정합성 검증.
+  // production에서는 __assertCardProfilesMatch가 dead-code-eliminate된다.
+  if (process.env.NODE_ENV !== 'production') {
+    __assertCardProfilesMatch(templates.map((t) => t.slug));
+  }
+
+  return templates;
 }
 
 export async function getProgressionTemplate(slug: string): Promise<ProgressionTemplate> {

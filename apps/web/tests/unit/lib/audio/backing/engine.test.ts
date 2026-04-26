@@ -214,15 +214,15 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
     // bar 0 → I7 (파싱 성공)
     cb(0, 0);
 
-    // drums: blues shuffle_a — kick 2 + snare 2 + hat 8 = 12회
-    expect(fakeDrumsMock.start).toHaveBeenCalledTimes(12);
+    // drums: blues groove_a (Sprint 9 PR-D) — kick 2 + snare 2 + hat 12(triplet8) = 16회
+    expect(fakeDrumsMock.start).toHaveBeenCalledTimes(16);
     // bass: blues shuffle_a — 2스텝(1박·3박)
     expect(fakeBassMock.start).toHaveBeenCalledTimes(2);
     // guitar: blues shuffle_a — 4스텝 × midiNotes 음 수(I7 = 4음) = 16회 (최소 1회 이상)
     expect(fakeGuitarMock.start.mock.calls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('drums trigger note는 string("kick"/"snare"/"hat")으로 호출됨', async () => {
+  it('drums trigger note는 string으로 호출됨 (hat은 voice가 hhclosed로 동적 매핑)', async () => {
     const cb = await getOnBarCallback();
     fakeDrumsMock.start.mockClear();
 
@@ -230,10 +230,10 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
 
     const calls = fakeDrumsMock.start.mock.calls;
     const notes = calls.map((c: unknown[]) => (c[0] as { note: string }).note);
-    // kick 노트가 존재해야 함
+    // kick / snare / hat(→hhclosed) — voice가 sample 이름으로 dispatch
     expect(notes).toContain('kick');
     expect(notes).toContain('snare');
-    expect(notes).toContain('hat');
+    expect(notes).toContain('hhclosed');
   });
 
   it('파싱 실패 코드(b#VII)는 drums/bass/guitar 모두 0회 trigger + warn', async () => {
