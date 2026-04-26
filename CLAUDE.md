@@ -363,15 +363,15 @@ WSL에 시스템 chromium 의존 라이브러리 없음. `docker compose -f
 docker-compose.test.yml up` 으로 돌리거나, `sudo apt install libnspr4 libnss3
 libasound2t64` (sudo 권한 필요).
 
-### WebAudioFont 카드 일부가 무음 (특히 jazz)
-surikov CDN(`surikov.github.io/webaudiofontdata/sound/`)은 모든 GM drum kit을
-보유하지 않는다 — kit `0`(Standard), `8`(Room), `16`(Power), `24`(Electronic),
-`25`(TR-808)만 모든 노트 파일이 존재. kit `32`(Jazz) 등은 404.
+### Jazz brush 사운드 (Sprint 2-8 후속)
+Sprint 2-8에서 surikov WebAudioFont → smplr 라이브러리로 backing 백엔드를
+교체했지만, smplr 0.20.0 DrumMachine은 5개 kit (TR-808/Casio-RZ1/LM-2/MFB-512/
+Roland CR-8000)만 지원하고 *jazz brush와 acoustic kit이 모두 부재*.
 
-`ensureDrumPatch`가 실패 시 자동으로 kit=0(Standard)로 폴백하므로 무음은 발생하지
-않지만, 사운드가 의도와 달라진다. 재즈 브러시 사운드는 Sprint 2-8(RhythmRecipe +
-사운드폰트 교체)에서 복원 예정. 현재는 `lib/audio/backing/presets.ts`의
-`jazz.drumsKit`가 의도적으로 `0`으로 설정돼 있음(2026-04 commit `7e0906d`).
+현재 jazz 카테고리는 TR-808 폴백 (`lib/audio/backing/presets.ts`의 CATEGORY_BUNDLES).
+진짜 jazz brush는 후속 Sprint에서 smplr Sampler 클래스 + 외부 CC0 brush 샘플
+(Freesound.org 등) 또는 FluidR3_GM Soundfont의 GM drum channel(MIDI ch10) 활용으로
+복원 예정. 분석 메모: docs/superpowers/notes/2026-04-26-smplr-spike.md 참조.
 
 ### Chrome DevTools / Playwright MCP가 chrome 못 찾음
 Windows에 Google Chrome 64-bit(`C:\Program Files\Google\Chrome\...`) 설치가 제일

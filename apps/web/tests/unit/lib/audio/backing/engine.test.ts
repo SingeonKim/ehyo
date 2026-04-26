@@ -115,7 +115,8 @@ import * as smplrBridgeModule from '@/lib/audio/backing/smplr-bridge';
 import type { PitchClass } from '@/lib/theory/types';
 
 // 테스트용 ProgressionTemplate 고정 픽스처
-// bVII: 접두 b로 시작 → parseRoman이 null 반환하는 파싱 실패 케이스
+// XBAD: b# 조합은 parseRoman이 null 반환하는 파싱 실패 케이스
+// (D1 이후 단일 b/# 접두사는 유효해졌으므로, 이중 접두사로 대체)
 const TEMPLATE = {
   id: 'test-1',
   slug: 'test-12-bar',
@@ -124,10 +125,10 @@ const TEMPLATE = {
   bars: 4,
   default_bpm: 90,
   progression: [
-    { bar: 1, chord: 'I7' },   // 파싱 성공
-    { bar: 2, chord: 'IV7' },  // 파싱 성공
-    { bar: 3, chord: 'V7' },   // 파싱 성공
-    { bar: 4, chord: 'bVII' }, // 파싱 실패
+    { bar: 1, chord: 'I7' },    // 파싱 성공
+    { bar: 2, chord: 'IV7' },   // 파싱 성공
+    { bar: 3, chord: 'V7' },    // 파싱 성공
+    { bar: 4, chord: 'b#VII' }, // 파싱 실패 (이중 접두사 — D1에서 거부)
   ],
   time_signature: '4/4',
   recommended_scales: ['major_blues'],
@@ -235,7 +236,7 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
     expect(notes).toContain('hat');
   });
 
-  it('파싱 실패 코드(bVII)는 drums/bass/guitar 모두 0회 trigger + warn', async () => {
+  it('파싱 실패 코드(b#VII)는 drums/bass/guitar 모두 0회 trigger + warn', async () => {
     vi.useFakeTimers();
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const cb = await getOnBarCallback();
@@ -243,7 +244,7 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
     fakeBassMock.start.mockClear();
     fakeGuitarMock.start.mockClear();
 
-    // bar 3 → bVII (파싱 실패), eventTime=0 → delayMs=0
+    // bar 3 → b#VII (파싱 실패 — 이중 접두사), eventTime=0 → delayMs=0
     cb(0, 3);
 
     // 동기 블록에서는 trigger가 없어야 함
@@ -253,7 +254,7 @@ describe('onBar 콜백 — 멀티트랙 트리거', () => {
 
     // warn은 setTimeout(delay) 내부에서 발생 (eventTime=0이므로 delay=0)
     vi.advanceTimersByTime(0);
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('bVII'));
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('b#VII'));
 
     warnSpy.mockRestore();
     vi.useRealTimers();

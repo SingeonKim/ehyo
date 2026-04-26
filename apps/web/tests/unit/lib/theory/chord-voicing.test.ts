@@ -53,8 +53,10 @@ describe('chordSymbolToMidi', () => {
   });
 
   it('returns null for unparseable symbol', () => {
-    expect(chordSymbolToMidi('bVII', 0 as PitchClass, 4)).toBeNull();
+    // bVII는 D1 이후 유효한 파싱 대상(♭7도 메이저 트라이어드)이므로 제거.
+    // 파싱 실패는 완전히 불가한 심볼로만 테스트.
     expect(chordSymbolToMidi('garbage', 0 as PitchClass, 4)).toBeNull();
+    expect(chordSymbolToMidi('bbVII', 0 as PitchClass, 4)).toBeNull();
   });
 });
 

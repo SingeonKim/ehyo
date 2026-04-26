@@ -96,17 +96,25 @@ const QUALITY_INTERVALS: Record<ChordQuality, readonly number[]> = {
  *   "III+"    → degree 3, augmented
  */
 export function parseRoman(symbol: string): Omit<ParsedChord, 'semitones'> | null {
-  // 선행 변화(b/#)는 현재 시드에서 쓰지 않지만 확장 여지 위해 분리.
-  // 예: "bVII"의 b는 접두사. 지금은 지원 안 함(null 반환).
-  if (symbol.startsWith('b') || symbol.startsWith('#')) {
-    return null;
+  // 접두사 b/#: 도수 자체의 반음 변형 (♭7도 = bVII, ♯4도 = #IV).
+  // 단일 b 또는 # 만 허용 — bb/##/b#/#b 같은 조합은 거부.
+  let prefixOffset = 0;
+  let body = symbol;
+  if (body.startsWith('b')) {
+    if (body.length < 2 || body[1] === 'b' || body[1] === '#') return null;
+    prefixOffset = -1;
+    body = body.slice(1);
+  } else if (body.startsWith('#')) {
+    if (body.length < 2 || body[1] === '#' || body[1] === 'b') return null;
+    prefixOffset = 1;
+    body = body.slice(1);
   }
 
-  // 로마 숫자 부분 추출 (최장 매치)
+  // 로마 숫자 부분 추출 (최장 매치). body 기준으로 변경.
   let romanPart = '';
   for (const candidate of ['VII', 'III', 'VI', 'IV', 'II', 'V', 'I']) {
-    if (symbol.toUpperCase().startsWith(candidate)) {
-      romanPart = symbol.slice(0, candidate.length);
+    if (body.toUpperCase().startsWith(candidate)) {
+      romanPart = body.slice(0, candidate.length);
       break;
     }
   }
@@ -116,7 +124,7 @@ export function parseRoman(symbol: string): Omit<ParsedChord, 'semitones'> | nul
   if (degree === undefined) return null;
 
   const isLower = romanPart === romanPart.toLowerCase();
-  const suffix = symbol.slice(romanPart.length).trim();
+  const suffix = body.slice(romanPart.length).trim();
 
   // 기본 품질: 대문자 = 메이저, 소문자 = 마이너
   let quality: ChordQuality = isLower ? 'minor' : 'major';
@@ -150,8 +158,10 @@ export function parseRoman(symbol: string): Omit<ParsedChord, 'semitones'> | nul
     return null;
   }
 
-  const rootSemitones = DEGREE_OFFSET[degree];
-  if (rootSemitones === undefined) return null;
+  const baseRoot = DEGREE_OFFSET[degree];
+  if (baseRoot === undefined) return null;
+  // 음수 모듈로 방어: prefixOffset = -1 일 때 (0 - 1 + 12) % 12 = 11.
+  const rootSemitones = (baseRoot + prefixOffset + 12) % 12;
 
   return { degree, rootSemitones, quality };
 }

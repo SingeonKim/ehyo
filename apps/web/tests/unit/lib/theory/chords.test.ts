@@ -84,8 +84,11 @@ describe('parseRoman — 실패 케이스', () => {
     expect(parseRoman('abc')).toBeNull();
   });
 
-  it('bVII 같은 선행 변화는 현재 미지원', () => {
-    expect(parseRoman('bVII')).toBeNull();
+  it('bVII — b 접두사 지원 후: 유효한 파싱 (rootSemitones = 10)', () => {
+    // D1 이전에는 null이었으나 b/# prefix 지원으로 파싱 가능.
+    const c = parseRoman('bVII');
+    expect(c).not.toBeNull();
+    expect(c!.rootSemitones).toBe(10);
   });
 
   it('알 수 없는 접미사는 null', () => {
@@ -161,6 +164,54 @@ describe('getChordTonesInKey — 지판 하이라이트 호출부', () => {
   it('파싱 실패 시 빈 배열', () => {
     // 컴포넌트는 빈 배열을 "하이라이트 없음"으로 처리 가능
     expect(getChordTonesInKey('bogus', 0 as PitchClass)).toEqual([]);
+  });
+});
+
+describe('parseRoman — flat/sharp degree prefix', () => {
+  it('bVII7 — major key의 ♭7도, dominant7. rootSemitones = 11 - 1 = 10', () => {
+    const c = romanToChord('bVII7');
+    expect(c).not.toBeNull();
+    expect(c!.degree).toBe(7);
+    expect(c!.quality).toBe('dominant7');
+    expect(c!.rootSemitones).toBe(10);
+  });
+
+  it('bVI — major key의 ♭6도, major triad. rootSemitones = 9 - 1 = 8', () => {
+    const c = romanToChord('bVI');
+    expect(c).not.toBeNull();
+    expect(c!.degree).toBe(6);
+    expect(c!.rootSemitones).toBe(8);
+  });
+
+  it('#IV — major key의 ♯4도. rootSemitones = 5 + 1 = 6', () => {
+    const c = romanToChord('#IV');
+    expect(c).not.toBeNull();
+    expect(c!.rootSemitones).toBe(6);
+  });
+
+  it('bIII — major key의 ♭3도. rootSemitones = 4 - 1 = 3 (마이너 3도)', () => {
+    const c = romanToChord('bIII');
+    expect(c).not.toBeNull();
+    expect(c!.rootSemitones).toBe(3);
+  });
+
+  it('잘못된 접두사 조합은 null', () => {
+    expect(romanToChord('bbVII')).toBeNull();
+    expect(romanToChord('##V')).toBeNull();
+    expect(romanToChord('b#V')).toBeNull();
+    expect(romanToChord('#bVII')).toBeNull();
+  });
+
+  it('단일 b/# 단독은 null (로마 숫자 부분 없음)', () => {
+    expect(romanToChord('b')).toBeNull();
+    expect(romanToChord('#')).toBeNull();
+  });
+
+  it('jazz-major-blues progression: 모든 코드가 파싱된다', () => {
+    const chords = ['Imaj7','I7','IVmaj7','ivm7','bVII7','iiim7','VI7','iim7','V7'];
+    for (const c of chords) {
+      expect(romanToChord(c), c).not.toBeNull();
+    }
   });
 });
 

@@ -8,7 +8,7 @@ import { apiFetch, type GetResponse } from './client';
 export type ProgressionTemplate = GetResponse<'/api/v1/progression-templates/{slug}'>;
 
 export interface ListParams {
-  category?: 'blues' | 'pop' | 'jazz' | 'minor' | 'modal';
+  category?: 'blues' | 'pop' | 'jazz' | 'minor' | 'modal' | 'funk' | 'bossa' | 'rock' | 'folk';
 }
 
 export async function listProgressionTemplates(
