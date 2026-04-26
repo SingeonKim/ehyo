@@ -32,10 +32,20 @@ pnpm build                   # Next.js standalone (output: 'standalone')
 pnpm start                   # 프로덕션 서버
 pnpm format                  # prettier --write .
 
-# Docker
-docker compose up            # dev 서버 컨테이너 (핫 리로드)
+# Docker — 백엔드 스택 (postgres + api + minio)
+docker compose up -d         # 백그라운드 기동 (postgres:5432, api:8000, minio:9000/9001)
+docker compose ps            # healthy 상태 확인
 docker compose -f docker-compose.test.yml up --exit-code-from playwright
                              # 프로덕션 빌드 + E2E 결정론적 실행
+
+# API (apps/api) — FastAPI · SQLAlchemy async · Alembic
+cd apps/api && uv run python -m app.scripts.seed   # 카탈로그 시드 (idempotent)
+cd apps/api && uv run pytest                       # API 단위·통합 테스트
+cd apps/api && uv run alembic upgrade head         # 마이그레이션 적용
+cd apps/api && uv run alembic revision --autogenerate -m "msg"
+                                                   # 새 마이그레이션 생성
+pnpm --filter @my-music-app/web types:api          # API OpenAPI → 프론트 타입 갱신
+                                                   # apps/web/lib/api/generated.ts 갱신, 직접 편집 금지
 ```
 
 **Playwright 로컬 실행 주의**: WSL 환경에서 시스템 chromium 라이브러리(`libnspr4` 등) 없으면 실패. `docker-compose.test.yml`이 확실한 경로. Windows에 Chrome 64-bit 설치(`C:\Program Files\Google\Chrome\...`)되어 있으면 MCP 브라우저 도구로 수동 스모크 가능.
@@ -46,13 +56,13 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 
 ### 한 줄 요약
 
-기타 연습자용 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙** 웹앱. v1은 **순수 클라이언트 Next.js 앱**(백엔드 없음). 배킹 트랙도 WebAudioFont(surikov CDN) 샘플 기반으로 클라이언트에서 합성 — 원래 Phase 5에 도입 예정이던 Tone.js·FastAPI·MinIO·모노레포 전환은 **모두 보류**. 사용자 인증·프리셋 공유 같은 서버 종속 기능이 명확해질 때 백엔드 도입 재검토.
+기타 연습자용 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙** 웹앱. **모노레포 구성**: `apps/web`(Next.js 15) + `apps/api`(FastAPI · PostgreSQL · MinIO). 백엔드는 *코드 진행 카탈로그* 데이터 소스 역할 — 사용자 인증/프리셋 공유는 아직 미구현. 배킹 트랙은 클라이언트 측 [smplr](https://github.com/danigb/smplr) 라이브러리(Soundfont/DrumMachine/Reverb)로 합성. surikov WebAudioFont는 Sprint 2-8에서 smplr으로 교체 완료.
 
 ### 핵심 설계 결정 (파일만 봐서는 안 보이는 것)
 
 - **단일 AudioContext 원칙**: 앱 전체에서 `AudioContext` 인스턴스는 **오직 1개**. `lib/audio/context.ts`의 싱글턴에서만 생성. 메트로놈과 (Phase 5+) Tone.js Transport가 같은 clock을 공유해야 드리프트 없이 동기화된다. 다른 곳에서 `new AudioContext()` 금지.
 
-- **v1 백엔드 없음**: 설정 영속화는 Zustand `persist` → `localStorage`. 키 `my-music-app:v1`, 스키마 `version` 필드 + `migrate` 함수로 상위 호환. `users`/프리셋 테이블 같은 건 Phase 5에 들어온다.
+- **백엔드 책임 = 카탈로그 한정**: `apps/api`(FastAPI · SQLAlchemy 2.x async · Alembic)는 코드 진행 카탈로그(`progression_templates`) 정적 데이터만 제공. *사용자 상태*(BPM, 키, 볼륨, 진행 슬러그 선택 등)는 모두 Zustand `persist` → `localStorage`. 키 `my-music-app:v1`, 스키마 `version` 필드 + `migrate` 함수로 상위 호환. 사용자 인증/프리셋 공유는 아직 도입 안 함 — 그 시점에 `users`/프리셋 테이블 추가.
 
 - **음악 이론 레이어는 순수 함수**: `lib/theory/*`는 커버리지 **100%** 목표. `SCALES`, `IMPORTANT_DEGREES`는 음악 이론 컨센서스와 부합해야 하며 수정은 `music-theory-guardian` 에이전트 게이트 필수.
 
@@ -72,7 +82,13 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 - `components/fretboard/` — SVG 지판 렌더러 + 컨트롤. 각 컨트롤은 Zustand 스토어를 직접 구독하는 자체 컨테이너 패턴 (prop drilling 없음). `FretboardSurface`(SVG)와 `FretboardControls`(설정 UI)가 분리돼 jam 페이지에서는 Surface만 sticky.
 - `components/metronome/` — 메트로놈 UI(MetronomeDock, BpmInput 등).
 - `components/jam/` — 통합 뷰 컴포넌트. 코드 진행 카탈로그(`ProgressionCatalog`), 키·BPM·볼륨 슬라이더, Roman/Absolute 표기 토글, 재생 버튼.
-- `lib/audio/` — AudioContext 싱글턴 + Chris Wilson lookahead 스케줄러(25ms / 100ms, iOS 150ms). `lib/audio/backing/`은 WebAudioFont 통합 — `engine.ts`가 BarScheduler·voice·masterGain을 묶고, `webaudiofont-bridge.ts`가 surikov CDN 스크립트 + 패치 캐시를 관리. 단일 재생 원칙(다른 카드 ▶ 누르면 자동 teardown).
+- `lib/audio/` — AudioContext 싱글턴 + Chris Wilson lookahead 스케줄러(25ms / 100ms, iOS 150ms). `lib/audio/backing/`은 smplr 통합:
+  - `engine.ts` — BarScheduler·voice·masterGain·Master FX 체인을 묶는 본체. 단일 재생 원칙(다른 카드 ▶ 누르면 자동 teardown).
+  - `smplr-bridge.ts` — `Soundfont`/`DrumMachine`/`Reverb` 인스턴스 캐시 + `loadBundle()`. 같은 instrument는 단일 인스턴스 공유.
+  - `presets.ts` — `CATEGORY_BUNDLES` 9개 카테고리 매핑 (drums kit + bass/guitar instrument + 옵션 aux=shaker/clave). smplr DrumMachine은 5개 kit만 지원 (jazz brush 부재 → TR-808 폴백).
+  - `fx-chain.ts` — Master FX: `compressor(-18dB/3:1) → split(dry 0.82 / wet 0.18 → reverb) → destination`.
+  - `patterns/library/<category>.ts` × 9 — 카테고리별 `BarPattern` + `selectSlot(tpl, idx) → 슬롯`. 마디 인덱스/BPM/template 길이 기준 결정론적 슬롯 선택. 예: blues 12bar에서 idx=3 → `iv_pickup`, idx∈{10,11} → `turnaround`.
+  - `voices/{drums,bass,guitar,aux}.ts` — smplr `start({note, time, duration, velocity})`를 voice 추상화로 wrap. **velocity 변환**: 패턴 데이터 0~1 → smplr 0~127 곱연산. `start()`가 반환하는 StopFn을 voice가 모아 `cancelScheduled()`에서 일괄 호출 (smplr `Smplr.stop()`이 스케줄러 큐를 비우지 않는 한계 보완 — `dist/index.js:1041-1052` 참조).
 - `lib/theory/` — 음악 이론 데이터·함수. `notes.ts`(피치 클래스·도수), `scales.ts`(16 스케일 + `SCALE_HIGHLIGHTS` 색상 매트릭스), `fretboard.ts`(튜닝 × 프렛 → 노트 마크), `chords.ts`(로마 숫자 파싱), `chord-voicing.ts`(MIDI 변환 + `ChordOverlay`), `chord-display.ts`(Roman ↔ Absolute 표기 변환).
 - `lib/store/` — Zustand 단일 스토어 + persist 미들웨어 + `useHasHydrated` 훅.
 - `lib/api/progression-templates.ts` — 코드 진행 카탈로그 데이터 소스. `generated.ts`는 시드에서 자동 생성, 직접 편집 금지.
@@ -91,26 +107,29 @@ docker compose -f docker-compose.test.yml up --exit-code-from playwright
 | 에이전트 | 주 담당 |
 |---|---|
 | `music-theory-guardian` | `lib/theory/**`, `SCALES`, `SCALE_HIGHLIGHTS`, 코드 파싱 규칙 변경의 최종 검증 |
-| `web-audio-engineer` | `lib/audio/**`, AudioContext·BarScheduler·WebAudioFont 타이밍 |
+| `web-audio-engineer` | `lib/audio/**`, AudioContext·BarScheduler·smplr 통합·Master FX 체인·StopFn 라이프사이클 |
 | `fretboard-renderer` | `components/fretboard/**`, 지판 SVG·노트 좌표·overlay 레이어 |
 | `aesthetic-reviewer` | 디자인 규율(금지 폰트·보라 그라데이션 차단), 토큰 일관성 |
 | `test-strategist` | Vitest/Playwright 전략, 오디오 타이밍 spy, CI |
 | `nextjs-architect` | App Router·Zustand persist·Tailwind v4·빌드 |
-| `backend-architect` | FastAPI/SQLAlchemy/Alembic — 현재 dormant(백엔드 미도입). 서버 분리 결정 시 활성. |
+| `backend-architect` | `apps/api/**` FastAPI · SQLAlchemy 2.x async · Alembic. 카탈로그(`progression_templates`) 모델·라우터·Pydantic 스키마·시드 관리. |
 
 규칙: 범위 겹치지 않고 순차 의존성 없을 때 **병렬** 호출 (단일 메시지에 여러 Agent tool 호출). 새 스케일 추가는 `music-theory-guardian` + `test-strategist`, 지판 UI 변경은 `fretboard-renderer` + `aesthetic-reviewer`가 대표 조합.
 
 ### Phase 로드맵
 
-현재 Phase 4 진행 중(Sprint 2-6까지 머지). 상세는 `docs/planning.md` §12.
+현재 Phase 4 진행 중(Sprint 2-8까지 머지). 상세는 `docs/planning.md` §12.
 
 - Phase 0: 셋업 ✅
 - Phase 1: 메트로놈 MVP ✅
 - Phase 2: 지판 스케일 가이드 ✅
 - Phase 3: 스케일 확장 (16종 정의 + UI) ✅
-- Phase 4: `/jam` 통합 뷰 ✅ (Sprint 2-6 — sticky 지판 + 배킹 카탈로그 통합)
-  - 배킹 트랙은 원래 Phase 5 백엔드 도입 후로 미뤘으나, **WebAudioFont 채택으로 클라이언트만으로 작동**(Sprint 2-2 ~ 2-5).
-- Phase 5+: 백엔드 분리는 **사용자 인증·프리셋 공유가 명확해지면 재개**. Tone.js·FastAPI·MinIO 도입은 그 시점 결정.
+- Phase 4: `/jam` 통합 뷰 ✅
+  - Sprint 2-2~2-5: WebAudioFont 기반 배킹 트랙
+  - Sprint 2-6: sticky 지판 + 배킹 카탈로그 통합
+  - Sprint 2-7: smart highlighting (chord-tension + 색채음 매트릭스)
+  - Sprint 2-8: smplr 백엔드 교체 + Master FX(compressor + reverb) + 9 카테고리 도메인 RhythmPattern + 카탈로그 +7 (10→17)
+- Phase 5+: 사용자 인증/프리셋 공유 도입 시점에 user 테이블 + JWT 추가 검토. Jazz brush 복원(`Sampler` + 외부 샘플), 카드별 리듬 변화, voice별 EQ는 후속 Sprint.
 
 ---
 
