@@ -16,6 +16,36 @@ import { getAudioContext } from '../../context';
  *  이미 재생된 voice는 stopById로 정지 (smplr 0.20.0 dist L1019-1031). */
 type StopFn = (time?: number) => void;
 
+/**
+ * smplr DrumMachine kit별 'hat' / 'snare' sample 이름 동적 lookup.
+ *
+ * 문제: 우리 패턴 데이터는 추상 이름('kick'/'snare'/'hat') 사용. smplr은 sample
+ * 이름 자체 + 첫 base group을 alias로 등록(예: LM-2의 'hhclosed-long' → 'hhclosed'
+ * alias). 그러나 LM-2에 'hat'은 없고 'hhclosed'만 있어 'hat' 호출 시 *무음*.
+ * 'kick'은 LM-2 samples에 그대로 있어 작동, 'snare'는 'snare-h' 첫 sample이
+ * 'snare' alias로 매핑되어 작동.
+ *
+ * 해결: drumMachine.sampleNames에서 hi-hat 후보를 찾아 캐싱.
+ * kit별로 'hhclosed'(LM-2), 'hh-c'(가능), 'closed-hat' 등 다양 → 우선순위 lookup.
+ */
+const HAT_NOTE_CACHE = new WeakMap<DrumMachine, string>();
+function resolveHatNote(dm: DrumMachine): string {
+  const cached = HAT_NOTE_CACHE.get(dm);
+  if (cached) return cached;
+  // 일부 mock이나 비정상 인스턴스에서 sampleNames 미정의 가드.
+  const names = dm.sampleNames ?? [];
+  const resolved =
+    names.find((n) => n === 'hat') ??
+    names.find((n) => n === 'hhclosed') ??
+    names.find((n) => n === 'hh-c' || n === 'closed-hat' || n === 'hi-hat') ??
+    names.find((n) => n.startsWith('hhclosed')) ??
+    names.find((n) => n.startsWith('hh') && !n.includes('open')) ??
+    names.find((n) => n.includes('hihat')) ??
+    'hat'; // fallback (이 경우 무음 가능성 — 새 kit 추가 시 lookup 보강)
+  HAT_NOTE_CACHE.set(dm, resolved);
+  return resolved;
+}
+
 export interface DrumVoice {
   /**
    * 드럼 스텝 트리거.
@@ -59,8 +89,10 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
     trigger(step, drumMachine, time, velocity = 0.8, velocityScale = 1) {
       // velocity × velocityScale를 [0,1]로 clamp한 뒤 smplr 요구 0~127 범위로 변환
       const scaled = Math.max(0, Math.min(1, velocity * velocityScale));
+      // 'hat'은 kit별 sample 이름이 다르므로 동적 lookup. 'kick'/'snare'는 그대로.
+      const noteName = step === 'hat' ? resolveHatNote(drumMachine) : step;
       const stop = drumMachine.start({
-        note: step,
+        note: noteName,
         time,
         velocity: Math.max(0, Math.min(127, Math.round(scaled * 127))),
       }) as unknown as StopFn;

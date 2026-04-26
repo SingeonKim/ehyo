@@ -46,12 +46,13 @@ describe('DrumVoice (smplr)', () => {
     });
   });
 
-  it('trigger("hat", ...)는 dm.start({note: "hat", ...})', () => {
+  it('trigger("hat", ...)는 dm.sampleNames에서 hat sample 동적 lookup → "hhclosed"', () => {
+    // 실제 LM-2 sample 이름은 'hhclosed' — 'hat' alias 없음. voice가 동적으로 매핑.
     const dm = makeDrumMachineMock();
     const voice = createDrumVoice();
     voice.trigger('hat', dm as never, 3.0, 0.6);
     expect(dm.start).toHaveBeenCalledWith({
-      note: 'hat',
+      note: 'hhclosed',
       time: 3.0,
       velocity: Math.round(0.6 * 127),
     });

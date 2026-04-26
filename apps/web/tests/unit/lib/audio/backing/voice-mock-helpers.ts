@@ -54,6 +54,8 @@ export type DrumMachineMock = {
     addEffect: ReturnType<typeof vi.fn>;
     setVolume: ReturnType<typeof vi.fn>;
   };
+  /** voice가 hat sample 동적 lookup 시 사용. 실제 LM-2 sample 이름 일부. */
+  sampleNames: readonly string[];
   load: Promise<void>;
 };
 
@@ -92,6 +94,8 @@ export function makeDrumMachineMock(): DrumMachineMock {
       addEffect: vi.fn(),
       setVolume: vi.fn(),
     },
+    // 실제 LM-2 sample 이름(축약). voice가 'hat' → 'hhclosed' 동적 lookup.
+    sampleNames: ['kick', 'snare', 'snare-h', 'hhclosed', 'hhclosed-long', 'hhopen', 'ride'],
     load: Promise.resolve(),
   };
 }
