@@ -40,3 +40,33 @@ describe('JAZZ_RHYTHM.selectSlot', () => {
     expect(JAZZ_RHYTHM.patterns.comp_only).toBeDefined();
   });
 });
+
+describe('jazz swing', () => {
+  it('swing default 0.66', () => {
+    expect(JAZZ_RHYTHM.swing?.default).toBe(0.66);
+  });
+});
+
+describe('jazz patterns — ride uses triplet8', () => {
+  it('walk 슬롯 hat이 triplet8 unit만 사용', () => {
+    const hat = JAZZ_RHYTHM.patterns.walk?.drums.hat ?? [];
+    expect(hat.length).toBeGreaterThan(0);
+    expect(hat.every((s) => s.unit === 'triplet8')).toBe(true);
+  });
+
+  it('모든 jazz 슬롯의 hat이 triplet8 (비어 있지 않은 경우)', () => {
+    for (const [slotName, pattern] of Object.entries(JAZZ_RHYTHM.patterns)) {
+      const hat = pattern.drums.hat;
+      if (hat.length > 0) {
+        expect(hat.every((s) => s.unit === 'triplet8'), `${slotName} hat must be triplet8`).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it('walk 슬롯 hat이 4박 × 2 = 8 steps (long+short per beat)', () => {
+    const hat = JAZZ_RHYTHM.patterns.walk?.drums.hat ?? [];
+    expect(hat).toHaveLength(8);
+  });
+});

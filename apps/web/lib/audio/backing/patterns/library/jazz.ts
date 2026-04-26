@@ -9,6 +9,9 @@
 import type { CategoryRhythm } from '../types';
 
 export const JAZZ_RHYTHM: CategoryRhythm = {
+  // 정통 jazz swing: long-short 비율 0.66 (2:1 트리플렛 감각)
+  swing: { default: 0.66 },
+
   patterns: {
     walk: {
       drums: {
@@ -19,14 +22,17 @@ export const JAZZ_RHYTHM: CategoryRhythm = {
           { time: '0:1:2', velocity: 0.3 },
           { time: '0:3:2', velocity: 0.3 },
         ],
-        // ride 패턴: "ding-da-DING-da-DING" — 3박자 계열 느낌
+        // ride 패턴: "ding-dig-a-ding" — triplet8 sub 0(long)+2(short)로 정통 jazz ride
+        // unit:'triplet8'은 swing 인자를 무시하고 3등분 long-short로 고정
         hat: [
-          { time: '0:0:0', velocity: 0.6 },
-          { time: '0:1:0', velocity: 0.6 },
-          { time: '0:1:2', velocity: 0.6 },
-          { time: '0:2:0', velocity: 0.6 },
-          { time: '0:3:0', velocity: 0.6 },
-          { time: '0:3:2', velocity: 0.6 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.5 },
         ],
       },
       bass: {
@@ -52,13 +58,16 @@ export const JAZZ_RHYTHM: CategoryRhythm = {
           { time: '0:1:2', velocity: 0.3 },
           { time: '0:3:2', velocity: 0.3 },
         ],
+        // walk와 동일한 triplet8 ride — approach 마디도 같은 groov 유지
         hat: [
-          { time: '0:0:0', velocity: 0.6 },
-          { time: '0:1:0', velocity: 0.6 },
-          { time: '0:1:2', velocity: 0.6 },
-          { time: '0:2:0', velocity: 0.6 },
-          { time: '0:3:0', velocity: 0.6 },
-          { time: '0:3:2', velocity: 0.6 },
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.5 },
         ],
       },
       bass: {
