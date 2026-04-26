@@ -62,6 +62,36 @@ export const FOLK_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // folk_strum: strum_8th와 동일한 패턴이지만 variant 키로 직접 라우팅.
+    // folk-I-IV-V 카드가 모든 마디에 일관된 down-up 8분 strum을 갖도록.
+    folk_strum: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0', velocity: 0.5 }, { time: '0:3:0', velocity: 0.5 }],
+        hat: [
+          { time: '0:0:0', velocity: 0.4 },
+          { time: '0:0:2', velocity: 0.4 },
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:1:2', velocity: 0.4 },
+          { time: '0:2:0', velocity: 0.4 },
+          { time: '0:2:2', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.4 },
+          { time: '0:3:2', velocity: 0.4 },
+        ],
+      },
+      bass: {
+        steps: [{ time: '0:0:0' }, { time: '0:2:0' }],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down' },
+        { time: '0:1:0', direction: 'down' },
+        { time: '0:1:2', direction: 'up' },
+        { time: '0:2:2', direction: 'up' },
+        { time: '0:3:0', direction: 'down' },
+        { time: '0:3:2', direction: 'up' },
+      ],
+    },
+
     pickup: {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
@@ -94,9 +124,12 @@ export const FOLK_RHYTHM: CategoryRhythm = {
   },
 
   /**
-   * 마지막 마디 → pickup. 짝수 → picking, 홀수 → strum_8th.
+   * variant 'folk_strum'/'ballad_pick' 지정 시 해당 슬롯 직접 라우팅.
+   * 미지정 시 기존 짝/홀수 토글 + 마지막 마디 pickup 동작 유지.
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
+    if (variant === 'folk_strum') return 'folk_strum';
+    if (variant === 'ballad_pick') return 'ballad_pick';
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return local % 2 === 0 ? 'picking' : 'strum_8th';
