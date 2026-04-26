@@ -88,9 +88,12 @@ describe('CARD_PROFILES — actual values (PR-D)', () => {
     expect(CARD_PROFILES['mixolydian-vamp']!.rhythmVariant).toBe('mixolydian_driving');
   });
 
-  it('hard-bop-minor-blues uses hard_bop variant', () => {
+  it('hard-bop-minor-blues uses hard_bop variant + jazz guitar override', () => {
     const p = CARD_PROFILES['hard-bop-minor-blues']!;
     expect(p.rhythmVariant).toBe('hard_bop');
-    expect(p.toneProfile?.reverbWet).toBe(0.20);
+    // 도메인 검수 후 0.20 → 0.15 (Blue Note recording style — slightly dry).
+    expect(p.toneProfile?.reverbWet).toBe(0.15);
+    // distortion guitar는 hard bop과 어긋나 jazz guitar로 override (slow/major_swing와 동일 사양).
+    expect(p.instrumentOverrides?.guitar?.instrument).toBe('electric_guitar_jazz');
   });
 });

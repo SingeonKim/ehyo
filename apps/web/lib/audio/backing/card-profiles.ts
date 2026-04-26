@@ -49,12 +49,17 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
       guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
     },
   },
-  // hard bop minor. medium swing 0.62.
+  // hard bop minor (Art Blakey/Lee Morgan 스타일). medium swing 0.62, jazz guitar
+  // archtop, Blue Note recording 느낌으로 reverbWet 0.15 (slightly dry).
+  // distortion guitar는 hard bop 정통과 어긋나 명시적 override.
   'hard-bop-minor-blues': {
     rhythmVariant: 'hard_bop',
     toneProfile: {
       voiceGain: { drums: 0.95 },
-      reverbWet: 0.20,
+      reverbWet: 0.15,
+    },
+    instrumentOverrides: {
+      guitar: { instrument: 'electric_guitar_jazz', octaveShift: -1 },
     },
   },
   // 16th hat 추가된 정통 shuffle.
