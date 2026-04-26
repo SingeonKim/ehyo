@@ -284,8 +284,9 @@ function createEngine(): BackingEngine {
 
         // PR-A: parseBeatStep에 unit/swing 흘려보내기. swing 미정의 카테고리는 0.5(straight).
         const swing = resolveSwing(rhythm, variant);
-        const t = (step: { time: string; unit?: 'sub16' | 'triplet8' }) =>
-          eventTime + parseBeatStep(step.time, bpm, 4, { unit: step.unit, swing });
+        // bs(BeatStep): 외부 const step과의 변수 shadow를 피하기 위해 파라미터명 bs 사용
+        const t = (bs: { time: string; unit?: 'sub16' | 'triplet8' }) =>
+          eventTime + parseBeatStep(bs.time, bpm, 4, { unit: bs.unit, swing });
 
         // drums: smplr DrumMachine은 sample group name ('kick'/'snare'/'hat')으로 트리거
         for (const s of pattern.drums.kick)  voices.drums.trigger('kick',  loaded.drums, t(s), s.velocity);
