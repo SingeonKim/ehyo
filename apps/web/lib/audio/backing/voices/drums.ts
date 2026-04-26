@@ -34,8 +34,11 @@ function resolveHatNote(dm: DrumMachine): string {
   if (cached) return cached;
   // 일부 mock이나 비정상 인스턴스에서 sampleNames 미정의 가드.
   const names = dm.sampleNames ?? [];
+  // 'hhclosed-short'를 'hhclosed-long'/'hhclosed'보다 우선 — 짧고 밝은 음색이
+  // 트리플렛 빠른 retrigger와 셔플 ride feel에 더 적합.
   const resolved =
     names.find((n) => n === 'hat') ??
+    names.find((n) => n === 'hhclosed-short') ??
     names.find((n) => n === 'hhclosed') ??
     names.find((n) => n === 'hh-c' || n === 'closed-hat' || n === 'hi-hat') ??
     names.find((n) => n.startsWith('hhclosed')) ??
@@ -45,6 +48,13 @@ function resolveHatNote(dm: DrumMachine): string {
   HAT_NOTE_CACHE.set(dm, resolved);
   return resolved;
 }
+
+/**
+ * hat sample 전역 attenuation — 패턴 데이터의 dynamics는 보존하되 voice 레벨에서
+ * 일괄 -30%. closed hat sample이 kick/snare 대비 너무 도드라지는 경향을 균형.
+ * 카드별 미세 조정 필요 시 toneProfile.voiceGain.drums로 보강.
+ */
+const HAT_VELOCITY_SCALE = 0.7;
 
 export interface DrumVoice {
   /**
@@ -87,8 +97,10 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
 
   return {
     trigger(step, drumMachine, time, velocity = 0.8, velocityScale = 1) {
-      // velocity × velocityScale를 [0,1]로 clamp한 뒤 smplr 요구 0~127 범위로 변환
-      const scaled = Math.max(0, Math.min(1, velocity * velocityScale));
+      // hat은 closed hi-hat sample 도드라짐 완화 위해 voice 레벨에서 -30% attenuate.
+      const stepScale = step === 'hat' ? HAT_VELOCITY_SCALE : 1;
+      // velocity × velocityScale × stepScale → [0,1] clamp → smplr 요구 0~127 범위
+      const scaled = Math.max(0, Math.min(1, velocity * velocityScale * stepScale));
       // 'hat'은 kit별 sample 이름이 다르므로 동적 lookup. 'kick'/'snare'는 그대로.
       const noteName = step === 'hat' ? resolveHatNote(drumMachine) : step;
       const stop = drumMachine.start({
