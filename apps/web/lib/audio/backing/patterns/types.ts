@@ -33,6 +33,39 @@ export type TrackPattern = {
 };
 
 /**
+ * Sprint 2-8 PR-C — 카테고리별 다중 패턴 + 도메인 selectSlot 시스템.
+ *
+ * AuxStep은 BeatStep 그대로지만 의미 분리 위해 alias. shaker/clave 같은
+ * 보조 percussion 트랙에 사용 — voice 내부에서 고정 음높이로 연주.
+ */
+export type AuxStep = BeatStep;
+export type AuxPattern = AuxStep[];
+
+/** 한 마디(0:0:0~0:3:3) 분량의 BarPattern. 슬롯의 단위. */
+export type BarPattern = {
+  drums: DrumPattern;
+  bass: BassPattern;
+  guitar: StrumPattern;
+  aux?: AuxPattern;
+};
+
+/**
+ * 카테고리별 리듬 정의.
+ *
+ * patterns: 슬롯 이름 → BarPattern. 슬롯 이름은 카테고리가 자유롭게 정의
+ *   (e.g. 'groove_a', 'turnaround', 'iv_pickup', 'clave_3_2').
+ * selectSlot: 도메인 규칙으로 (template, barIndexAbs) → 슬롯 이름.
+ *   결정론 — 같은 인자는 항상 같은 슬롯을 반환해야 한다.
+ */
+export interface CategoryRhythm {
+  patterns: Readonly<Record<string, BarPattern>>;
+  selectSlot: (
+    tpl: { bars: number; default_bpm: number; progression: ReadonlyArray<{ chord: string }> },
+    barIndexAbs: number,
+  ) => string;
+}
+
+/**
  * 'bar:beat:sub' 표기를 BPM 기준 초로 환산.
  * sub는 16분음 단위(한 박 = 4 sub).
  */
