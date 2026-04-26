@@ -101,13 +101,47 @@ export const POP_RHYTHM: CategoryRhythm = {
         { time: '0:3:2', direction: 'up' },
       ],
     },
+
+    // 50s doo-wop: half-time feel — kick 1+3박, snare 3박만, 4분주 뮤트 컴핑
+    doo_wop: {
+      drums: {
+        // half-time feel: kick 1박·3박, snare는 3박 하나만 (2·4박 백비트 대신)
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:2:0' }],
+        // 4분음표 하이햇 — 직선 느낌 강조
+        hat: [
+          { time: '0:0:0', velocity: 0.45 },
+          { time: '0:1:0', velocity: 0.45 },
+          { time: '0:2:0', velocity: 0.45 },
+          { time: '0:3:0', velocity: 0.45 },
+        ],
+      },
+      bass: {
+        // 1박·3박 루트만 — half-time의 여백감 유지
+        steps: [
+          { time: '0:0:0', velocity: 0.7 },
+          { time: '0:2:0', velocity: 0.7 },
+        ],
+      },
+      // 4분주 뮤트 다운스트럼 컴핑 — doo-wop 특유의 단순한 백킹
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.4 },
+        { time: '0:1:0', direction: 'down', velocity: 0.4 },
+        { time: '0:2:0', direction: 'down', velocity: 0.4 },
+        { time: '0:3:0', direction: 'down', velocity: 0.4 },
+      ],
+    },
   },
 
   /**
    * 마지막 마디 → turnaround, 나머지 짝/홀수 alternate.
    * barIndexAbs 기준이므로 tpl.bars로 나머지를 구해 로컬 인덱스 계산.
+   * variant '50s_doo_wop' → doo_wop 슬롯 고정 (half-time feel).
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
+    // 50s doo-wop variant는 슬롯 전체를 doo_wop으로 고정
+    if (variant === '50s_doo_wop') return 'doo_wop';
+
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'turnaround';
     return local % 2 === 0 ? 'groove_a' : 'groove_b';
