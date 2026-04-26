@@ -11,9 +11,9 @@
 
 import { CARD_PROFILES } from './card-profiles';
 import {
-  CATEGORY_BUNDLES,
   getBundle,
   getCategoryToneDefault,
+  type CATEGORY_BUNDLES,
   type InstrumentBundle,
   type ToneProfile,
 } from './presets';

@@ -43,7 +43,6 @@ import { createBarScheduler, type BarScheduler } from '../scheduler/bar-schedule
 import { createLookaheadScheduler } from '../scheduler/lookahead-scheduler';
 import { CATEGORY_RHYTHMS } from './patterns/library';
 import { parseBeatStep } from './patterns/types';
-import { getBundle } from './presets';
 import { resolveCardProfile } from './profile-merge';
 import { resolveSwing } from './swing';
 import { loadBundle, type LoadedBundle } from './smplr-bridge';
