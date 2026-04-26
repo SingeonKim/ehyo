@@ -23,25 +23,34 @@ describe('BLUES_RHYTHM.selectSlot', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 15)).toBe('iv_pickup');
   });
 
-  it('12bar: idx=10 → turnaround', () => {
-    expect(BLUES_RHYTHM.selectSlot(tpl12(), 10)).toBe('turnaround');
+  // Sprint 9 PR-D 후속(hotfix): 9~12마디 4-way 변주(tension/release/resolve/turnaround)
+  it('12bar: idx=8 → tension (V7 빌드업)', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12(), 8)).toBe('tension');
   });
 
-  it('12bar: idx=11 → turnaround', () => {
+  it('12bar: idx=9 → release (IV7 풀어줌)', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12(), 9)).toBe('release');
+  });
+
+  it('12bar: idx=10 → resolve (I7 안정)', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12(), 10)).toBe('resolve');
+  });
+
+  it('12bar: idx=11 → turnaround (V7 climax)', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 11)).toBe('turnaround');
   });
 
-  it('12bar: 짝수 마디 (iv_pickup/turnaround 아님) → groove_a', () => {
+  it('12bar: 짝수 마디(분기 외) → groove_a', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 0)).toBe('groove_a');
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 2)).toBe('groove_a');
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 4)).toBe('groove_a');
-    expect(BLUES_RHYTHM.selectSlot(tpl12(), 8)).toBe('groove_a');
+    expect(BLUES_RHYTHM.selectSlot(tpl12(), 6)).toBe('groove_a');
   });
 
-  it('12bar: 홀수 마디 (iv_pickup/turnaround 아님) → groove_b', () => {
+  it('12bar: 홀수 마디(분기 외) → groove_b', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 1)).toBe('groove_b');
     expect(BLUES_RHYTHM.selectSlot(tpl12(), 5)).toBe('groove_b');
-    expect(BLUES_RHYTHM.selectSlot(tpl12(), 9)).toBe('groove_b');
+    expect(BLUES_RHYTHM.selectSlot(tpl12(), 7)).toBe('groove_b');
   });
 
   it('non-12bar: 항상 groove_a', () => {

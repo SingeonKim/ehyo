@@ -40,12 +40,16 @@ export const BLUES_RHYTHM: CategoryRhythm = {
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
-      // 단순한 4 다운스트럼 — 블루스 리듬 기타
+      // 8분 down/up 셔플 컴핑 — sub 2가 swing 0.66으로 밀려 long-short feel.
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.55 },
+        { time: '0:0:2', direction: 'up', velocity: 0.45 },
         { time: '0:1:0', direction: 'down', velocity: 0.55 },
+        { time: '0:1:2', direction: 'up', velocity: 0.45 },
         { time: '0:2:0', direction: 'down', velocity: 0.55 },
+        { time: '0:2:2', direction: 'up', velocity: 0.45 },
         { time: '0:3:0', direction: 'down', velocity: 0.55 },
+        { time: '0:3:2', direction: 'up', velocity: 0.45 },
       ],
     },
 
@@ -66,11 +70,16 @@ export const BLUES_RHYTHM: CategoryRhythm = {
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
+      // 8분 down/up — off-beat sub 2 강조로 groove_b 특성
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.55 },
+        { time: '0:0:2', direction: 'up', velocity: 0.5 },
         { time: '0:1:0', direction: 'down', velocity: 0.55 },
+        { time: '0:1:2', direction: 'up', velocity: 0.5 },
         { time: '0:2:0', direction: 'down', velocity: 0.55 },
+        { time: '0:2:2', direction: 'up', velocity: 0.5 },
         { time: '0:3:0', direction: 'down', velocity: 0.55 },
+        { time: '0:3:2', direction: 'up', velocity: 0.5 },
       ],
     },
 
@@ -93,12 +102,16 @@ export const BLUES_RHYTHM: CategoryRhythm = {
         // 4박-and에 leading note 추가 — IV 코드 진입 강조
         steps: [{ time: '0:0:0' }, { time: '0:2:0' }, { time: '0:3:2' }],
       },
+      // 8분 down/up — IV 진입 직전이라도 셔플 그루브 유지
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.55 },
+        { time: '0:0:2', direction: 'up', velocity: 0.45 },
         { time: '0:1:0', direction: 'down', velocity: 0.55 },
+        { time: '0:1:2', direction: 'up', velocity: 0.45 },
         { time: '0:2:0', direction: 'down', velocity: 0.55 },
-        // 4박에 ghost snare 추가 느낌을 guitar anticipation으로 표현
+        { time: '0:2:2', direction: 'up', velocity: 0.45 },
         { time: '0:3:0', direction: 'down', velocity: 0.55 },
+        { time: '0:3:2', direction: 'up', velocity: 0.45 },
       ],
     },
 
@@ -141,29 +154,127 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // ── shuffle12bar 9~12마디 4-way 변주 ─────────────────────────────
+    // bar 9 (V7): 긴장 빌드업 — kick driving 8th, hat strong, fill snare
+    tension: {
+      drums: {
+        kick: [
+          { time: '0:0:0' },
+          { time: '0:0:2', velocity: 0.65 },
+          { time: '0:2:0' },
+          { time: '0:2:2', velocity: 0.65 },
+        ],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }, { time: '0:3:2', velocity: 0.55 }],
+        hat: [
+          { time: '0:0:0', velocity: 0.65 },
+          { time: '0:0:2', velocity: 0.6 },
+          { time: '0:1:0', velocity: 0.65 },
+          { time: '0:1:2', velocity: 0.6 },
+          { time: '0:2:0', velocity: 0.65 },
+          { time: '0:2:2', velocity: 0.6 },
+          { time: '0:3:0', velocity: 0.65 },
+          { time: '0:3:2', velocity: 0.6 },
+        ],
+      },
+      bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
+      // 8분 down/up — strong + 4박 끝 fill anticipation
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.65 },
+        { time: '0:0:2', direction: 'up', velocity: 0.55 },
+        { time: '0:1:0', direction: 'down', velocity: 0.65 },
+        { time: '0:1:2', direction: 'up', velocity: 0.55 },
+        { time: '0:2:0', direction: 'down', velocity: 0.65 },
+        { time: '0:2:2', direction: 'up', velocity: 0.55 },
+        { time: '0:3:0', direction: 'down', velocity: 0.7 },
+        { time: '0:3:2', direction: 'up', velocity: 0.6 },
+      ],
+    },
+
+    // bar 10 (IV7): 풀어줌 — dynamic 살짝 낮춤
+    release: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', velocity: 0.45 },
+          { time: '0:0:2', velocity: 0.4 },
+          { time: '0:1:0', velocity: 0.45 },
+          { time: '0:1:2', velocity: 0.4 },
+          { time: '0:2:0', velocity: 0.45 },
+          { time: '0:2:2', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.45 },
+          { time: '0:3:2', velocity: 0.4 },
+        ],
+      },
+      bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
+      // 8분 down/up 약하게 — 풀어주는 느낌
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.45 },
+        { time: '0:0:2', direction: 'up', velocity: 0.38 },
+        { time: '0:1:0', direction: 'down', velocity: 0.45 },
+        { time: '0:1:2', direction: 'up', velocity: 0.38 },
+        { time: '0:2:0', direction: 'down', velocity: 0.45 },
+        { time: '0:2:2', direction: 'up', velocity: 0.38 },
+        { time: '0:3:0', direction: 'down', velocity: 0.45 },
+        { time: '0:3:2', direction: 'up', velocity: 0.38 },
+      ],
+    },
+
+    // bar 11 (I7): 안정 — 가라앉음, 4분주 단순화 (turnaround 직전 평이)
+    resolve: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', velocity: 0.5 },
+          { time: '0:0:2', velocity: 0.5 },
+          { time: '0:1:0', velocity: 0.5 },
+          { time: '0:1:2', velocity: 0.5 },
+          { time: '0:2:0', velocity: 0.5 },
+          { time: '0:2:2', velocity: 0.5 },
+          { time: '0:3:0', velocity: 0.5 },
+          { time: '0:3:2', velocity: 0.5 },
+        ],
+      },
+      bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
+      // 4분주 down — 안정 (8th 컴핑 줄여서 가라앉음 표현, turnaround 빌드업 대비)
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.5 },
+        { time: '0:1:0', direction: 'down', velocity: 0.5 },
+        { time: '0:2:0', direction: 'down', velocity: 0.5 },
+        { time: '0:3:0', direction: 'down', velocity: 0.5 },
+      ],
+    },
+
     // ── slow variant ─────────────────────────────────────────────────
     slow_groove: {
       drums: {
         // ½ time feel: kick 1박, snare 3박만
         kick: [{ time: '0:0:0' }],
         snare: [{ time: '0:2:0' }],
-        // ride triplet8 — 각 박의 long, short만 (가운데 음 생략 = slow drag feel)
-        hat: [
-          { time: '0:0:0', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:1:0', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:2:0', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:3:0', unit: 'triplet8', velocity: 0.45 },
-          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
+        // ride triplet8 — 12/8 정통 slow blues: 각 박마다 long-mid-short 3음 모두
+      hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.42 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.42 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.42 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.32 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.42 },
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
-      // sparse legato strums
+      // 4분주 down strum — slow blues comping (½ time feel 유지하면서 sustain)
       guitar: [
-        { time: '0:0:0', direction: 'down', velocity: 0.45 },
-        { time: '0:2:0', direction: 'down', velocity: 0.45 },
+        { time: '0:0:0', direction: 'down', velocity: 0.5 },
+        { time: '0:1:0', direction: 'down', velocity: 0.4 },
+        { time: '0:2:0', direction: 'down', velocity: 0.5 },
+        { time: '0:3:0', direction: 'down', velocity: 0.4 },
       ],
     },
 
@@ -197,10 +308,12 @@ export const BLUES_RHYTHM: CategoryRhythm = {
           { time: '0:3:0', velocity: 0.7 },
         ],
       },
-      // comp: 2 & 4박에 short stab
+      // Freddie Green 4분주 컴핑 — 1+3박 light(stab off-beat 느낌), 2+4박 strong
       guitar: [
-        { time: '0:1:0', direction: 'down', velocity: 0.55 },
-        { time: '0:3:0', direction: 'down', velocity: 0.55 },
+        { time: '0:0:0', direction: 'down', velocity: 0.4 },
+        { time: '0:1:0', direction: 'down', velocity: 0.6 },
+        { time: '0:2:0', direction: 'down', velocity: 0.4 },
+        { time: '0:3:0', direction: 'down', velocity: 0.6 },
       ],
     },
 
@@ -228,9 +341,12 @@ export const BLUES_RHYTHM: CategoryRhythm = {
           { time: '0:3:0', velocity: 0.85 },
         ],
       },
+      // Freddie Green 4분주 — turnaround라 전반적으로 더 강하게
       guitar: [
-        { time: '0:1:0', direction: 'down', velocity: 0.6 },
-        { time: '0:3:0', direction: 'down', velocity: 0.6 },
+        { time: '0:0:0', direction: 'down', velocity: 0.45 },
+        { time: '0:1:0', direction: 'down', velocity: 0.65 },
+        { time: '0:2:0', direction: 'down', velocity: 0.45 },
+        { time: '0:3:0', direction: 'down', velocity: 0.65 },
       ],
     },
 
@@ -260,11 +376,16 @@ export const BLUES_RHYTHM: CategoryRhythm = {
         ],
       },
       bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
+      // 8분 down/up — straight_shuffle도 셔플 그루브 유지 (16th hat은 hat에만)
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.6 },
+        { time: '0:0:2', direction: 'up', velocity: 0.5 },
         { time: '0:1:0', direction: 'down', velocity: 0.6 },
+        { time: '0:1:2', direction: 'up', velocity: 0.5 },
         { time: '0:2:0', direction: 'down', velocity: 0.6 },
+        { time: '0:2:2', direction: 'up', velocity: 0.5 },
         { time: '0:3:0', direction: 'down', velocity: 0.6 },
+        { time: '0:3:2', direction: 'up', velocity: 0.5 },
       ],
     },
 
@@ -390,8 +511,10 @@ export const BLUES_RHYTHM: CategoryRhythm = {
   },
 
   /**
-   * variant 라우팅:
-   *  - undefined / 'shuffle12bar' → 기존 4-슬롯 분기
+   * variant 라우팅 (12bar 구조 기준):
+   *  - 'shuffle12bar'(default): 9~12마디 4-way 변주
+   *      idx 3 iv_pickup, 8 tension, 9 release, 10 resolve, 11 turnaround,
+   *      else 짝수 groove_a / 홀수 groove_b
    *  - 'slow' → 모든 idx → slow_groove
    *  - 'hard_bop' → 10/11 → hb_turnaround, else hb_walk
    *  - 'straight_shuffle' → idx 3 iv_pickup, 10/11 turnaround, else groove_b16
@@ -418,8 +541,12 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       case 'jump':
         return local === 10 || local === 11 ? 'jump_turnaround' : 'jump_drive';
       default:
+        // shuffle12bar: 9~12마디 빌드업 (긴장-풀어줌-안정-턴어라운드)
         if (local === 3) return 'iv_pickup';
-        if (local === 10 || local === 11) return 'turnaround';
+        if (local === 8) return 'tension';
+        if (local === 9) return 'release';
+        if (local === 10) return 'resolve';
+        if (local === 11) return 'turnaround';
         return local % 2 === 0 ? 'groove_a' : 'groove_b';
     }
   },

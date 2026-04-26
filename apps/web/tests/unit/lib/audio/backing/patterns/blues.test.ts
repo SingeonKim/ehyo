@@ -19,8 +19,19 @@ describe('blues selectSlot — shuffle12bar variant (default)', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12, 3, 'shuffle12bar')).toBe('iv_pickup');
   });
 
-  it('idx 10/11 → turnaround', () => {
-    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'shuffle12bar')).toBe('turnaround');
+  it('idx 8 → tension (V7 빌드업)', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 8, 'shuffle12bar')).toBe('tension');
+  });
+
+  it('idx 9 → release (IV7 풀어줌)', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 9, 'shuffle12bar')).toBe('release');
+  });
+
+  it('idx 10 → resolve (I7 안정)', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'shuffle12bar')).toBe('resolve');
+  });
+
+  it('idx 11 → turnaround (V7 climax)', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12, 11, 'shuffle12bar')).toBe('turnaround');
   });
 
