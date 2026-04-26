@@ -141,7 +141,7 @@ export const BLUES_RHYTHM: CategoryRhythm = {
    * - idx=10·11 (11·12마디): turnaround
    * - 나머지: 짝수 → shuffle_a, 홀수 → shuffle_b
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (tpl.bars !== 12) return 'shuffle_a';
     if (local === 3) return 'iv_pickup';

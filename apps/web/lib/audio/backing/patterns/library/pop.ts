@@ -107,7 +107,7 @@ export const POP_RHYTHM: CategoryRhythm = {
    * 마지막 마디 → turnaround, 나머지 짝/홀수 alternate.
    * barIndexAbs 기준이므로 tpl.bars로 나머지를 구해 로컬 인덱스 계산.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'turnaround';
     return local % 2 === 0 ? 'groove_a' : 'groove_b';

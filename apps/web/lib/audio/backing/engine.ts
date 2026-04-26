@@ -44,6 +44,7 @@ import { createLookaheadScheduler } from '../scheduler/lookahead-scheduler';
 import { CATEGORY_RHYTHMS } from './patterns/library';
 import { parseBeatStep } from './patterns/types';
 import { getBundle } from './presets';
+import { resolveSwing } from './swing';
 import { loadBundle, type LoadedBundle } from './smplr-bridge';
 import { createAuxVoice, type AuxVoice } from './voices/aux';
 import { createBassVoice, type BassVoice } from './voices/bass';
@@ -271,38 +272,44 @@ function createEngine(): BackingEngine {
 
       if (midi) {
         const loaded = currentLoadedBundle;
-        // parseBeatStep 결과는 마디 시작으로부터의 상대 시각(초) → eventTime에 더해 절대 시각
-        const t = (notation: string) => eventTime + parseBeatStep(notation, bpm);
 
         // 카테고리별 CATEGORY_RHYTHMS로 디스패치 — 알 수 없는 카테고리는 pop fallback.
         const rhythm = CATEGORY_RHYTHMS[tpl.category as string] ?? CATEGORY_RHYTHMS['pop']!;
-        const slotName = rhythm.selectSlot(tpl, idx);
+        // PR-B에서 카드 variant가 흘러들어오기 전까지는 undefined.
+        const variant: string | undefined = undefined;
+        const slotName = rhythm.selectSlot(tpl, idx, variant);
         const pattern = rhythm.patterns[slotName];
         // 정의되지 않은 슬롯이면 스킵 — selectSlot이 올바르게 구현되면 발생하지 않음.
         if (!pattern) return;
 
+        // PR-A: parseBeatStep에 unit/swing 흘려보내기. swing 미정의 카테고리는 0.5(straight).
+        const swing = resolveSwing(rhythm, variant);
+        // bs(BeatStep): 외부 const step과의 변수 shadow를 피하기 위해 파라미터명 bs 사용
+        const t = (bs: { time: string; unit?: 'sub16' | 'triplet8' }) =>
+          eventTime + parseBeatStep(bs.time, bpm, 4, { unit: bs.unit, swing });
+
         // drums: smplr DrumMachine은 sample group name ('kick'/'snare'/'hat')으로 트리거
-        for (const s of pattern.drums.kick)  voices.drums.trigger('kick',  loaded.drums, t(s.time), s.velocity);
-        for (const s of pattern.drums.snare) voices.drums.trigger('snare', loaded.drums, t(s.time), s.velocity);
-        for (const s of pattern.drums.hat)   voices.drums.trigger('hat',   loaded.drums, t(s.time), s.velocity);
+        for (const s of pattern.drums.kick)  voices.drums.trigger('kick',  loaded.drums, t(s), s.velocity);
+        for (const s of pattern.drums.snare) voices.drums.trigger('snare', loaded.drums, t(s), s.velocity);
+        for (const s of pattern.drums.hat)   voices.drums.trigger('hat',   loaded.drums, t(s), s.velocity);
 
         // bass: 루트 2옥타브 다운, 카테고리 패턴별 스텝 수로 trigger
         // -24로 C2 부근 — 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
         const bassMidi = midi[0]! - 24;
-        for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s.time), s.velocity);
+        for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s), s.velocity);
 
         // guitar: 카테고리 패턴별 strum — down/up 방향으로 12ms 시간차 strum
         // 코드 톤을 1옥타브 다운 — C3 부근으로 옮겨 어쿠스틱/일렉기타 컴핑 음역과 맞춤.
         const guitarMidi = midi.map((n) => n - 12);
         for (const s of pattern.guitar)
-          voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s.time), s.velocity);
+          voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s), s.velocity);
 
         // aux: funk(shaker)/bossa(clave) 패턴 — pattern.aux + loaded.aux 둘 다 있을 때만 활성화.
         // kind는 getBundle(category).aux.kind로 lookup — CATEGORY_BUNDLES 상수 lookup이라 무비용.
         if (pattern.aux && voices.aux && loaded.aux) {
           const auxKind = getBundle(tpl.category ?? 'pop').aux?.kind;
           if (auxKind) {
-            for (const s of pattern.aux) voices.aux.trigger(loaded.aux, auxKind, t(s.time), s.velocity);
+            for (const s of pattern.aux) voices.aux.trigger(loaded.aux, auxKind, t(s), s.velocity);
           }
         }
       }

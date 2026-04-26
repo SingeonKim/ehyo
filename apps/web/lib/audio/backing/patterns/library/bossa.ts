@@ -106,7 +106,7 @@ export const BOSSA_RHYTHM: CategoryRhythm = {
    * 마지막 마디 → pickup.
    * 2마디 단위로 clave 방향 전환: Math.floor(idx/2) 짝수 → 3_2, 홀수 → 2_3.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return Math.floor(idx / 2) % 2 === 0 ? 'clave_3_2' : 'clave_2_3';

@@ -570,3 +570,58 @@ describe('engine + master FX chain wiring', () => {
     expect(fakeFxChain.dispose).toHaveBeenCalled();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sprint 9 PR-A: unit/swing flow 회귀 가드
+// ─────────────────────────────────────────────────────────────────────────────
+
+// pop 카테고리 템플릿 — swing 미정의 카테고리의 대표. groove_a 슬롯이 선택되도록
+// bars=4, idx=0(짝수) 조건을 맞춘다.
+const POP_TEMPLATE = {
+  id: 'test-pop-1',
+  slug: 'test-pop-4bar',
+  name: 'Pop',
+  category: 'pop',
+  bars: 4,
+  default_bpm: 120,
+  progression: [
+    { bar: 1, chord: 'I' },
+    { bar: 2, chord: 'IV' },
+    { bar: 3, chord: 'V' },
+    { bar: 4, chord: 'I' },
+  ],
+  time_signature: '4/4',
+  recommended_scales: ['major'],
+  created_at: '2024-01-01T00:00:00Z',
+};
+
+describe('Sprint 9 PR-A: unit/swing flow 회귀', () => {
+  it('swing 미정의 카테고리(pop)는 kick 타이밍이 straight 유지 (regression: PR-C 이후도 보장)', async () => {
+    // pop 카테고리는 CategoryRhythm.swing = undefined → resolveSwing → 0.5(straight).
+    // groove_a 슬롯: kick = ['0:0:0', '0:2:0'], bpm=120 → beatSec=0.5.
+    // straight 기준: '0:0:0' → 0s, '0:2:0' → 1.0s (eventTime 기준).
+    // PR-C에서 blues/jazz에 swing=0.66이 추가되어도 pop은 이 타이밍을 유지해야 한다.
+    const engine = getBackingEngine();
+    await engine.start(POP_TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
+    const lastCall = barSchedulerInstance.start.mock.calls.at(-1);
+    if (!lastCall) throw new Error('barScheduler.start was not called');
+    const cb = lastCall[2] as (eventTime: number, barIndex: number) => void;
+
+    fakeDrumsMock.start.mockClear();
+
+    // eventTime=10.0, barIndex=0 → groove_a 슬롯 → kick 2회
+    cb(10.0, 0);
+
+    const kickCalls = fakeDrumsMock.start.mock.calls.filter(
+      (c: unknown[]) => (c[0] as { note: string }).note === 'kick',
+    );
+    expect(kickCalls).toHaveLength(2);
+
+    // kick 시각이 straight(swing=0.5) 기준인지 확인.
+    // parseBeatStep('0:0:0', 120, 4, { swing: 0.5 }) = 0s → time = eventTime + 0 = 10.0
+    // parseBeatStep('0:2:0', 120, 4, { swing: 0.5 }) = 1.0s → time = eventTime + 1.0 = 11.0
+    const kickTimes = kickCalls.map((c: unknown[]) => (c[0] as { time: number }).time).sort((a: number, b: number) => a - b);
+    expect(kickTimes[0]).toBeCloseTo(10.0, 5);
+    expect(kickTimes[1]).toBeCloseTo(11.0, 5);
+  });
+});

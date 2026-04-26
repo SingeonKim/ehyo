@@ -114,7 +114,7 @@ export const ROCK_RHYTHM: CategoryRhythm = {
    * 4마디 이상: 마지막 → fill_quarter, 끝에서 두 번째 → pickup_eighth.
    * 4마디 미만(1~3마디 루프): groove만.
    */
-  selectSlot: (tpl, idx) => {
+  selectSlot: (tpl, idx, _variant) => {
     const local = idx % tpl.bars;
     if (tpl.bars >= 4 && local === tpl.bars - 1) return 'fill_quarter';
     if (tpl.bars >= 4 && local === tpl.bars - 2) return 'pickup_eighth';

@@ -6,8 +6,16 @@
  */
 
 export type BeatStep = {
-  /** 'bar:beat:sub' — 16분 sub. 예: '0:1:2' = 2박+8분(half beat). */
+  /** 'bar:beat:sub' — sub의 의미는 unit에 따름. */
   time: string;
+  /**
+   * sub 단위 해석:
+   *  - 'sub16'(default): sub 0/1/2/3 = 0/0.25/0.5/0.75박 (16분).
+   *    swing 인자가 0.5 초과면 sub 2(8분 off-beat)가 swing 비율로 밀린다.
+   *  - 'triplet8': sub 0/1/2 = 0/0.333/0.667박 (8분 트리플렛 long-mid-short).
+   *    swing 인자는 무시된다 — 트리플렛은 명시적 long-short.
+   */
+  unit?: 'sub16' | 'triplet8';
   velocity?: number;
 };
 
@@ -50,26 +58,41 @@ export type BarPattern = {
 };
 
 /**
- * 카테고리별 리듬 정의.
+ * 카테고리별 리듬 정의 — Sprint 9에서 swing/variant 확장.
  *
- * patterns: 슬롯 이름 → BarPattern. 슬롯 이름은 카테고리가 자유롭게 정의
- *   (e.g. 'groove_a', 'turnaround', 'iv_pickup', 'clave_3_2').
- * selectSlot: 도메인 규칙으로 (template, barIndexAbs) → 슬롯 이름.
- *   결정론 — 같은 인자는 항상 같은 슬롯을 반환해야 한다.
+ * patterns: 슬롯 이름 → BarPattern.
+ * swing?: 글로벌 그루브 캐릭터. 미지정 = 0.5(straight).
+ *   variant별 override가 default와 다른 경우만 perVariant에 등록.
+ * selectSlot: (tpl, barIndexAbs, variant?) → 슬롯 이름.
+ *   variant는 카드 프로필이 흘려준 값. 카테고리는 무시하거나 풀 분기에 사용.
+ *   결정론 — 같은 인자는 항상 같은 슬롯.
  */
 export interface CategoryRhythm {
   patterns: Readonly<Record<string, BarPattern>>;
+  swing?: { default: number; perVariant?: Record<string, number> };
   selectSlot: (
     tpl: { bars: number; default_bpm: number; progression: ReadonlyArray<{ chord: string }> },
     barIndexAbs: number,
+    variant?: string,
   ) => string;
 }
 
 /**
  * 'bar:beat:sub' 표기를 BPM 기준 초로 환산.
- * sub는 16분음 단위(한 박 = 4 sub).
+ *
+ * opts.unit:
+ *  - 'sub16'(default): 16분 sub. swing이 0.5 초과면 sub 2를 swing 비율로 밀기.
+ *  - 'triplet8': 8분 트리플렛 sub(0/1/2 → 0박 / 1/3박 / 2/3박). swing 무시.
+ *
+ * opts.swing: 0.5(straight) ~ 0.75(hard shuffle). default 0.5(회귀 안전).
  */
-export function parseBeatStep(notation: string, bpm: number, beatsPerBar = 4): number {
+export function parseBeatStep(
+  notation: string,
+  bpm: number,
+  beatsPerBar = 4,
+  opts?: { unit?: 'sub16' | 'triplet8'; swing?: number },
+): number {
+  const { unit = 'sub16', swing = 0.5 } = opts ?? {};
   const parts = notation.split(':').map(Number);
   const [bars = 0, beats = 0, subs = 0] = parts;
 
@@ -82,8 +105,24 @@ export function parseBeatStep(notation: string, bpm: number, beatsPerBar = 4): n
     if (!Number.isFinite(bpm) || bpm <= 0) {
       throw new Error(`parseBeatStep: bpm must be > 0, got ${bpm}`);
     }
+    if (!Number.isFinite(swing) || swing < 0.5 || swing > 0.75) {
+      throw new Error(`parseBeatStep: swing must be in [0.5, 0.75], got ${swing}`);
+    }
   }
 
   const beatSec = 60 / bpm;
-  return bars * beatsPerBar * beatSec + beats * beatSec + (subs / 4) * beatSec;
+  let subFrac: number;
+
+  if (unit === 'triplet8') {
+    // 8분 트리플렛: sub 0/1/2 → 박의 0/1/3/2/3
+    subFrac = subs / 3;
+  } else {
+    // sub16(default): 16분 sub. swing이 0.5 초과면 sub 2(8분 off-beat)를 밀기.
+    subFrac = subs / 4;
+    if (swing !== 0.5 && subs === 2) {
+      subFrac = swing;
+    }
+  }
+
+  return bars * beatsPerBar * beatSec + beats * beatSec + subFrac * beatSec;
 }
