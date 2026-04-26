@@ -7,6 +7,8 @@ const tpl = (bars: number, default_bpm = 100) => ({
   progression: Array.from({ length: bars }, (_, i) => ({ bar: i + 1, chord: 'I' })),
 });
 
+const tpl4 = (default_bpm = 110) => tpl(4, default_bpm);
+
 describe('ROCK_RHYTHM.selectSlot', () => {
   it('4마디: 마지막 → fill_quarter', () => {
     expect(ROCK_RHYTHM.selectSlot(tpl(4), 3)).toBe('fill_quarter');
@@ -36,5 +38,33 @@ describe('ROCK_RHYTHM.selectSlot', () => {
     expect(ROCK_RHYTHM.patterns.groove).toBeDefined();
     expect(ROCK_RHYTHM.patterns.pickup_eighth).toBeDefined();
     expect(ROCK_RHYTHM.patterns.fill_quarter).toBeDefined();
+  });
+});
+
+describe('rock selectSlot — rock_mixo variant', () => {
+  it('모든 idx에서 rock_mixo 슬롯 사용 (groove/pickup/fill 토글 우회)', () => {
+    expect(ROCK_RHYTHM.selectSlot(tpl4(), 0, 'rock_mixo')).toBe('rock_mixo');
+    expect(ROCK_RHYTHM.selectSlot(tpl4(), 2, 'rock_mixo')).toBe('rock_mixo');
+    expect(ROCK_RHYTHM.selectSlot(tpl4(), 3, 'rock_mixo')).toBe('rock_mixo');
+  });
+
+  it('rock_mixo 패턴: 4 on the floor 킥', () => {
+    const kick = ROCK_RHYTHM.patterns.rock_mixo?.drums.kick ?? [];
+    expect(kick.length).toBe(4);
+    expect(kick.map((k) => k.time)).toEqual(['0:0:0', '0:1:0', '0:2:0', '0:3:0']);
+  });
+
+  it('rock_mixo guitar: 8분 down-pick (8 strums all down)', () => {
+    const guitar = ROCK_RHYTHM.patterns.rock_mixo?.guitar ?? [];
+    expect(guitar.length).toBe(8);
+    expect(guitar.every((g) => g.direction === 'down')).toBe(true);
+  });
+});
+
+describe('rock selectSlot — 기존 회귀 (variant 미지정)', () => {
+  it('4마디 이상: 마지막 → fill_quarter, 끝에서 두 번째 → pickup_eighth', () => {
+    expect(ROCK_RHYTHM.selectSlot(tpl4(), 3)).toBe('fill_quarter');
+    expect(ROCK_RHYTHM.selectSlot(tpl4(), 2)).toBe('pickup_eighth');
+    expect(ROCK_RHYTHM.selectSlot(tpl4(), 0)).toBe('groove');
   });
 });

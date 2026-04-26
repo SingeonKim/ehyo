@@ -108,13 +108,63 @@ export const ROCK_RHYTHM: CategoryRhythm = {
       // fill 마디는 기타 1박 다운만 — 드럼 fill 공간 확보
       guitar: [{ time: '0:0:0', direction: 'down' }],
     },
+
+    // rock_mixo: 8분 down-pick + 4 on the floor 킥. Mixolydian 록 정체성.
+    // rock-I-bVII-IV 카드용. distortion guitar 카테고리 default와 결합.
+    rock_mixo: {
+      drums: {
+        // 4 on the floor: 모든 박에 킥
+        kick: [
+          { time: '0:0:0' },
+          { time: '0:1:0' },
+          { time: '0:2:0' },
+          { time: '0:3:0' },
+        ],
+        snare: [
+          { time: '0:1:0' },
+          { time: '0:3:0' },
+        ],
+        hat: [
+          { time: '0:0:0', velocity: 0.55 },
+          { time: '0:0:2', velocity: 0.55 },
+          { time: '0:1:0', velocity: 0.55 },
+          { time: '0:1:2', velocity: 0.55 },
+          { time: '0:2:0', velocity: 0.55 },
+          { time: '0:2:2', velocity: 0.55 },
+          { time: '0:3:0', velocity: 0.55 },
+          { time: '0:3:2', velocity: 0.55 },
+        ],
+      },
+      bass: {
+        steps: [{ time: '0:0:0' }, { time: '0:2:0' }],
+      },
+      // 8분 down-pick 8회 (rock 정체성)
+      guitar: [
+        { time: '0:0:0', direction: 'down' },
+        { time: '0:0:2', direction: 'down' },
+        { time: '0:1:0', direction: 'down' },
+        { time: '0:1:2', direction: 'down' },
+        { time: '0:2:0', direction: 'down' },
+        { time: '0:2:2', direction: 'down' },
+        { time: '0:3:0', direction: 'down' },
+        { time: '0:3:2', direction: 'down' },
+      ],
+    },
   },
 
   /**
-   * 4마디 이상: 마지막 → fill_quarter, 끝에서 두 번째 → pickup_eighth.
-   * 4마디 미만(1~3마디 루프): groove만.
+   * variant 'rock_mixo'/'rock_12bar' 지정 시 해당 분기 라우팅.
+   * 미지정 시 기존 4마디 이상 fill/pickup 동작 유지.
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
+    if (variant === 'rock_mixo') return 'rock_mixo';
+    if (variant === 'rock_12bar') {
+      const local = idx % tpl.bars;
+      if (local === 8) return 'rock_12bar_tension';
+      if (local === 10) return 'rock_12bar_resolve';
+      if (local === 11) return 'rock_12bar_turnaround';
+      return 'rock_12bar_drive';
+    }
     const local = idx % tpl.bars;
     if (tpl.bars >= 4 && local === tpl.bars - 1) return 'fill_quarter';
     if (tpl.bars >= 4 && local === tpl.bars - 2) return 'pickup_eighth';
