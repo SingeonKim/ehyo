@@ -33,3 +33,30 @@ describe('MODAL_RHYTHM.selectSlot', () => {
     expect(MODAL_RHYTHM.patterns.groove_b).toBeDefined();
   });
 });
+
+const tpl4 = { bars: 4, default_bpm: 90, progression: Array(4).fill({ chord: 'i' }) };
+
+describe('modal variants', () => {
+  it('routes dorian_groove → dorian_groove slot', () => {
+    expect(MODAL_RHYTHM.selectSlot(tpl4, 0, 'dorian_groove')).toBe('dorian_groove');
+  });
+
+  it('routes lydian_dreamy → lydian_dreamy slot', () => {
+    expect(MODAL_RHYTHM.selectSlot(tpl4, 0, 'lydian_dreamy')).toBe('lydian_dreamy');
+  });
+
+  it('routes mixolydian_driving → mixolydian_driving slot', () => {
+    expect(MODAL_RHYTHM.selectSlot(tpl4, 0, 'mixolydian_driving')).toBe('mixolydian_driving');
+  });
+
+  it('all 3 variant slot patterns are defined', () => {
+    expect(MODAL_RHYTHM.patterns.dorian_groove).toBeDefined();
+    expect(MODAL_RHYTHM.patterns.lydian_dreamy).toBeDefined();
+    expect(MODAL_RHYTHM.patterns.mixolydian_driving).toBeDefined();
+  });
+
+  it('undefined variant falls back to original default (no regression)', () => {
+    const slot = MODAL_RHYTHM.selectSlot(tpl4, 0);
+    expect(['dorian_groove', 'lydian_dreamy', 'mixolydian_driving']).not.toContain(slot);
+  });
+});
