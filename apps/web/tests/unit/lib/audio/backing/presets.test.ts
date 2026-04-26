@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { CATEGORY_BUNDLES, getBundle } from '@/lib/audio/backing/presets';
+import { CATEGORY_BUNDLES, CATEGORY_TONE_DEFAULTS, getCategoryToneDefault, getBundle } from '@/lib/audio/backing/presets';
 
 describe('CATEGORY_BUNDLES (Sprint 2-8)', () => {
   const expected = ['pop', 'rock', 'funk', 'jazz', 'blues', 'folk', 'bossa', 'minor', 'modal'];
@@ -55,5 +55,32 @@ describe('CATEGORY_BUNDLES (Sprint 2-8)', () => {
       expect(bundle.bass.octaveShift, `${cat} bass`).toBe(-2);
       expect(bundle.guitar.octaveShift, `${cat} guitar`).toBe(-1);
     }
+  });
+});
+
+describe('CATEGORY_TONE_DEFAULTS', () => {
+  it('has tone profile for all 9 categories', () => {
+    const cats = ['pop', 'rock', 'funk', 'jazz', 'blues', 'folk', 'bossa', 'minor', 'modal'];
+    for (const c of cats) {
+      expect(CATEGORY_TONE_DEFAULTS[c as keyof typeof CATEGORY_TONE_DEFAULTS]).toBeDefined();
+    }
+  });
+
+  it('all profiles have full voiceGain (drums/bass/guitar/aux)', () => {
+    for (const profile of Object.values(CATEGORY_TONE_DEFAULTS)) {
+      expect(profile.voiceGain).toMatchObject({
+        drums: expect.any(Number),
+        bass: expect.any(Number),
+        guitar: expect.any(Number),
+        aux: expect.any(Number),
+      });
+      expect(profile.velocityScale).toBeGreaterThan(0);
+      expect(profile.reverbWet).toBeGreaterThanOrEqual(0);
+      expect(profile.reverbWet).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('getCategoryToneDefault falls back to pop for unknown category', () => {
+    expect(getCategoryToneDefault('unknown')).toBe(CATEGORY_TONE_DEFAULTS.pop);
   });
 });
