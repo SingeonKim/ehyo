@@ -505,6 +505,293 @@ export const BLUES_RHYTHM: CategoryRhythm = {
         { time: '0:3:0', direction: 'down', velocity: 0.8 },
       ],
     },
+
+    // ── hard_bop 9/11마디 변주 ────────────────────────────────────────
+    // bar 9 V7 빌드업: hb_walk + driving 4박 + comp accent
+    hb_tension: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:1:0', velocity: 0.5 }, { time: '0:2:0' }, { time: '0:3:0', velocity: 0.5 }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }, { time: '0:3:2', velocity: 0.55 }],
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.85 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.75 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.85 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.75 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.85 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.75 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.85 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.75 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.8 },
+          { time: '0:2:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.8 },
+        ],
+      },
+      // comp 4박 모두 (Freddie Green dense)
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.5 },
+        { time: '0:1:0', direction: 'down', velocity: 0.65 },
+        { time: '0:2:0', direction: 'down', velocity: 0.5 },
+        { time: '0:3:0', direction: 'down', velocity: 0.65 },
+      ],
+    },
+
+    // bar 11 I7 안정: hb_walk dynamic 살짝 낮춤 (turnaround 빌드업 직전 평이)
+    hb_resolve: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.7 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.7 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.7 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.7 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.35 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.6 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.75 },
+          { time: '0:1:0', velocity: 0.65 },
+          { time: '0:2:0', velocity: 0.75 },
+          { time: '0:3:0', velocity: 0.65 },
+        ],
+      },
+      // comp sparse — 2박만
+      guitar: [
+        { time: '0:1:0', direction: 'down', velocity: 0.5 },
+      ],
+    },
+
+    // ── straight_shuffle 8·11·12마디 변주 ─────────────────────────────
+    // bar 9 V7 빌드업: kick driving 8th + bass walking + guitar strong
+    b16_tension: {
+      drums: {
+        kick: [
+          { time: '0:0:0' },
+          { time: '0:0:2', velocity: 0.65 },
+          { time: '0:2:0' },
+          { time: '0:2:2', velocity: 0.65 },
+        ],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }, { time: '0:3:2', velocity: 0.55 }],
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.6 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.6 },
+        ],
+      },
+      // walking bass 4박 (straight_shuffle 캐릭터 강화)
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.75 },
+          { time: '0:2:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.75 },
+        ],
+      },
+      // 8분 down/up strong
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.7 },
+        { time: '0:0:2', direction: 'up', velocity: 0.55 },
+        { time: '0:1:0', direction: 'down', velocity: 0.7 },
+        { time: '0:1:2', direction: 'up', velocity: 0.55 },
+        { time: '0:2:0', direction: 'down', velocity: 0.7 },
+        { time: '0:2:2', direction: 'up', velocity: 0.55 },
+        { time: '0:3:0', direction: 'down', velocity: 0.75 },
+        { time: '0:3:2', direction: 'up', velocity: 0.6 },
+      ],
+    },
+
+    // bar 11 I7 안정
+    b16_resolve: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.5 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
+        ],
+      },
+      bass: { steps: [{ time: '0:0:0' }, { time: '0:2:0' }] },
+      // 4분주 단순화 (안정 — 다음 turnaround 대비)
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.55 },
+        { time: '0:1:0', direction: 'down', velocity: 0.55 },
+        { time: '0:2:0', direction: 'down', velocity: 0.55 },
+        { time: '0:3:0', direction: 'down', velocity: 0.55 },
+      ],
+    },
+
+    // bar 12 V7 turnaround climax (straight_shuffle 자체 — 12-Bar turnaround와 분리)
+    b16_turnaround: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0' }, { time: '0:2:2', velocity: 0.6 }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:0:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:1:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.65 },
+          { time: '0:2:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.7 },
+          { time: '0:3:1', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.65 },
+        ],
+      },
+      // walking turnaround (4박)
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.85 },
+        ],
+      },
+      // 8분 down/up 강조 + 마지막 박 strong
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.65 },
+        { time: '0:0:2', direction: 'up', velocity: 0.5 },
+        { time: '0:1:0', direction: 'down', velocity: 0.65 },
+        { time: '0:1:2', direction: 'up', velocity: 0.5 },
+        { time: '0:2:0', direction: 'down', velocity: 0.65 },
+        { time: '0:2:2', direction: 'up', velocity: 0.5 },
+        { time: '0:3:0', direction: 'down', velocity: 0.75 },
+        { time: '0:3:2', direction: 'up', velocity: 0.6 },
+      ],
+    },
+
+    // ── major_swing 4·8·9·11마디 변주 ────────────────────────────────
+    // bar 4(idx=3) / bar 8(idx=7) fill — ms_comp + 0:2:2 ghost snare
+    ms_fill: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        // 4박째 직전 ghost snare (ms_turnaround와 동일 fill 패턴)
+        snare: [{ time: '0:1:0' }, { time: '0:2:2', velocity: 0.55 }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', velocity: 0.55 },
+          { time: '0:0:2', velocity: 0.5 },
+          { time: '0:1:0', velocity: 0.55 },
+          { time: '0:1:2', velocity: 0.5 },
+          { time: '0:2:0', velocity: 0.55 },
+          { time: '0:2:2', velocity: 0.5 },
+          { time: '0:3:0', velocity: 0.55 },
+          { time: '0:3:2', velocity: 0.5 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.8 },
+          { time: '0:1:0', velocity: 0.7 },
+          { time: '0:2:0', velocity: 0.8 },
+          { time: '0:3:0', velocity: 0.7 },
+        ],
+      },
+      guitar: [
+        { time: '0:1:0', direction: 'down', velocity: 0.55 },
+        { time: '0:3:0', direction: 'down', velocity: 0.55 },
+      ],
+    },
+
+    // bar 9 V7 빌드업
+    ms_tension: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:1:0', velocity: 0.55 }, { time: '0:2:0' }, { time: '0:3:0', velocity: 0.55 }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }, { time: '0:3:2', velocity: 0.6 }],
+        hat: [
+          { time: '0:0:0', velocity: 0.65 },
+          { time: '0:0:2', velocity: 0.55 },
+          { time: '0:1:0', velocity: 0.65 },
+          { time: '0:1:2', velocity: 0.55 },
+          { time: '0:2:0', velocity: 0.65 },
+          { time: '0:2:2', velocity: 0.55 },
+          { time: '0:3:0', velocity: 0.65 },
+          { time: '0:3:2', velocity: 0.55 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.8 },
+          { time: '0:2:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.8 },
+        ],
+      },
+      // comp 4박 dense
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.5 },
+        { time: '0:1:0', direction: 'down', velocity: 0.65 },
+        { time: '0:2:0', direction: 'down', velocity: 0.5 },
+        { time: '0:3:0', direction: 'down', velocity: 0.65 },
+      ],
+    },
+
+    // bar 11 I7 안정
+    ms_resolve: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        hat: [
+          { time: '0:0:0', velocity: 0.5 },
+          { time: '0:0:2', velocity: 0.45 },
+          { time: '0:1:0', velocity: 0.5 },
+          { time: '0:1:2', velocity: 0.45 },
+          { time: '0:2:0', velocity: 0.5 },
+          { time: '0:2:2', velocity: 0.45 },
+          { time: '0:3:0', velocity: 0.5 },
+          { time: '0:3:2', velocity: 0.45 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.75 },
+          { time: '0:1:0', velocity: 0.65 },
+          { time: '0:2:0', velocity: 0.75 },
+          { time: '0:3:0', velocity: 0.65 },
+        ],
+      },
+      // comp sparse
+      guitar: [
+        { time: '0:1:0', direction: 'down', velocity: 0.5 },
+      ],
+    },
   },
 
   /**
@@ -529,13 +816,25 @@ export const BLUES_RHYTHM: CategoryRhythm = {
       case 'slow':
         return 'slow_groove';
       case 'hard_bop':
-        return local === 10 || local === 11 ? 'hb_turnaround' : 'hb_walk';
+        // 9마디 V7 빌드업 / 11마디 I7 안정 / 12마디 V7 turnaround climax
+        if (local === 8) return 'hb_tension';
+        if (local === 10) return 'hb_resolve';
+        if (local === 11) return 'hb_turnaround';
+        return 'hb_walk';
       case 'straight_shuffle':
+        // 4마디 IV pickup / 9마디 빌드업 / 11마디 안정 / 12마디 자체 turnaround
         if (local === 3) return 'iv_pickup';
-        if (local === 10 || local === 11) return 'turnaround';
+        if (local === 8) return 'b16_tension';
+        if (local === 10) return 'b16_resolve';
+        if (local === 11) return 'b16_turnaround';
         return 'groove_b16';
       case 'major_swing':
-        return local === 10 || local === 11 ? 'ms_turnaround' : 'ms_comp';
+        // 4·8마디 ghost snare fill / 9마디 빌드업 / 11마디 안정 / 12마디 turnaround
+        if (local === 3 || local === 7) return 'ms_fill';
+        if (local === 8) return 'ms_tension';
+        if (local === 10) return 'ms_resolve';
+        if (local === 11) return 'ms_turnaround';
+        return 'ms_comp';
       case 'jump':
         return local === 10 || local === 11 ? 'jump_turnaround' : 'jump_drive';
       default:

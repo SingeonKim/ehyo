@@ -58,27 +58,58 @@ describe('blues selectSlot — slow variant', () => {
   });
 });
 
-describe('blues selectSlot — hard_bop variant', () => {
-  it('idx 10/11 → hb_turnaround, else hb_walk', () => {
-    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'hard_bop')).toBe('hb_turnaround');
+describe('blues selectSlot — hard_bop variant (Sprint 9 PR-D 9·11·12마디 변주)', () => {
+  it('idx 8 → hb_tension, 10 → hb_resolve, 11 → hb_turnaround, else hb_walk', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 8, 'hard_bop')).toBe('hb_tension');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'hard_bop')).toBe('hb_resolve');
     expect(BLUES_RHYTHM.selectSlot(tpl12, 11, 'hard_bop')).toBe('hb_turnaround');
     expect(BLUES_RHYTHM.selectSlot(tpl12, 0, 'hard_bop')).toBe('hb_walk');
     expect(BLUES_RHYTHM.selectSlot(tpl12, 5, 'hard_bop')).toBe('hb_walk');
   });
 });
 
-describe('blues selectSlot — straight_shuffle variant', () => {
-  it('idx 3 → iv_pickup, 10/11 → turnaround, else groove_b16', () => {
+describe('blues selectSlot — straight_shuffle variant (Sprint 9 PR-D 4-way)', () => {
+  it('idx 3 iv_pickup, 8 b16_tension, 10 b16_resolve, 11 b16_turnaround, else groove_b16', () => {
     expect(BLUES_RHYTHM.selectSlot(tpl12, 3, 'straight_shuffle')).toBe('iv_pickup');
-    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'straight_shuffle')).toBe('turnaround');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 8, 'straight_shuffle')).toBe('b16_tension');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'straight_shuffle')).toBe('b16_resolve');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 11, 'straight_shuffle')).toBe('b16_turnaround');
     expect(BLUES_RHYTHM.selectSlot(tpl12, 0, 'straight_shuffle')).toBe('groove_b16');
   });
 });
 
-describe('blues selectSlot — major_swing variant', () => {
-  it('idx 10/11 → ms_turnaround, else ms_comp', () => {
-    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'major_swing')).toBe('ms_turnaround');
+describe('blues selectSlot — major_swing variant (Sprint 9 PR-D fill + 9·11·12마디 변주)', () => {
+  it('idx 3/7 ms_fill, 8 ms_tension, 10 ms_resolve, 11 ms_turnaround, else ms_comp', () => {
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 3, 'major_swing')).toBe('ms_fill');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 7, 'major_swing')).toBe('ms_fill');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 8, 'major_swing')).toBe('ms_tension');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 10, 'major_swing')).toBe('ms_resolve');
+    expect(BLUES_RHYTHM.selectSlot(tpl12, 11, 'major_swing')).toBe('ms_turnaround');
     expect(BLUES_RHYTHM.selectSlot(tpl12, 0, 'major_swing')).toBe('ms_comp');
+  });
+});
+
+describe('blues new variant slots — pattern existence', () => {
+  it('hard_bop: hb_tension/hb_resolve patterns 정의됨', () => {
+    expect(BLUES_RHYTHM.patterns.hb_tension).toBeDefined();
+    expect(BLUES_RHYTHM.patterns.hb_resolve).toBeDefined();
+  });
+
+  it('straight_shuffle: b16_tension/b16_resolve/b16_turnaround patterns 정의됨', () => {
+    expect(BLUES_RHYTHM.patterns.b16_tension).toBeDefined();
+    expect(BLUES_RHYTHM.patterns.b16_resolve).toBeDefined();
+    expect(BLUES_RHYTHM.patterns.b16_turnaround).toBeDefined();
+  });
+
+  it('major_swing: ms_fill/ms_tension/ms_resolve patterns 정의됨', () => {
+    expect(BLUES_RHYTHM.patterns.ms_fill).toBeDefined();
+    expect(BLUES_RHYTHM.patterns.ms_tension).toBeDefined();
+    expect(BLUES_RHYTHM.patterns.ms_resolve).toBeDefined();
+  });
+
+  it('ms_fill에 0:2:2 ghost snare가 포함 (사용자 요청: 4·8마디 turnaround같은 fill)', () => {
+    const snare = BLUES_RHYTHM.patterns.ms_fill?.drums.snare ?? [];
+    expect(snare.some((s) => s.time === '0:2:2')).toBe(true);
   });
 });
 
