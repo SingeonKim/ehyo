@@ -38,6 +38,7 @@ import { chordSymbolToMidi } from '@/lib/theory/chord-voicing';
 import type { PitchClass } from '@/lib/theory/types';
 
 import { getAudioContext, resumeAudioContext } from '../context';
+import { createMasterFxChain, type MasterFxChain } from './fx-chain';
 import { createBarScheduler, type BarScheduler } from '../scheduler/bar-scheduler';
 import { createLookaheadScheduler } from '../scheduler/lookahead-scheduler';
 import { BACKBEAT_BASS, BACKBEAT_DRUMS } from './patterns/backbeat';
@@ -126,6 +127,7 @@ function createEngine(): BackingEngine {
    * lazy 생성: 첫 ensureVoices 시 audio context와 함께 만들어진다.
    */
   let masterGain: GainNode | null = null;
+  let fxChain: MasterFxChain | null = null;
   let currentVolume = 0.7; // store에서 setVolume 들어오기 전 기본값. UI 슬라이더와 동일 default.
 
   /**
@@ -141,13 +143,19 @@ function createEngine(): BackingEngine {
   let currentLoadedBundle: LoadedBundle | null = null;
 
   /** voice 객체를 lazy 생성. start/stop 사이클에서 재사용.
-   *  마스터 게인을 먼저 만들고 모든 voice가 그것을 destination으로 사용한다. */
-  const ensureVoices = () => {
+   *  마스터 게인을 먼저 만들고, FX 체인 생성 후 masterGain → fxChain.input 연결.
+   *  reverb AudioWorklet 준비 대기 때문에 async. */
+  const ensureVoices = async () => {
     if (!masterGain) {
       const ctx = getAudioContext();
       masterGain = ctx.createGain();
       masterGain.gain.value = currentVolume;
-      masterGain.connect(ctx.destination);
+      // FX 체인 생성 후 masterGain → fxChain.input 연결.
+      // reverb AudioWorklet 준비 대기 때문에 async (createMasterFxChain은 Promise 반환).
+      if (!fxChain) {
+        fxChain = await createMasterFxChain(ctx);
+      }
+      masterGain.connect(fxChain.input);
     }
     if (!drums) drums = createDrumVoice(masterGain);
     if (!bass) bass = createBassVoice(masterGain);
@@ -236,7 +244,7 @@ function createEngine(): BackingEngine {
         ? initialBpm
         : template.default_bpm;
 
-    const voices = ensureVoices();
+    const voices = await ensureVoices();
     const lookahead = createLookaheadScheduler({ audioContext: ctx });
     scheduler = createBarScheduler({ lookahead });
 
@@ -365,6 +373,10 @@ function createEngine(): BackingEngine {
     if (masterGain) {
       masterGain.disconnect();
       masterGain = null;
+    }
+    if (fxChain) {
+      fxChain.dispose();
+      fxChain = null;
     }
     listeners.clear();
     state = { status: 'idle' };

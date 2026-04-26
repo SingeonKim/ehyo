@@ -78,6 +78,23 @@ const fakeDrumsMock = makeDrumMachineMock();
 const fakeBassMock = makeSoundfontMock();
 const fakeGuitarMock = makeSoundfontMock();
 
+// fx-chain mock — vi.hoisted로 호이스팅 문제 해결 (vi.mock 팩토리보다 먼저 초기화)
+const { fakeFxChain, fakeCreateMasterFxChain } = vi.hoisted(() => {
+  const fakeFxChain = {
+    input: { connect: vi.fn(), disconnect: vi.fn() } as unknown as GainNode,
+    compressor: {} as unknown as DynamicsCompressorNode,
+    dryGain: {} as unknown as GainNode,
+    wetGain: {} as unknown as GainNode,
+    reverb: {} as never,
+    dispose: vi.fn(),
+  };
+  const fakeCreateMasterFxChain = vi.fn(async () => fakeFxChain);
+  return { fakeFxChain, fakeCreateMasterFxChain };
+});
+vi.mock('@/lib/audio/backing/fx-chain', () => ({
+  createMasterFxChain: fakeCreateMasterFxChain,
+}));
+
 vi.mock('@/lib/audio/backing/smplr-bridge', () => ({
   loadBundle: vi.fn(async () => ({
     drums: fakeDrumsMock,
@@ -129,6 +146,10 @@ beforeEach(() => {
   barSchedulerInstance.start.mockClear();
   barSchedulerInstance.stop.mockClear();
   barSchedulerInstance.setBpm.mockClear();
+  // fx-chain mock 초기화
+  fakeCreateMasterFxChain.mockClear();
+  fakeFxChain.dispose.mockClear();
+  (fakeFxChain.input.connect as ReturnType<typeof vi.fn>).mockClear();
 });
 
 afterEach(() => {
@@ -517,5 +538,35 @@ describe('engine.stop pending setState cancel (Bug 2)', () => {
     expect(playingCalls).toHaveLength(0);
 
     vi.useRealTimers();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FX 체인 wiring (Sprint 2-8 PR-B Task B2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('engine + master FX chain wiring', () => {
+  it('start 후 createMasterFxChain이 1회 호출되고 masterGain이 fxChain.input에 연결', async () => {
+    const engine = getBackingEngine();
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
+
+    expect(fakeCreateMasterFxChain).toHaveBeenCalledTimes(1);
+    // masterGain.connect 호출 — fakeFxChain.input에 연결됐어야
+    const lastGainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(lastGainResult.connect).toHaveBeenCalledWith(fakeFxChain.input);
+  });
+
+  it('두 번째 start는 fxChain을 새로 만들지 않음 (재사용)', async () => {
+    const engine = getBackingEngine();
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 5 as PitchClass);
+    expect(fakeCreateMasterFxChain).toHaveBeenCalledTimes(1);
+  });
+
+  it('dispose 시 fxChain.dispose 호출', async () => {
+    const engine = getBackingEngine();
+    await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
+    __disposeBackingEngineForTests();
+    expect(fakeFxChain.dispose).toHaveBeenCalled();
   });
 });
