@@ -62,6 +62,68 @@ export const FOLK_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // folk_strum: strum_8th와 동일한 패턴이지만 variant 키로 직접 라우팅.
+    // folk-I-IV-V 카드가 모든 마디에 일관된 down-up 8분 strum을 갖도록.
+    folk_strum: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:1:0', velocity: 0.5 }, { time: '0:3:0', velocity: 0.5 }],
+        hat: [
+          { time: '0:0:0', velocity: 0.4 },
+          { time: '0:0:2', velocity: 0.4 },
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:1:2', velocity: 0.4 },
+          { time: '0:2:0', velocity: 0.4 },
+          { time: '0:2:2', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.4 },
+          { time: '0:3:2', velocity: 0.4 },
+        ],
+      },
+      bass: {
+        steps: [{ time: '0:0:0' }, { time: '0:2:0' }],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down' },
+        { time: '0:1:0', direction: 'down' },
+        { time: '0:1:2', direction: 'up' },
+        { time: '0:2:2', direction: 'up' },
+        { time: '0:3:0', direction: 'down' },
+        { time: '0:3:2', direction: 'up' },
+      ],
+    },
+
+    // ballad_pick: half-time finger-pick. kick 1박, snare 3박 backbeat, soft 4분 hat.
+    // ballad-I-V-vi-IV 8bar 카드용. 70bpm 기준 호흡 길게.
+    ballad_pick: {
+      drums: {
+        // half-time: kick 1박만
+        kick: [{ time: '0:0:0' }],
+        // half-time: snare 3박 backbeat (4박이 아닌 3박)
+        snare: [{ time: '0:2:0', velocity: 0.45 }],
+        // soft 4분 hat
+        hat: [
+          { time: '0:0:0', velocity: 0.3 },
+          { time: '0:1:0', velocity: 0.3 },
+          { time: '0:2:0', velocity: 0.3 },
+          { time: '0:3:0', velocity: 0.3 },
+        ],
+      },
+      bass: {
+        // 1박 루트, 3박 루트(단순화)
+        steps: [
+          { time: '0:0:0', velocity: 0.7 },
+          { time: '0:2:0', velocity: 0.7 },
+        ],
+      },
+      // finger-pick: 8분 down 4번 (Travis 단순화). velocity 낮게.
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.4 },
+        { time: '0:1:0', direction: 'down', velocity: 0.35 },
+        { time: '0:2:0', direction: 'down', velocity: 0.4 },
+        { time: '0:3:0', direction: 'down', velocity: 0.35 },
+      ],
+    },
+
     pickup: {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
@@ -94,9 +156,12 @@ export const FOLK_RHYTHM: CategoryRhythm = {
   },
 
   /**
-   * 마지막 마디 → pickup. 짝수 → picking, 홀수 → strum_8th.
+   * variant 'folk_strum'/'ballad_pick' 지정 시 해당 슬롯 직접 라우팅.
+   * 미지정 시 기존 짝/홀수 토글 + 마지막 마디 pickup 동작 유지.
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
+    if (variant === 'folk_strum') return 'folk_strum';
+    if (variant === 'ballad_pick') return 'ballad_pick';
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return local % 2 === 0 ? 'picking' : 'strum_8th';

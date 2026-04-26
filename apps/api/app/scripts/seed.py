@@ -309,6 +309,99 @@ SEED_TEMPLATES: list[dict] = [
             {"bar": 3, "chord": "iim7"}, {"bar": 4, "chord": "V7"},
         ],
     },
+    # ── Sprint 10 신규 5장 ────────────────────────────
+    # folk acoustic 3-chord staple
+    {
+        "slug": "folk-I-IV-V",
+        "name": "Folk I–IV–V",
+        "category": "folk",
+        "bars": 4,
+        "time_signature": "4/4",
+        "default_bpm": 95,
+        "recommended_scales": ["major", "major_pentatonic", "mixolydian"],
+        "progression": [
+            {"bar": 1, "chord": "I"},
+            {"bar": 2, "chord": "IV"},
+            {"bar": 3, "chord": "V"},
+            {"bar": 4, "chord": "I"},
+        ],
+    },
+    # half-time finger-pick ballad
+    {
+        "slug": "ballad-I-V-vi-IV",
+        "name": "Ballad I–V–vi–IV (8-bar)",
+        "category": "folk",
+        "bars": 8,
+        "time_signature": "4/4",
+        "default_bpm": 70,
+        "recommended_scales": ["major", "major_pentatonic"],
+        "progression": [
+            {"bar": 1, "chord": "I"},
+            {"bar": 2, "chord": "V"},
+            {"bar": 3, "chord": "vi"},
+            {"bar": 4, "chord": "IV"},
+            {"bar": 5, "chord": "I"},
+            {"bar": 6, "chord": "V"},
+            {"bar": 7, "chord": "IV"},
+            {"bar": 8, "chord": "V"},
+        ],
+    },
+    # Mixolydian rock vamp
+    {
+        "slug": "rock-I-bVII-IV",
+        "name": "Rock I–bVII–IV (Mixolydian)",
+        "category": "rock",
+        "bars": 4,
+        "time_signature": "4/4",
+        "default_bpm": 110,
+        "recommended_scales": ["mixolydian", "major_pentatonic", "minor_pentatonic"],
+        "progression": [
+            {"bar": 1, "chord": "I"},
+            {"bar": 2, "chord": "bVII"},
+            {"bar": 3, "chord": "IV"},
+            {"bar": 4, "chord": "I"},
+        ],
+    },
+    # Chuck Berry 12-bar boogie
+    {
+        "slug": "rock-12-bar",
+        "name": "Rock 12-Bar (Chuck Berry)",
+        "category": "rock",
+        "bars": 12,
+        "time_signature": "4/4",
+        "default_bpm": 130,
+        "recommended_scales": ["major_pentatonic", "minor_pentatonic", "mixolydian"],
+        "progression": [
+            {"bar": 1, "chord": "I7"},
+            {"bar": 2, "chord": "I7"},
+            {"bar": 3, "chord": "I7"},
+            {"bar": 4, "chord": "I7"},
+            {"bar": 5, "chord": "IV7"},
+            {"bar": 6, "chord": "IV7"},
+            {"bar": 7, "chord": "I7"},
+            {"bar": 8, "chord": "I7"},
+            {"bar": 9, "chord": "V7"},
+            {"bar": 10, "chord": "IV7"},
+            {"bar": 11, "chord": "I7"},
+            {"bar": 12, "chord": "V7"},
+        ],
+    },
+    # Phrygian Spanish vamp
+    {
+        "slug": "phrygian-vamp",
+        "name": "Phrygian Vamp (Spanish)",
+        "category": "modal",
+        "bars": 4,
+        "time_signature": "4/4",
+        "default_bpm": 100,
+        "recommended_scales": ["phrygian", "minor_pentatonic"],
+        "progression": [
+            {"bar": 1, "chord": "i"},
+            {"bar": 2, "chord": "bII"},
+            {"bar": 3, "chord": "i"},
+            {"bar": 4, "chord": "bII"},
+        ],
+    },
 ]
 
 

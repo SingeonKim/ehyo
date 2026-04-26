@@ -143,6 +143,44 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
       voiceGain: { drums: 1.05 },
     },
   },
+
+  // ── Sprint 10 신규 5장 ────────────────────────────────────────────
+  // folk acoustic strum staple.
+  'folk-I-IV-V': {
+    rhythmVariant: 'folk_strum',
+  },
+  // half-time finger-pick ballad. acoustic_guitar_steel(folk default) 그대로.
+  'ballad-I-V-vi-IV': {
+    rhythmVariant: 'ballad_pick',
+    toneProfile: {
+      velocityScale: 0.85,
+      reverbWet: 0.30,
+    },
+  },
+  // Mixolydian rock — distortion guitar(rock default) + dry.
+  'rock-I-bVII-IV': {
+    rhythmVariant: 'rock_mixo',
+    toneProfile: {
+      reverbWet: 0.10,
+    },
+  },
+  // Chuck Berry 12bar boogie — driving 8분, dry.
+  'rock-12-bar': {
+    rhythmVariant: 'rock_12bar',
+    toneProfile: {
+      reverbWet: 0.12,
+    },
+  },
+  // Spanish/exotic phrygian. modal default가 clean이라 distortion 명시 override.
+  'phrygian-vamp': {
+    rhythmVariant: 'phrygian_dark',
+    toneProfile: {
+      reverbWet: 0.25,
+    },
+    instrumentOverrides: {
+      guitar: { instrument: 'distortion_guitar', octaveShift: -1 },
+    },
+  },
 };
 
 /**

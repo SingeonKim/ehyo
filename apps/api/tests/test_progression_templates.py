@@ -7,14 +7,20 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_list_all_returns_seed_data(api_client: AsyncClient) -> None:
-    """시드 17개가 전부 반환된다 (PR-D D2 이후 10 → 17)."""
+    """시드 22개가 전부 반환된다 (Sprint 10 이후 17 → 22)."""
     response = await api_client.get("/api/v1/progression-templates")
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 17
+    assert len(data) == 22
     slugs = {t["slug"] for t in data}
     assert "12-bar-blues-major" in slugs
     assert "jazz-ii-V-I" in slugs
+    # Sprint 10 신규 5장
+    assert "folk-I-IV-V" in slugs
+    assert "ballad-I-V-vi-IV" in slugs
+    assert "rock-I-bVII-IV" in slugs
+    assert "rock-12-bar" in slugs
+    assert "phrygian-vamp" in slugs
 
 
 @pytest.mark.asyncio
@@ -67,11 +73,11 @@ async def test_openapi_contains_endpoints(api_client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_catalog_has_seventeen_templates(api_client: AsyncClient) -> None:
-    """Sprint 2-8 PR-D 후 카탈로그 총 17개 (10 + 7)."""
+async def test_catalog_has_twenty_two_templates(api_client: AsyncClient) -> None:
+    """Sprint 10 후 카탈로그 총 22개 (Sprint 9까지 17 + Sprint 10 신규 5)."""
     resp = await api_client.get("/api/v1/progression-templates")
     assert resp.status_code == 200
-    assert len(resp.json()) == 17
+    assert len(resp.json()) == 22
 
 
 @pytest.mark.asyncio
