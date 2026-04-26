@@ -24,9 +24,11 @@ export type CardProfile = {
 
 export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   // ── blues 8장 ────────────────────────────────────────────────────
-  // 정통 12bar shuffle. 카테고리 default가 곧 정체성.
+  // 정통 12bar shuffle. 카테고리 default(0.22)보다 살짝 dry로 punchy하게 —
+  // minor blues(0.24 wet)와의 정체성 차별화 (major는 더 밝고 직진).
   '12-bar-blues-major': {
     rhythmVariant: 'shuffle12bar',
+    toneProfile: { reverbWet: 0.18 },
   },
   // minor blues — 약간 더 어두운 공간감.
   '12-bar-blues-minor': {
