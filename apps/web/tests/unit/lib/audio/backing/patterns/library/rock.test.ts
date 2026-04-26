@@ -68,3 +68,36 @@ describe('rock selectSlot — 기존 회귀 (variant 미지정)', () => {
     expect(ROCK_RHYTHM.selectSlot(tpl4(), 0)).toBe('groove');
   });
 });
+
+const tpl12 = (default_bpm = 130) => ({
+  bars: 12,
+  default_bpm,
+  progression: Array.from({ length: 12 }, (_, i) => ({ bar: i + 1, chord: 'I7' })),
+});
+
+describe('rock selectSlot — rock_12bar variant', () => {
+  it('idx 0~7,9 → rock_12bar_drive', () => {
+    for (const i of [0, 1, 4, 7, 9]) {
+      expect(ROCK_RHYTHM.selectSlot(tpl12(), i, 'rock_12bar')).toBe('rock_12bar_drive');
+    }
+  });
+
+  it('idx 8 → rock_12bar_tension (V7 빌드업)', () => {
+    expect(ROCK_RHYTHM.selectSlot(tpl12(), 8, 'rock_12bar')).toBe('rock_12bar_tension');
+  });
+
+  it('idx 10 → rock_12bar_resolve (I7 안정)', () => {
+    expect(ROCK_RHYTHM.selectSlot(tpl12(), 10, 'rock_12bar')).toBe('rock_12bar_resolve');
+  });
+
+  it('idx 11 → rock_12bar_turnaround (V7 climax)', () => {
+    expect(ROCK_RHYTHM.selectSlot(tpl12(), 11, 'rock_12bar')).toBe('rock_12bar_turnaround');
+  });
+
+  it('rock_12bar 4 슬롯 모두 정의됨', () => {
+    expect(ROCK_RHYTHM.patterns.rock_12bar_drive).toBeDefined();
+    expect(ROCK_RHYTHM.patterns.rock_12bar_tension).toBeDefined();
+    expect(ROCK_RHYTHM.patterns.rock_12bar_resolve).toBeDefined();
+    expect(ROCK_RHYTHM.patterns.rock_12bar_turnaround).toBeDefined();
+  });
+});
