@@ -79,7 +79,10 @@ export function ProgressionCard({
   };
 
   return (
-    <li className="space-y-2 border border-ink-muted/15 bg-bg-elevated px-3 py-2.5">
+    <li
+      data-testid={`progression-card-${t.slug}`}
+      className="space-y-2 border border-ink-muted/15 bg-bg-elevated px-3 py-2.5"
+    >
       <div className="flex items-baseline justify-between gap-3">
         <span className="font-mono text-sm text-ink-primary">{t.name}</span>
         <span className="font-mono text-[0.65rem] tabular-nums text-ink-muted">
