@@ -24,7 +24,10 @@ export interface GuitarVoice {
     durationSec: number,
     time: number,
     velocity?: number,
+    velocityScale?: number,
   ): void;
+  /** voice 내부 GainNode 스케일 즉시 세팅. 카드 시작 시 프로파일 voiceGain 적용. */
+  setVoiceGain(scale: number): void;
   fadeOut(): void;
   /** 모든 예약/재생 중인 음 즉시 취소. drums.ts 주석 참조. */
   cancelScheduled(): void;
@@ -41,12 +44,13 @@ export function createGuitarVoice(destination?: AudioNode): GuitarVoice {
   const pendingStops: StopFn[] = [];
 
   return {
-    strum(direction, midiNotes, soundfont, durationSec, time, velocity = 0.6) {
+    strum(direction, midiNotes, soundfont, durationSec, time, velocity = 0.6, velocityScale = 1) {
       // down: 저음 → 고음(오름차순), up: 고음 → 저음(내림차순)
       const sorted = [...midiNotes].sort((a, b) => a - b);
       const order = direction === 'down' ? sorted : sorted.reverse();
-      // velocity 0~1을 smplr 요구 0~127 범위로 변환 (루프 밖에서 1회만 계산)
-      const v = Math.max(0, Math.min(127, Math.round(velocity * 127)));
+      // velocity × velocityScale를 [0,1]로 clamp 후 smplr 0~127 변환 (루프 밖 1회 계산)
+      const scaled = Math.max(0, Math.min(1, velocity * velocityScale));
+      const v = Math.max(0, Math.min(127, Math.round(scaled * 127)));
       order.forEach((note, i) => {
         const stop = soundfont.start({
           note,
@@ -56,6 +60,12 @@ export function createGuitarVoice(destination?: AudioNode): GuitarVoice {
         }) as unknown as StopFn;
         pendingStops.push(stop);
       });
+    },
+    setVoiceGain(scale: number) {
+      // 카드 시작 시 프로파일 voiceGain을 즉시 반영 — ramp 없이 setValueAtTime 사용
+      const t = ctx.currentTime;
+      gain.gain.cancelScheduledValues(t);
+      gain.gain.setValueAtTime(Math.max(0, scale), t);
     },
     fadeOut() {
       const t = ctx.currentTime;
