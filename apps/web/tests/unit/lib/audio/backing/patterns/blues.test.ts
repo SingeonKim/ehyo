@@ -110,15 +110,15 @@ describe('blues patterns presence', () => {
     }
   });
 
-  it('groove_a hat uses triplet8 12-step (long-mid-short × 4박)', () => {
+  it('groove_a hat uses triplet8 long-short 8-step (LM-2 retrigger 한계로 ghost 제거)', () => {
     const hat = BLUES_RHYTHM.patterns.groove_a?.drums.hat ?? [];
-    expect(hat.length).toBe(12);
+    expect(hat.length).toBe(8);
     expect(hat.every((s) => s.unit === 'triplet8')).toBe(true);
   });
 
-  it('groove_b16 (straight_shuffle) hat uses triplet8 12-step (16th → triplet 변경)', () => {
+  it('groove_b16 (straight_shuffle) hat uses triplet8 long-short 8-step', () => {
     const hat = BLUES_RHYTHM.patterns.groove_b16?.drums.hat ?? [];
-    expect(hat.length).toBe(12);
+    expect(hat.length).toBe(8);
     expect(hat.every((s) => s.unit === 'triplet8')).toBe(true);
   });
 
@@ -127,9 +127,9 @@ describe('blues patterns presence', () => {
     expect(slowDrums.some((s) => s.unit === 'triplet8')).toBe(true);
   });
 
-  it('hb_walk ride uses triplet8 with middle ghost (velocity ~0.4)', () => {
+  it('hb_walk ride uses triplet8 (LM-2 retrigger 한계로 long-short만, ghost 제거)', () => {
     const hat = BLUES_RHYTHM.patterns.hb_walk?.drums.hat ?? [];
-    expect(hat.some((s) => s.unit === 'triplet8')).toBe(true);
-    expect(hat.some((s) => s.unit === 'triplet8' && (s.velocity ?? 0) <= 0.5)).toBe(true);
+    expect(hat.length).toBe(8);
+    expect(hat.every((s) => s.unit === 'triplet8')).toBe(true);
   });
 });
