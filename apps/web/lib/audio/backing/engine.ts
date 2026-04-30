@@ -226,9 +226,14 @@ function createEngine(): BackingEngine {
     // PR-B: 카드 슬러그로 profile resolve. 미등재 = 빈 프로필 → 카테고리 default 그대로.
     const profile = resolveCardProfile(template.slug, template.category ?? 'pop');
     const bundle = profile.bundle;
+
+    // ensureVoices를 loadBundle 전에 호출해 fxChain.input을 확보 — smplr instance는
+    // 생성 시점 destination이 영구 적용되므로, 첫 호출이 fxChain.input을 받아야
+    // voice → fxChain → masterGain 라우팅이 성립(volume slider가 master로 작동).
+    const voices = await ensureVoices();
     let loaded: LoadedBundle;
     try {
-      loaded = await loadBundle(ctx, bundle);
+      loaded = await loadBundle(ctx, bundle, fxChain!.input);
     } catch (e) {
       setState({
         status: 'error',
@@ -247,8 +252,6 @@ function createEngine(): BackingEngine {
       typeof initialBpm === 'number' && Number.isFinite(initialBpm) && initialBpm > 0
         ? initialBpm
         : template.default_bpm;
-
-    const voices = await ensureVoices();
 
     // PR-B: 카드 시작 시 tone 적용. setValueAtTime은 즉시 반영(ramp 없음 — hardStop 직후라 OK).
     const ctxNow = ctx.currentTime;
