@@ -31,7 +31,7 @@ export default function HomePage() {
             href="/jam"
             className="border border-accent-brass px-6 py-3 font-mono text-sm uppercase tracking-wider text-accent-brass transition-colors hover:bg-accent-brass hover:text-bg-base"
           >
-            Jam →
+            Practice →
           </Link>
           <Link
             href="/metronome"

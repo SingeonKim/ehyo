@@ -42,7 +42,7 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
                 href="/jam"
                 className="text-ink-secondary transition-colors hover:text-accent-brass"
               >
-                Jam
+                Practice
               </Link>
             </li>
           </ul>

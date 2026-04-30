@@ -23,7 +23,7 @@ import { ProgressionCatalog } from '@/components/jam/ProgressionCatalog';
  */
 
 export const metadata: Metadata = {
-  title: 'Jam',
+  title: 'Practice',
   description: '지판과 배킹 트랙이 한 화면에. 코드 진행 따라 chord overlay가 매 마디 갱신.',
 };
 
@@ -32,7 +32,7 @@ export default function JamPage() {
     <section className="space-y-8 py-8">
       <header className="mb-4">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
-          Practice / Jam
+          Practice
         </p>
         <h1 className="mt-3 font-display text-4xl font-black leading-none tracking-tight md:text-6xl">
           <span className="text-accent-brass">Practice</span>, together.

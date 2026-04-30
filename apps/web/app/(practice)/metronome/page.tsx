@@ -17,7 +17,7 @@ export default function MetronomePage() {
     <section className="py-8">
       <header className="mb-10">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
-          Practice / Metronome
+          Metronome
         </p>
         <h1 className="mt-3 font-display text-4xl font-black leading-none tracking-tight md:text-6xl">
           <span className="text-accent-brass">Tempo</span>, on time.
