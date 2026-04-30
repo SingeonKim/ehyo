@@ -1,15 +1,34 @@
+# Build context 최소화 — Docker가 매번 전송하는 파일을 줄이기 위함.
+# 패턴은 .gitignore와 동일 동작 (prefix 매칭).
+
+# 의존성·빌드 산출물은 컨테이너 안에서 다시 만든다.
 node_modules
 .next
+**/.next
+**/coverage
+**/playwright-report
+**/test-results
+**/tsconfig.tsbuildinfo
+
+# 백엔드 — 프로덕션 Dockerfile은 apps/web만 빌드. apps/api는 dev/test 도구.
+apps/api
+
+# VCS·CI·로컬 환경
 .git
 .github
-coverage
-playwright-report
-test-results
-README.md
-.env
-.env*.local
 .vscode
 .idea
+.env
+.env.*
+**/.env
+**/.env.local
+**/.env.*.local
+
+# Docker 메타 자체는 context에 안 들어가도 됨.
 Dockerfile
+docker
 docker-compose*.yml
+
+# 개발 문서
 docs
+README.md

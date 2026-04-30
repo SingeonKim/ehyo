@@ -1,0 +1,16 @@
+# Railway 배포 설정 — Dockerfile 빌더 사용.
+# 루트의 Dockerfile을 자동 감지하지만, healthcheck/restart 정책을 명시한다.
+#
+# 참고: https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# 첫 페이지(랜딩)가 SSR 200을 정상 응답 — 별도 /api/health 추가 시 변경.
+healthcheckPath = "/"
+# 빌드 직후 cold start + Next 초기화에 여유. Railway는 timeout 동안 healthcheck 재시도.
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
