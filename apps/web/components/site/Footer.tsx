@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 /*
  * 전역 푸터 — Server Component.
  *
@@ -14,26 +12,12 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer className="border-t border-ink-muted/15">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-6 font-mono text-xs text-ink-muted sm:flex-row sm:items-baseline sm:justify-between">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-6 font-mono text-xs text-ink-muted sm:flex-row sm:items-baseline sm:justify-between">
         <p>
           © 2026 에휴.. (Ehyo..) ·{' '}
           <span className="text-ink-secondary">기타 연습자를 위한 도구</span>
         </p>
-        <nav aria-label="푸터 메뉴" className="flex flex-wrap items-baseline gap-4 tabular-nums">
-          <Link href="/jam" className="transition-colors hover:text-ink-primary">
-            Practice
-          </Link>
-          <Link href="/metronome" className="transition-colors hover:text-ink-primary">
-            Metronome
-          </Link>
-          <Link href="/fretboard" className="transition-colors hover:text-ink-primary">
-            Fretboard
-          </Link>
-          <span aria-hidden="true" className="text-ink-muted/40">
-            ·
-          </span>
-          <span>v0.1.0</span>
-        </nav>
+        <p className="tabular-nums">v0.1.0</p>
       </div>
     </footer>
   );
