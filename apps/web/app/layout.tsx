@@ -19,13 +19,13 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'My Music App',
-    template: '%s · My Music App',
+    default: '에휴.. (Ehyo..)',
+    template: '%s · 에휴..',
   },
   description: '메트로놈과 기타 스케일 가이드를 한 화면에서. 기타 연습자를 위한 웹 도구.',
   metadataBase: new URL('http://localhost:3000'),
   openGraph: {
-    title: 'My Music App',
+    title: '에휴.. (Ehyo..)',
     description: '메트로놈과 기타 스케일 가이드를 한 화면에서.',
     type: 'website',
   },
