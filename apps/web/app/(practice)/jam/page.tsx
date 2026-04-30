@@ -38,7 +38,7 @@ export default function JamPage() {
           <span className="text-accent-brass">Practice</span>, together.
         </h1>
         <p className="mt-4 max-w-xl font-mono text-sm text-ink-secondary">
-          지판과 배킹 트랙이 한 자리에. 헤더 Dock으로 다른 페이지에서도 메트로놈 계속.
+          지판과 배킹 트랙이 한자리에.
         </p>
       </header>
 

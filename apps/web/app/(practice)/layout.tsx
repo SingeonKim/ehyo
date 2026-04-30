@@ -18,7 +18,7 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
             href="/"
             className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted transition-colors hover:text-ink-primary"
           >
-            ← my-music-app
+            ← 에휴..
           </Link>
           <ul className="ml-auto flex gap-6 font-mono text-xs uppercase tracking-wider">
             <li>

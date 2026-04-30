@@ -10,7 +10,6 @@ import { subscribeToBeats, toggleMetronome } from '@/lib/audio/metronome-singlet
 import type { SchedulerEvent } from '@/lib/audio/types';
 
 import { BeatLED } from './BeatLED';
-import { Pendulum } from './Pendulum';
 
 /*
  * 메트로놈 클라이언트.
@@ -126,10 +125,10 @@ export function MetronomeClient() {
 
   return (
     <div className="space-y-10">
-      {/* ── 히어로: 진자 + BPM + LED ─────────────── */}
-      <section className="grid items-center gap-8 border border-ink-muted/20 bg-bg-elevated p-8 md:grid-cols-[160px_1fr_auto]">
-        <Pendulum bpm={m.bpm} isPlaying={m.isPlaying} className="w-32 self-center justify-self-center md:justify-self-start" />
-
+      {/* ── 히어로: BPM | 박자 LED | Play/Stop ──────────────
+         3컬럼 가로 배치. BPM은 1fr로 좌측 대형 디스플레이, LED는 중앙에 size='lg'로
+         크게, Play/Stop은 우측 CTA. 모바일(<md)은 단일 컬럼으로 자연 스택. */}
+      <section className="grid items-center gap-8 border border-ink-muted/20 bg-bg-elevated p-8 md:grid-cols-[1fr_auto_auto]">
         <div className="text-center md:text-left">
           <p className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-ink-muted">
             Beats per minute
@@ -140,26 +139,27 @@ export function MetronomeClient() {
           </p>
         </div>
 
-        <div className="flex flex-col items-center gap-4 md:items-end">
-          <BeatLED
-            numerator={m.timeSignature.numerator}
-            currentBeat={m.isPlaying ? currentBeat : 0}
-            accentBeatOne={m.accentBeatOne}
-          />
-          <button
-            type="button"
-            onClick={() => void handleToggle()}
-            className={clsx(
-              'border-2 px-8 py-3 font-mono text-sm uppercase tracking-widest transition-colors duration-75',
-              m.isPlaying
-                ? 'border-accent-signal bg-accent-signal text-bg-base hover:bg-accent-signal/80'
-                : 'border-accent-brass text-accent-brass hover:bg-accent-brass hover:text-bg-base',
-            )}
-            aria-label={m.isPlaying ? '정지 (Space)' : '재생 (Space)'}
-          >
-            {m.isPlaying ? 'Stop' : 'Play'}
-          </button>
-        </div>
+        <BeatLED
+          numerator={m.timeSignature.numerator}
+          currentBeat={m.isPlaying ? currentBeat : 0}
+          accentBeatOne={m.accentBeatOne}
+          size="lg"
+          className="justify-self-center"
+        />
+
+        <button
+          type="button"
+          onClick={() => void handleToggle()}
+          className={clsx(
+            'justify-self-center border-2 px-8 py-3 font-mono text-sm uppercase tracking-widest transition-colors duration-75 md:justify-self-end',
+            m.isPlaying
+              ? 'border-accent-signal bg-accent-signal text-bg-base hover:bg-accent-signal/80'
+              : 'border-accent-brass text-accent-brass hover:bg-accent-brass hover:text-bg-base',
+          )}
+          aria-label={m.isPlaying ? '정지 (Space)' : '재생 (Space)'}
+        >
+          {m.isPlaying ? 'Stop' : 'Play'}
+        </button>
       </section>
 
       {/* ── 컨트롤 그리드 ────────────────────────── */}
@@ -193,7 +193,7 @@ export function MetronomeClient() {
 
       {/* ── 단축키 힌트 ──────────────────────────── */}
       <p className="font-mono text-[0.65rem] uppercase tracking-[0.25em] text-ink-muted">
-        Keys · Space: play/stop · ↑↓: ±1 bpm · Shift+↑↓: ±10 · T: tap
+        Keys · Space: play/stop · ↑↓: ±1 bpm · Shift+↑↓: ±10 · T: tap (avg of last 4)
       </p>
     </div>
   );
@@ -271,7 +271,10 @@ function BpmControl({
         />
         <button
           type="button"
-          onClick={onTap}
+          // 화살표 함수로 감싸는 이유:
+          // onClick은 MouseEvent를 인자로 넘긴다. tap(now?)에 직결하면 MouseEvent가
+          // now로 들어가 'now - lastTap' 계산이 NaN이 되어 BPM이 NaN으로 망가진다.
+          onClick={() => onTap()}
           className="flex-1 border border-accent-brass px-4 py-2 font-mono text-xs uppercase tracking-widest text-accent-brass transition-colors duration-75 hover:bg-accent-brass hover:text-bg-base"
           aria-label="Tap tempo (T)"
         >
