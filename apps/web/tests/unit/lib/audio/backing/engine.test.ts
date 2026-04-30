@@ -546,14 +546,18 @@ describe('engine.stop pending setState cancel (Bug 2)', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('engine + master FX chain wiring', () => {
-  it('start 후 createMasterFxChain이 1회 호출되고 masterGain이 fxChain.input에 연결', async () => {
+  it('start 후 masterGain이 ctx.destination final stage에 연결 + fxChain은 masterGain을 outputDestination으로 받음', async () => {
     const engine = getBackingEngine();
     await engine.start(TEMPLATE as Parameters<typeof engine.start>[0], 0 as PitchClass);
 
+    // 새 토폴로지: voices → fxChain.input → ... → masterGain → ctx.destination.
+    // masterGain은 dry+reverb 양쪽 모두 master volume의 영향을 받는 final stage.
     expect(fakeCreateMasterFxChain).toHaveBeenCalledTimes(1);
-    // masterGain.connect 호출 — fakeFxChain.input에 연결됐어야
-    const lastGainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
-    expect(lastGainResult.connect).toHaveBeenCalledWith(fakeFxChain.input);
+    // createMasterFxChain(ctx, masterGain) — masterGain이 outputDestination으로 전달돼야
+    const masterGainResult = (mockCtx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+    expect(fakeCreateMasterFxChain).toHaveBeenCalledWith(mockCtx, masterGainResult);
+    // masterGain은 ctx.destination에 connect (volume slider가 진짜 master)
+    expect(masterGainResult.connect).toHaveBeenCalledWith(mockCtx.destination);
   });
 
   it('두 번째 start는 fxChain을 새로 만들지 않음 (재사용)', async () => {
