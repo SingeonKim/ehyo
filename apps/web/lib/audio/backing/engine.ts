@@ -122,8 +122,9 @@ function createEngine(): BackingEngine {
   let scheduler: BarScheduler | null = null;
 
   /**
-   * 마스터 게인 노드 — 모든 voice가 여기로 합류한 뒤 destination으로 출력.
-   * setVolume이 이 gain.value만 조정하므로 voice별 fadeOut/start 사이클과 독립.
+   * 마스터 게인 노드 — fxChain 출력(dry + reverb tail) 이후 final stage.
+   * 토폴로지: voices → fxChain.input → compressor → dry/wet → masterGain → destination.
+   * setVolume이 이 gain.value만 조정. dry+wet 양쪽 모두 영향 받아 진정한 master volume.
    * lazy 생성: 첫 ensureVoices 시 audio context와 함께 만들어진다.
    */
   let masterGain: GainNode | null = null;
@@ -143,24 +144,25 @@ function createEngine(): BackingEngine {
   let currentLoadedBundle: LoadedBundle | null = null;
 
   /** voice 객체를 lazy 생성. start/stop 사이클에서 재사용.
-   *  마스터 게인을 먼저 만들고, FX 체인 생성 후 masterGain → fxChain.input 연결.
+   *  토폴로지: voices → fxChain.input → compressor → dry/wet → masterGain → destination.
+   *  masterGain이 fxChain *이후* 단계에 위치해 dry + reverb tail 둘 다 master volume의 영향 받음.
    *  reverb AudioWorklet 준비 대기 때문에 async. */
   const ensureVoices = async () => {
     if (!masterGain) {
       const ctx = getAudioContext();
       masterGain = ctx.createGain();
       masterGain.gain.value = currentVolume;
-      // FX 체인 생성 후 masterGain → fxChain.input 연결.
-      // reverb AudioWorklet 준비 대기 때문에 async (createMasterFxChain은 Promise 반환).
+      masterGain.connect(ctx.destination);
+      // fxChain 생성 시 outputDestination으로 masterGain 전달 — dry/reverb 둘 다 master 통과.
       if (!fxChain) {
-        fxChain = await createMasterFxChain(ctx);
+        fxChain = await createMasterFxChain(ctx, masterGain);
       }
-      masterGain.connect(fxChain.input);
     }
-    if (!drums) drums = createDrumVoice(masterGain);
-    if (!bass) bass = createBassVoice(masterGain);
-    if (!guitar) guitar = createGuitarVoice(masterGain);
-    if (!aux) aux = createAuxVoice(masterGain);
+    // voice들은 fxChain.input으로 합류 (compressor → dry/wet → masterGain → destination).
+    if (!drums) drums = createDrumVoice(fxChain!.input);
+    if (!bass) bass = createBassVoice(fxChain!.input);
+    if (!guitar) guitar = createGuitarVoice(fxChain!.input);
+    if (!aux) aux = createAuxVoice(fxChain!.input);
     return { drums, bass, guitar, aux };
   };
 
@@ -387,6 +389,8 @@ function createEngine(): BackingEngine {
     currentVolume = clamped;
     if (masterGain) {
       const ctx = getAudioContext();
+      // cancelScheduledValues로 이전 setValueAtTime 잔여 스케줄 정리 — 즉각 반영 보장.
+      masterGain.gain.cancelScheduledValues(ctx.currentTime);
       masterGain.gain.setValueAtTime(clamped, ctx.currentTime);
     }
   };

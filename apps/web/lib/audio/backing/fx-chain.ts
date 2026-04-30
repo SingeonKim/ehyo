@@ -5,10 +5,12 @@
  *   input → compressor → splitter
  *                          → dryGain (0.82) ────────────────┐
  *                          → wetGain (0.18) → reverb ───────┤
- *                                                            → ctx.destination
+ *                                                            → outputDestination
  *
- * input은 엔진의 masterGain이 connect할 GainNode. 외부에서 input.connect로 voice가 합류.
- * 카테고리별 wet 차등은 Sprint 2-9.
+ * input은 voice들이 합류하는 진입 GainNode.
+ * outputDestination(default ctx.destination)으로 dry + reverb 둘 다 출력.
+ *   엔진이 outputDestination에 masterGain을 전달하면 dry + reverb tail 모두
+ *   master volume의 영향을 받는다 (volume slider가 진짜 master 역할).
  */
 
 import type { Reverb } from 'smplr';
@@ -46,8 +48,14 @@ export interface MasterFxChain {
  *
  * Reverb 초기화에 AudioWorklet ready() await이 필요하므로 async.
  * 엔진 초기화 시 1회 호출 후 engine.ts가 보유한다.
+ *
+ * outputDestination: dry + reverb 출력이 향할 노드. default = ctx.destination.
+ *   engine이 masterGain을 전달하면 master volume이 dry/reverb 양쪽에 적용.
  */
-export async function createMasterFxChain(ctx: AudioContext): Promise<MasterFxChain> {
+export async function createMasterFxChain(
+  ctx: AudioContext,
+  outputDestination?: AudioNode,
+): Promise<MasterFxChain> {
   // 진입 GainNode — voice들이 여기로 connect
   const input = ctx.createGain();
 
@@ -71,6 +79,7 @@ export async function createMasterFxChain(ctx: AudioContext): Promise<MasterFxCh
   const reverb = await getReverb(ctx);
 
   // ── 노드 그래프 연결 ──
+  const dest = outputDestination ?? ctx.destination;
   // input → compressor
   input.connect(compressor);
   // compressor → dry + wet 두 갈래
@@ -78,9 +87,9 @@ export async function createMasterFxChain(ctx: AudioContext): Promise<MasterFxCh
   compressor.connect(wetGain);
   // wet → reverb input (smplr Reverb는 .input으로 수신)
   wetGain.connect(reverb.input);
-  // dry와 reverb 출력 모두 destination으로
-  dryGain.connect(ctx.destination);
-  reverb.connect(ctx.destination);
+  // dry와 reverb 출력 모두 outputDestination으로 (default ctx.destination)
+  dryGain.connect(dest);
+  reverb.connect(dest);
 
   return {
     input,
