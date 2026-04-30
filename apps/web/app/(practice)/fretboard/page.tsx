@@ -18,7 +18,7 @@ export default function FretboardPage() {
     <section className="py-8">
       <header className="mb-10">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
-          Practice / Fretboard
+          Fretboard
         </p>
         <h1 className="mt-3 font-display text-4xl font-black leading-none tracking-tight md:text-6xl">
           Scales, <span className="text-accent-brass">visualized.</span>
