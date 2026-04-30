@@ -28,11 +28,23 @@ export type LoadedBundle = {
   aux?: Soundfont;
 };
 
-export async function getSoundfont(ctx: AudioContext, instrument: string): Promise<Soundfont> {
+/**
+ * smplr Soundfont/DrumMachine은 생성자 `options.destination`으로 출력 노드를 받는다.
+ * 미지정 시 ctx.destination 직행 — fxChain/masterGain 우회 → volume slider 무력화.
+ * destination을 fxChain.input에 묶어 voice → fxChain → masterGain → destination 흐름 보장.
+ *
+ * cache는 instrument name 단위라 첫 호출의 destination이 영구 적용. engine 라이프타임
+ * 동안 fxChain.input은 동일 노드라 cache hit도 안전.
+ */
+export async function getSoundfont(
+  ctx: AudioContext,
+  instrument: string,
+  destination?: AudioNode,
+): Promise<Soundfont> {
   const cached = soundfontCache.get(instrument);
   if (cached) return cached;
   const promise = (async () => {
-    const sf = new Soundfont(ctx, { instrument });
+    const sf = new Soundfont(ctx, { instrument, destination });
     await sf.load;
     return sf;
   })();
@@ -40,11 +52,15 @@ export async function getSoundfont(ctx: AudioContext, instrument: string): Promi
   return promise;
 }
 
-export async function getDrumMachine(ctx: AudioContext, machine: string): Promise<DrumMachine> {
+export async function getDrumMachine(
+  ctx: AudioContext,
+  machine: string,
+  destination?: AudioNode,
+): Promise<DrumMachine> {
   const cached = drumCache.get(machine);
   if (cached) return cached;
   const promise = (async () => {
-    const dm = new DrumMachine(ctx, { instrument: machine });
+    const dm = new DrumMachine(ctx, { instrument: machine, destination });
     await dm.load;
     return dm;
   })();
@@ -65,12 +81,15 @@ const AUX_INSTRUMENT: Record<'shaker' | 'clave', string> = {
 export async function loadBundle(
   ctx: AudioContext,
   bundle: InstrumentBundle,
+  destination?: AudioNode,
 ): Promise<LoadedBundle> {
   const [drums, bass, guitar, aux] = await Promise.all([
-    getDrumMachine(ctx, bundle.drums.machine),
-    getSoundfont(ctx, bundle.bass.instrument),
-    getSoundfont(ctx, bundle.guitar.instrument),
-    bundle.aux ? getSoundfont(ctx, AUX_INSTRUMENT[bundle.aux.kind]) : Promise.resolve(undefined),
+    getDrumMachine(ctx, bundle.drums.machine, destination),
+    getSoundfont(ctx, bundle.bass.instrument, destination),
+    getSoundfont(ctx, bundle.guitar.instrument, destination),
+    bundle.aux
+      ? getSoundfont(ctx, AUX_INSTRUMENT[bundle.aux.kind], destination)
+      : Promise.resolve(undefined),
   ]);
   return { drums, bass, guitar, aux };
 }
