@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 
 import { Footer } from '@/components/site/Footer';
 
@@ -9,9 +10,22 @@ import './globals.css';
  * RootLayout — 앱 전체의 상위 쉘 (Django의 base.html에 대응).
  * Server Component. 폰트·메타데이터·전역 CSS·전역 푸터만 담당하고,
  * 인터랙티브 UI는 하위 Client Component에서 렌더한다.
+ *
+ * 폰트 전부 self-host:
+ *   - Pretendard Variable: public/fonts/ → next/font/local
+ *   - JetBrains Mono: next/font/google이 빌드 시 self-host
+ *   외부 도메인(jsdelivr 등) 런타임 의존을 제거 — CSP 단순화 + CDN 단절 리스크 해소.
  */
 
-// JetBrains Mono — 수치·도수·코드 표기용.
+// Pretendard Variable — 본문/디스플레이용 한글·라틴 변동 폰트(weight 45–920 axis).
+const pretendard = localFont({
+  src: '../public/fonts/PretendardVariable.woff2',
+  variable: '--font-sans-local',
+  display: 'swap',
+  weight: '45 920',
+});
+
+// JetBrains Mono — 수치·도수·코드 표기용. next/font/google이 빌드에 self-host.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono-local',
@@ -56,7 +70,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={jetbrainsMono.variable}>
+    <html lang="ko" className={`${pretendard.variable} ${jetbrainsMono.variable}`}>
       <body className="flex min-h-screen flex-col bg-bg-base text-ink-primary">
         <div className="flex-1">{children}</div>
         <Footer />

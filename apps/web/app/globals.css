@@ -4,10 +4,8 @@
  * 모든 디자인 토큰은 여기에 정의하고, 컴포넌트에서는 토큰 클래스(`bg-bg-base`, `text-accent-brass` 등)로만 참조한다.
  * hex 값을 컴포넌트에 하드코딩하지 말 것.
  */
-/* Pretendard Variable — dynamic subsetting (jsdelivr).
-   Phase 1 이후 next/font/local로 이관 예정.
-   주의: @import 규칙은 모든 other rule 앞에 와야 하므로 tailwindcss 임포트보다 먼저. */
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+/* Pretendard Variable과 JetBrains Mono는 next/font가 layout.tsx에서 self-host로 등록.
+   루트에 --font-sans-local / --font-mono-local CSS 변수를 주입하므로 토큰에서 var()로 참조한다. */
 @import "tailwindcss";
 
 @theme {
@@ -47,10 +45,11 @@
 
   /* ── Fonts ────────────────────────────────────── */
   /* sans-serif 단독 폴백 금지 — Pretendard 로드 실패 시 macOS는 -apple-system,
-     Windows는 ui-sans-serif 경로로 폴백. 최후 수단 폴백은 제거. */
-  --font-display: "Pretendard Variable", -apple-system, ui-sans-serif;
-  --font-body: "Pretendard Variable", -apple-system, ui-sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+     Windows는 ui-sans-serif 경로로 폴백. 최후 수단 폴백은 제거.
+     var(--font-sans-local) / var(--font-mono-local)은 next/font가 :root에 주입. */
+  --font-display: var(--font-sans-local), "Pretendard Variable", -apple-system, ui-sans-serif;
+  --font-body: var(--font-sans-local), "Pretendard Variable", -apple-system, ui-sans-serif;
+  --font-mono: var(--font-mono-local), "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* ── Sizing ───────────────────────────────────── */
   --text-hero: 9rem;       /* 144px — BPM 히어로 */
