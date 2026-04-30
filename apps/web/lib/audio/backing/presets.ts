@@ -40,10 +40,11 @@ export const CATEGORY_BUNDLES = {
     guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
   },
   rock: {
-    label: 'Rock · Clean Electric + Pick Bass',
+    label: 'Rock · Distortion + Pick Bass',
     drums: { machine: 'Roland CR-8000' },
     bass: { instrument: 'electric_bass_pick', octaveShift: -2 },
-    guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
+    // 정통 rock은 distortion이 표준 — clean은 modal/pop과 차별화 약함.
+    guitar: { instrument: 'distortion_guitar', octaveShift: -1 },
   },
   funk: {
     label: 'Funk · Muted Electric + Shaker',

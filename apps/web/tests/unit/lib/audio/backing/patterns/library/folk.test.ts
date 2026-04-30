@@ -59,27 +59,46 @@ describe('folk selectSlot — folk_strum variant', () => {
   });
 });
 
-describe('folk selectSlot — ballad_pick variant', () => {
-  it('모든 idx에서 ballad_pick 슬롯 사용', () => {
-    const tpl8 = {
-      bars: 8,
-      default_bpm: 70,
-      progression: Array.from({ length: 8 }, (_, i) => ({ bar: i + 1, chord: 'I' })),
-    };
-    for (const i of [0, 3, 7]) {
-      expect(FOLK_RHYTHM.selectSlot(tpl8, i, 'ballad_pick')).toBe('ballad_pick');
+describe('folk selectSlot — ballad_pick variant (Sprint 10 PR-D 짝/홀 변주)', () => {
+  const tpl8 = {
+    bars: 8,
+    default_bpm: 70,
+    progression: Array.from({ length: 8 }, (_, i) => ({ bar: i + 1, chord: 'I' })),
+  };
+
+  it('짝수 idx → ballad_pick_a (표준)', () => {
+    for (const i of [0, 2, 4, 6]) {
+      expect(FOLK_RHYTHM.selectSlot(tpl8, i, 'ballad_pick')).toBe('ballad_pick_a');
     }
   });
 
-  it('ballad_pick은 kick 1박만 (half-time)', () => {
-    const kick = FOLK_RHYTHM.patterns.ballad_pick?.drums.kick ?? [];
-    expect(kick.length).toBe(1);
-    expect(kick[0]?.time).toBe('0:0:0');
+  it('홀수 idx → ballad_pick_b (4박-and pickup)', () => {
+    for (const i of [1, 3, 5, 7]) {
+      expect(FOLK_RHYTHM.selectSlot(tpl8, i, 'ballad_pick')).toBe('ballad_pick_b');
+    }
   });
 
-  it('ballad_pick snare는 3박 backbeat (half-time 백비트)', () => {
-    const snare = FOLK_RHYTHM.patterns.ballad_pick?.drums.snare ?? [];
+  it('ballad_pick_a/b 둘 다 정의 + half-time kick 1박만', () => {
+    expect(FOLK_RHYTHM.patterns.ballad_pick_a).toBeDefined();
+    expect(FOLK_RHYTHM.patterns.ballad_pick_b).toBeDefined();
+    expect(FOLK_RHYTHM.patterns.ballad_pick_a?.drums.kick.length).toBe(1);
+    expect(FOLK_RHYTHM.patterns.ballad_pick_b?.drums.kick.length).toBe(1);
+    expect(FOLK_RHYTHM.patterns.ballad_pick_a?.drums.kick[0]?.time).toBe('0:0:0');
+  });
+
+  it('ballad_pick_a snare = 3박 backbeat 1개 (half-time)', () => {
+    const snare = FOLK_RHYTHM.patterns.ballad_pick_a?.drums.snare ?? [];
     expect(snare.length).toBe(1);
     expect(snare[0]?.time).toBe('0:2:0');
+  });
+
+  it('ballad_pick_b는 4박-and pickup 추가 (snare/hat/bass/guitar 끝에 ghost)', () => {
+    const b = FOLK_RHYTHM.patterns.ballad_pick_b;
+    // snare 4박-and ghost
+    expect(b?.drums.snare.some((s) => s.time === '0:3:2')).toBe(true);
+    // bass 4박-and pickup
+    expect(b?.bass.steps.some((s) => s.time === '0:3:2')).toBe(true);
+    // guitar 4박-and up strum
+    expect(b?.guitar.some((s) => s.time === '0:3:2' && s.direction === 'up')).toBe(true);
   });
 });
