@@ -40,26 +40,19 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     rhythmVariant: 'shuffle12bar',
   },
   // half-time dreamy. distortion 빼고 clean으로 — instrument override.
+  // 음량 정체성(velocityScale/voiceGain)은 절대 볼륨 통일을 위해 제거 — Sprint 10 후속.
   'slow-minor-blues': {
     rhythmVariant: 'slow',
-    toneProfile: {
-      velocityScale: 0.85,
-      voiceGain: { drums: 0.85 },
-      reverbWet: 0.30,
-    },
+    toneProfile: { reverbWet: 0.30 },
     instrumentOverrides: {
       guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
     },
   },
   // hard bop minor (Art Blakey/Lee Morgan 스타일). medium swing 0.62, jazz guitar
   // archtop, Blue Note recording 느낌으로 reverbWet 0.15 (slightly dry).
-  // distortion guitar는 hard bop 정통과 어긋나 명시적 override.
   'hard-bop-minor-blues': {
     rhythmVariant: 'hard_bop',
-    toneProfile: {
-      voiceGain: { drums: 0.95 },
-      reverbWet: 0.15,
-    },
+    toneProfile: { reverbWet: 0.15 },
     instrumentOverrides: {
       guitar: { instrument: 'electric_guitar_jazz', octaveShift: -1 },
     },
@@ -67,15 +60,11 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   // 16th hat 추가된 정통 shuffle.
   'shuffle-minor-blues': {
     rhythmVariant: 'straight_shuffle',
-    toneProfile: { velocityScale: 1.05 },
   },
   // smoky comping + walking bass + jazz guitar.
   'jazz-major-blues': {
     rhythmVariant: 'major_swing',
-    toneProfile: {
-      velocityScale: 0.95,
-      reverbWet: 0.25,
-    },
+    toneProfile: { reverbWet: 0.25 },
     instrumentOverrides: {
       guitar: { instrument: 'electric_guitar_jazz', octaveShift: -1 },
     },
@@ -83,11 +72,7 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   // tight driving 8th, dry. swing 0.55.
   'jump-blues': {
     rhythmVariant: 'jump',
-    toneProfile: {
-      velocityScale: 1.15,
-      voiceGain: { drums: 1.1 },
-      reverbWet: 0.10,
-    },
+    toneProfile: { reverbWet: 0.10 },
   },
 
   // ── pop 2장 ──────────────────────────────────────────────────────
@@ -96,54 +81,32 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   // half-time doo-wop feel.
   '50s-I-vi-IV-V': {
     rhythmVariant: '50s_doo_wop',
-    toneProfile: {
-      velocityScale: 0.9,
-      reverbWet: 0.25,
-    },
+    toneProfile: { reverbWet: 0.25 },
   },
 
   // ── jazz / minor / funk / bossa 각 1장 ────────────────────────────
   'jazz-ii-V-I': {
-    toneProfile: {
-      velocityScale: 0.95,
-      reverbWet: 0.22,
-    },
+    toneProfile: { reverbWet: 0.22 },
   },
   // 카테고리 default 그대로.
   'minor-i-VI-III-VII': {},
   'funk-i7-vamp': {
-    toneProfile: {
-      velocityScale: 1.1,
-      voiceGain: { drums: 1.05, guitar: 1.1 },
-      reverbWet: 0.12,
-    },
+    toneProfile: { reverbWet: 0.12 },
   },
   'bossa-i-iv-ii-v': {
-    toneProfile: {
-      velocityScale: 0.85,
-      voiceGain: { drums: 0.85 },
-      reverbWet: 0.25,
-    },
+    toneProfile: { reverbWet: 0.25 },
   },
 
   // ── modal 3장 ────────────────────────────────────────────────────
   'dorian-vamp': {
     rhythmVariant: 'dorian_groove',
-    toneProfile: { voiceGain: { drums: 1.05, guitar: 1.1 } },
   },
   'lydian-vamp': {
     rhythmVariant: 'lydian_dreamy',
-    toneProfile: {
-      velocityScale: 0.9,
-      reverbWet: 0.30,
-    },
+    toneProfile: { reverbWet: 0.30 },
   },
   'mixolydian-vamp': {
     rhythmVariant: 'mixolydian_driving',
-    toneProfile: {
-      velocityScale: 1.05,
-      voiceGain: { drums: 1.05 },
-    },
   },
 
   // ── Sprint 10 신규 5장 ────────────────────────────────────────────
@@ -152,12 +115,10 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     rhythmVariant: 'folk_strum',
   },
   // half-time finger-pick ballad. acoustic_guitar_steel(folk default) 그대로.
+  // 음량은 dreamy half-time이라도 절대 볼륨 통일 — velocityScale 제거.
   'ballad-I-V-vi-IV': {
     rhythmVariant: 'ballad_pick',
-    toneProfile: {
-      velocityScale: 0.85,
-      reverbWet: 0.30,
-    },
+    toneProfile: { reverbWet: 0.30 },
   },
   // Mixolydian rock — distortion guitar(rock default) + dry.
   'rock-I-bVII-IV': {

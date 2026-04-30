@@ -2,12 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { resolveCardProfile } from '@/lib/audio/backing/profile-merge';
 
 describe('resolveCardProfile', () => {
-  it('returns category default for empty profile', () => {
-    // pop-I-V-vi-IV는 빈 프로필 → pop CATEGORY_TONE_DEFAULTS 그대로
+  it('returns category default for empty profile (uniform volume base)', () => {
+    // pop-I-V-vi-IV는 빈 프로필 → pop CATEGORY_TONE_DEFAULTS 그대로.
+    // Sprint 10 후속: 모든 카테고리 default voiceGain/velocityScale은 통일됨.
     const r = resolveCardProfile('pop-I-V-vi-IV', 'pop');
     expect(r.variant).toBeUndefined();
     expect(r.tone.velocityScale).toBe(1.0);
-    expect(r.tone.voiceGain).toEqual({ drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 });
+    expect(r.tone.voiceGain).toEqual({ drums: 0.95, bass: 1.0, guitar: 1.05, aux: 1.0 });
     expect(r.tone.reverbWet).toBe(0.18);
     expect(r.bundle.guitar.instrument).toBe('electric_guitar_clean');
   });

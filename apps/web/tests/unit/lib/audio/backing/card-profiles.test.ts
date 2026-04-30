@@ -115,11 +115,12 @@ describe('CARD_PROFILES — Sprint 10 신규 5장', () => {
     });
   });
 
-  it('ballad-I-V-vi-IV: rhythmVariant=ballad_pick, reverbWet 0.30', () => {
+  it('ballad-I-V-vi-IV: rhythmVariant=ballad_pick, reverbWet 0.30 (volume uniform)', () => {
     const p = CARD_PROFILES['ballad-I-V-vi-IV'];
     expect(p?.rhythmVariant).toBe('ballad_pick');
     expect(p?.toneProfile?.reverbWet).toBe(0.30);
-    expect(p?.toneProfile?.velocityScale).toBe(0.85);
+    // velocityScale은 절대 볼륨 통일을 위해 제거됨
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
   });
 
   it('rock-I-bVII-IV: rhythmVariant=rock_mixo, reverbWet 0.10', () => {
