@@ -92,15 +92,12 @@ export const FOLK_RHYTHM: CategoryRhythm = {
       ],
     },
 
-    // ballad_pick: half-time finger-pick. kick 1박, snare 3박 backbeat, soft 4분 hat.
-    // ballad-I-V-vi-IV 8bar 카드용. 70bpm 기준 호흡 길게.
-    ballad_pick: {
+    // ballad_pick_a: 짝수 마디 — half-time finger-pick 표준.
+    // kick 1박, snare 3박 backbeat, soft 4분 hat.
+    ballad_pick_a: {
       drums: {
-        // half-time: kick 1박만
         kick: [{ time: '0:0:0' }],
-        // half-time: snare 3박 backbeat (4박이 아닌 3박)
         snare: [{ time: '0:2:0', velocity: 0.45 }],
-        // soft 4분 hat
         hat: [
           { time: '0:0:0', velocity: 0.3 },
           { time: '0:1:0', velocity: 0.3 },
@@ -109,18 +106,53 @@ export const FOLK_RHYTHM: CategoryRhythm = {
         ],
       },
       bass: {
-        // 1박 루트, 3박 루트(단순화)
         steps: [
           { time: '0:0:0', velocity: 0.7 },
           { time: '0:2:0', velocity: 0.7 },
         ],
       },
-      // finger-pick: 8분 down 4번 (Travis 단순화). velocity 낮게.
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.4 },
         { time: '0:1:0', direction: 'down', velocity: 0.35 },
         { time: '0:2:0', direction: 'down', velocity: 0.4 },
         { time: '0:3:0', direction: 'down', velocity: 0.35 },
+      ],
+    },
+
+    // ballad_pick_b: 홀수 마디 — 4박-and pickup으로 다음 마디 leading.
+    // 짝/홀 alternating으로 8bar 단조 해소.
+    ballad_pick_b: {
+      drums: {
+        kick: [{ time: '0:0:0' }],
+        // 4박-and ghost snare 추가 — 다음 마디로 호흡 이끔
+        snare: [
+          { time: '0:2:0', velocity: 0.45 },
+          { time: '0:3:2', velocity: 0.25 },
+        ],
+        // 4박-and hat ghost — pickup 보강
+        hat: [
+          { time: '0:0:0', velocity: 0.3 },
+          { time: '0:1:0', velocity: 0.3 },
+          { time: '0:2:0', velocity: 0.3 },
+          { time: '0:3:0', velocity: 0.3 },
+          { time: '0:3:2', velocity: 0.25 },
+        ],
+      },
+      bass: {
+        // 4박-and pickup note — 다음 마디 root anticipation
+        steps: [
+          { time: '0:0:0', velocity: 0.7 },
+          { time: '0:2:0', velocity: 0.7 },
+          { time: '0:3:2', velocity: 0.5 },
+        ],
+      },
+      // 4박-and up strum — pickup feel
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.4 },
+        { time: '0:1:0', direction: 'down', velocity: 0.35 },
+        { time: '0:2:0', direction: 'down', velocity: 0.4 },
+        { time: '0:3:0', direction: 'down', velocity: 0.35 },
+        { time: '0:3:2', direction: 'up', velocity: 0.3 },
       ],
     },
 
@@ -161,7 +193,11 @@ export const FOLK_RHYTHM: CategoryRhythm = {
    */
   selectSlot: (tpl, idx, variant) => {
     if (variant === 'folk_strum') return 'folk_strum';
-    if (variant === 'ballad_pick') return 'ballad_pick';
+    if (variant === 'ballad_pick') {
+      const local = idx % tpl.bars;
+      // 짝수 마디 → ballad_pick_a (표준), 홀수 → ballad_pick_b (4박-and pickup)
+      return local % 2 === 0 ? 'ballad_pick_a' : 'ballad_pick_b';
+    }
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return local % 2 === 0 ? 'picking' : 'strum_8th';
