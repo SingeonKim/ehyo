@@ -1,0 +1,939 @@
+[
+  {
+    "slug": "12-bar-blues-major",
+    "name": "12-Bar Blues (Major)",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 90,
+    "recommended_scales": [
+      "major_blues",
+      "minor_blues",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I7"
+      },
+      {
+        "bar": 2,
+        "chord": "I7"
+      },
+      {
+        "bar": 3,
+        "chord": "I7"
+      },
+      {
+        "bar": 4,
+        "chord": "I7"
+      },
+      {
+        "bar": 5,
+        "chord": "IV7"
+      },
+      {
+        "bar": 6,
+        "chord": "IV7"
+      },
+      {
+        "bar": 7,
+        "chord": "I7"
+      },
+      {
+        "bar": 8,
+        "chord": "I7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "IV7"
+      },
+      {
+        "bar": 11,
+        "chord": "I7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "12-bar-blues-minor",
+    "name": "12-Bar Blues (Minor)",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 80,
+    "recommended_scales": [
+      "minor_blues",
+      "minor_pentatonic",
+      "dorian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i7"
+      },
+      {
+        "bar": 2,
+        "chord": "i7"
+      },
+      {
+        "bar": 3,
+        "chord": "i7"
+      },
+      {
+        "bar": 4,
+        "chord": "i7"
+      },
+      {
+        "bar": 5,
+        "chord": "iv7"
+      },
+      {
+        "bar": 6,
+        "chord": "iv7"
+      },
+      {
+        "bar": 7,
+        "chord": "i7"
+      },
+      {
+        "bar": 8,
+        "chord": "i7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "iv7"
+      },
+      {
+        "bar": 11,
+        "chord": "i7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "12-bar-blues-quick-change",
+    "name": "12-Bar Blues (Quick Change)",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 95,
+    "recommended_scales": [
+      "major_blues",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I7"
+      },
+      {
+        "bar": 2,
+        "chord": "IV7"
+      },
+      {
+        "bar": 3,
+        "chord": "I7"
+      },
+      {
+        "bar": 4,
+        "chord": "I7"
+      },
+      {
+        "bar": 5,
+        "chord": "IV7"
+      },
+      {
+        "bar": 6,
+        "chord": "IV7"
+      },
+      {
+        "bar": 7,
+        "chord": "I7"
+      },
+      {
+        "bar": 8,
+        "chord": "I7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "IV7"
+      },
+      {
+        "bar": 11,
+        "chord": "I7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "pop-I-V-vi-IV",
+    "name": "I–V–vi–IV (Axis Progression)",
+    "category": "pop",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 110,
+    "recommended_scales": [
+      "major",
+      "major_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "V"
+      },
+      {
+        "bar": 3,
+        "chord": "vi"
+      },
+      {
+        "bar": 4,
+        "chord": "IV"
+      }
+    ]
+  },
+  {
+    "slug": "50s-I-vi-IV-V",
+    "name": "50s Doo-wop (I–vi–IV–V)",
+    "category": "pop",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 100,
+    "recommended_scales": [
+      "major",
+      "major_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "vi"
+      },
+      {
+        "bar": 3,
+        "chord": "IV"
+      },
+      {
+        "bar": 4,
+        "chord": "V"
+      }
+    ]
+  },
+  {
+    "slug": "jazz-ii-V-I",
+    "name": "Jazz ii–V–I",
+    "category": "jazz",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 140,
+    "recommended_scales": [
+      "major",
+      "dorian",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "iim7"
+      },
+      {
+        "bar": 2,
+        "chord": "V7"
+      },
+      {
+        "bar": 3,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 4,
+        "chord": "Imaj7"
+      }
+    ]
+  },
+  {
+    "slug": "minor-i-VI-III-VII",
+    "name": "Minor i–VI–III–VII",
+    "category": "minor",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 100,
+    "recommended_scales": [
+      "natural_minor",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i"
+      },
+      {
+        "bar": 2,
+        "chord": "VI"
+      },
+      {
+        "bar": 3,
+        "chord": "III"
+      },
+      {
+        "bar": 4,
+        "chord": "VII"
+      }
+    ]
+  },
+  {
+    "slug": "dorian-vamp",
+    "name": "Dorian Vamp (i–IV)",
+    "category": "modal",
+    "bars": 2,
+    "time_signature": "4/4",
+    "default_bpm": 110,
+    "recommended_scales": [
+      "dorian",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i7"
+      },
+      {
+        "bar": 2,
+        "chord": "IV7"
+      }
+    ]
+  },
+  {
+    "slug": "lydian-vamp",
+    "name": "Lydian Vamp (I–II)",
+    "category": "modal",
+    "bars": 2,
+    "time_signature": "4/4",
+    "default_bpm": 110,
+    "recommended_scales": [
+      "lydian",
+      "major_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 2,
+        "chord": "II"
+      }
+    ]
+  },
+  {
+    "slug": "mixolydian-vamp",
+    "name": "Mixolydian Vamp (I–VII)",
+    "category": "modal",
+    "bars": 2,
+    "time_signature": "4/4",
+    "default_bpm": 115,
+    "recommended_scales": [
+      "mixolydian",
+      "major_blues"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I7"
+      },
+      {
+        "bar": 2,
+        "chord": "VII"
+      }
+    ]
+  },
+  {
+    "slug": "slow-minor-blues",
+    "name": "Slow Minor Blues",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 70,
+    "recommended_scales": [
+      "minor_blues",
+      "dorian",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i7"
+      },
+      {
+        "bar": 2,
+        "chord": "i7"
+      },
+      {
+        "bar": 3,
+        "chord": "i7"
+      },
+      {
+        "bar": 4,
+        "chord": "i7"
+      },
+      {
+        "bar": 5,
+        "chord": "iv7"
+      },
+      {
+        "bar": 6,
+        "chord": "iv7"
+      },
+      {
+        "bar": 7,
+        "chord": "i7"
+      },
+      {
+        "bar": 8,
+        "chord": "i7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "iv7"
+      },
+      {
+        "bar": 11,
+        "chord": "i7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "hard-bop-minor-blues",
+    "name": "Hard Bop Minor Blues",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 130,
+    "recommended_scales": [
+      "minor_blues",
+      "dorian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i7"
+      },
+      {
+        "bar": 2,
+        "chord": "i7"
+      },
+      {
+        "bar": 3,
+        "chord": "i7"
+      },
+      {
+        "bar": 4,
+        "chord": "i7"
+      },
+      {
+        "bar": 5,
+        "chord": "iv7"
+      },
+      {
+        "bar": 6,
+        "chord": "iv7"
+      },
+      {
+        "bar": 7,
+        "chord": "i7"
+      },
+      {
+        "bar": 8,
+        "chord": "i7"
+      },
+      {
+        "bar": 9,
+        "chord": "iim7b5"
+      },
+      {
+        "bar": 10,
+        "chord": "V7"
+      },
+      {
+        "bar": 11,
+        "chord": "i7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "shuffle-minor-blues",
+    "name": "Shuffle Minor Blues",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 100,
+    "recommended_scales": [
+      "minor_blues",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i7"
+      },
+      {
+        "bar": 2,
+        "chord": "iv7"
+      },
+      {
+        "bar": 3,
+        "chord": "i7"
+      },
+      {
+        "bar": 4,
+        "chord": "i7"
+      },
+      {
+        "bar": 5,
+        "chord": "iv7"
+      },
+      {
+        "bar": 6,
+        "chord": "iv7"
+      },
+      {
+        "bar": 7,
+        "chord": "i7"
+      },
+      {
+        "bar": 8,
+        "chord": "i7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "iv7"
+      },
+      {
+        "bar": 11,
+        "chord": "i7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "jazz-major-blues",
+    "name": "Jazz Major Blues",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 120,
+    "recommended_scales": [
+      "mixolydian",
+      "major_blues",
+      "dorian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 2,
+        "chord": "I7"
+      },
+      {
+        "bar": 3,
+        "chord": "IVmaj7"
+      },
+      {
+        "bar": 4,
+        "chord": "ivm7"
+      },
+      {
+        "bar": 5,
+        "chord": "IVmaj7"
+      },
+      {
+        "bar": 6,
+        "chord": "bVII7"
+      },
+      {
+        "bar": 7,
+        "chord": "iiim7"
+      },
+      {
+        "bar": 8,
+        "chord": "VI7"
+      },
+      {
+        "bar": 9,
+        "chord": "iim7"
+      },
+      {
+        "bar": 10,
+        "chord": "V7"
+      },
+      {
+        "bar": 11,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "jump-blues",
+    "name": "Jump Blues",
+    "category": "blues",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 140,
+    "recommended_scales": [
+      "major_blues",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I7"
+      },
+      {
+        "bar": 2,
+        "chord": "IV7"
+      },
+      {
+        "bar": 3,
+        "chord": "I7"
+      },
+      {
+        "bar": 4,
+        "chord": "I7"
+      },
+      {
+        "bar": 5,
+        "chord": "IV7"
+      },
+      {
+        "bar": 6,
+        "chord": "IV7"
+      },
+      {
+        "bar": 7,
+        "chord": "I7"
+      },
+      {
+        "bar": 8,
+        "chord": "I7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "IV7"
+      },
+      {
+        "bar": 11,
+        "chord": "I7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "funk-i7-vamp",
+    "name": "Funk I7 Vamp",
+    "category": "funk",
+    "bars": 1,
+    "time_signature": "4/4",
+    "default_bpm": 110,
+    "recommended_scales": [
+      "mixolydian",
+      "minor_pentatonic",
+      "major_blues"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I7"
+      }
+    ]
+  },
+  {
+    "slug": "bossa-i-iv-ii-v",
+    "name": "Bossa I–IV–ii–V",
+    "category": "bossa",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 130,
+    "recommended_scales": [
+      "major",
+      "lydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 2,
+        "chord": "IVmaj7"
+      },
+      {
+        "bar": 3,
+        "chord": "iim7"
+      },
+      {
+        "bar": 4,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "folk-I-IV-V",
+    "name": "Folk I–IV–V",
+    "category": "folk",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 95,
+    "recommended_scales": [
+      "major",
+      "major_pentatonic",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "IV"
+      },
+      {
+        "bar": 3,
+        "chord": "V"
+      },
+      {
+        "bar": 4,
+        "chord": "I"
+      }
+    ]
+  },
+  {
+    "slug": "ballad-I-V-vi-IV",
+    "name": "Ballad I–V–vi–IV (8-bar)",
+    "category": "folk",
+    "bars": 8,
+    "time_signature": "4/4",
+    "default_bpm": 70,
+    "recommended_scales": [
+      "major",
+      "major_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "V"
+      },
+      {
+        "bar": 3,
+        "chord": "vi"
+      },
+      {
+        "bar": 4,
+        "chord": "IV"
+      },
+      {
+        "bar": 5,
+        "chord": "I"
+      },
+      {
+        "bar": 6,
+        "chord": "V"
+      },
+      {
+        "bar": 7,
+        "chord": "IV"
+      },
+      {
+        "bar": 8,
+        "chord": "V"
+      }
+    ]
+  },
+  {
+    "slug": "rock-I-bVII-IV",
+    "name": "Rock I–bVII–IV (Mixolydian)",
+    "category": "rock",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 110,
+    "recommended_scales": [
+      "mixolydian",
+      "major_pentatonic",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "bVII"
+      },
+      {
+        "bar": 3,
+        "chord": "IV"
+      },
+      {
+        "bar": 4,
+        "chord": "I"
+      }
+    ]
+  },
+  {
+    "slug": "rock-12-bar",
+    "name": "Rock 12-Bar (Chuck Berry)",
+    "category": "rock",
+    "bars": 12,
+    "time_signature": "4/4",
+    "default_bpm": 130,
+    "recommended_scales": [
+      "major_pentatonic",
+      "minor_pentatonic",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I7"
+      },
+      {
+        "bar": 2,
+        "chord": "I7"
+      },
+      {
+        "bar": 3,
+        "chord": "I7"
+      },
+      {
+        "bar": 4,
+        "chord": "I7"
+      },
+      {
+        "bar": 5,
+        "chord": "IV7"
+      },
+      {
+        "bar": 6,
+        "chord": "IV7"
+      },
+      {
+        "bar": 7,
+        "chord": "I7"
+      },
+      {
+        "bar": 8,
+        "chord": "I7"
+      },
+      {
+        "bar": 9,
+        "chord": "V7"
+      },
+      {
+        "bar": 10,
+        "chord": "IV7"
+      },
+      {
+        "bar": 11,
+        "chord": "I7"
+      },
+      {
+        "bar": 12,
+        "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "phrygian-vamp",
+    "name": "Phrygian Vamp (Spanish)",
+    "category": "modal",
+    "bars": 4,
+    "time_signature": "4/4",
+    "default_bpm": 100,
+    "recommended_scales": [
+      "phrygian",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i"
+      },
+      {
+        "bar": 2,
+        "chord": "bII"
+      },
+      {
+        "bar": 3,
+        "chord": "i"
+      },
+      {
+        "bar": 4,
+        "chord": "bII"
+      }
+    ]
+  }
+]
