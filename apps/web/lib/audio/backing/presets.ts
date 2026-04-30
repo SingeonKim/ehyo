@@ -111,53 +111,25 @@ export type ToneProfile = {
   reverbWet: number;
 };
 
+// Sprint 10 후속 — 절대 볼륨 통일.
+// 모든 카테고리의 velocityScale + voiceGain을 12-bar-blues-major 기준으로 균일화.
+// 정체성은 reverbWet, instrumentOverrides, 패턴 자체로만 표현 (음량 차이 X).
+const UNIFORM_TONE_BASE = {
+  velocityScale: 1.0,
+  voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.05, aux: 1.0 },
+} as const;
+
 export const CATEGORY_TONE_DEFAULTS: Readonly<Record<keyof typeof CATEGORY_BUNDLES, ToneProfile>> =
   {
-    pop: {
-      velocityScale: 1.0,
-      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.18,
-    },
-    rock: {
-      velocityScale: 1.1,
-      voiceGain: { drums: 1.05, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.14,
-    },
-    funk: {
-      velocityScale: 1.05,
-      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.12,
-    },
-    jazz: {
-      velocityScale: 0.95,
-      voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.22,
-    },
-    blues: {
-      velocityScale: 1.0,
-      voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.05, aux: 1.0 },
-      reverbWet: 0.22,
-    },
-    folk: {
-      velocityScale: 0.95,
-      voiceGain: { drums: 0.95, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.18,
-    },
-    bossa: {
-      velocityScale: 0.9,
-      voiceGain: { drums: 0.9, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.20,
-    },
-    minor: {
-      velocityScale: 1.0,
-      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.18,
-    },
-    modal: {
-      velocityScale: 1.0,
-      voiceGain: { drums: 1.0, bass: 1.0, guitar: 1.0, aux: 1.0 },
-      reverbWet: 0.18,
-    },
+    pop: { ...UNIFORM_TONE_BASE, reverbWet: 0.18 },
+    rock: { ...UNIFORM_TONE_BASE, reverbWet: 0.14 },
+    funk: { ...UNIFORM_TONE_BASE, reverbWet: 0.12 },
+    jazz: { ...UNIFORM_TONE_BASE, reverbWet: 0.22 },
+    blues: { ...UNIFORM_TONE_BASE, reverbWet: 0.22 },
+    folk: { ...UNIFORM_TONE_BASE, reverbWet: 0.18 },
+    bossa: { ...UNIFORM_TONE_BASE, reverbWet: 0.20 },
+    minor: { ...UNIFORM_TONE_BASE, reverbWet: 0.18 },
+    modal: { ...UNIFORM_TONE_BASE, reverbWet: 0.18 },
   };
 
 /** 알려지지 않은 카테고리는 pop default. */
