@@ -377,15 +377,24 @@ export const useAppStore = create<AppState>()(
           s.metronome.isPlaying = false;
         }),
 
-      tap: (now = typeof performance !== 'undefined' ? performance.now() : Date.now()) =>
+      tap: (now?: number) =>
         set((s) => {
+          // 방어 로직: 호출부에서 MouseEvent 같은 비-숫자 인자를 잘못 넘길 수 있다
+          // (예: <button onClick={tap}>는 MouseEvent를 now로 전달). 유한 숫자가
+          // 아니면 현재 시각으로 폴백해 NaN 전파를 차단.
+          const safeNow =
+            typeof now === 'number' && Number.isFinite(now)
+              ? now
+              : typeof performance !== 'undefined'
+                ? performance.now()
+                : Date.now();
           const ts = s.metronome.tapTimestamps;
           const lastTap = ts[ts.length - 1];
           // 2초 이상 공백이면 탭 기록 리셋 (사용자가 다시 시작하는 것으로 간주)
-          if (lastTap !== undefined && now - lastTap > TAP_WINDOW_MS) {
+          if (lastTap !== undefined && safeNow - lastTap > TAP_WINDOW_MS) {
             ts.length = 0;
           }
-          ts.push(now);
+          ts.push(safeNow);
           // 최근 TAP_MAX + 1 (=5)개만 유지 → 4개 간격 계산 가능
           while (ts.length > TAP_MAX + 1) ts.shift();
 
