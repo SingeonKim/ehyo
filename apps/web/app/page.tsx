@@ -6,10 +6,12 @@ import { RandomTaunt } from '@/components/home/random-taunt';
  * 랜딩 페이지 — Server Component.
  * 메인 타이틀(앱 이름 "에휴..")은 정적이라 서버에서 렌더하고,
  * 서브타이틀은 랜덤 자극 멘트라 RandomTaunt(Client Component)로 분리한다.
+ *
+ * 글로벌 푸터(layout.tsx)와 자연스럽게 이어지도록 자체 footer 제거.
  */
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col justify-between px-8 py-16">
+    <main className="mx-auto max-w-5xl px-8 py-16">
       <header className="flex items-baseline justify-between">
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
           ehyo · 에휴
@@ -48,13 +50,6 @@ export default function HomePage() {
           </Link>
         </nav>
       </section>
-
-      <footer className="flex items-end justify-between border-t border-ink-muted/20 pt-6">
-        <p className="font-mono text-xs text-ink-muted">
-          Pretendard · JetBrains Mono · Analog × Editorial
-        </p>
-        <p className="font-mono text-xs text-ink-muted">2026</p>
-      </footer>
     </main>
   );
 }

@@ -1,15 +1,17 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
+
+import { Footer } from '@/components/site/Footer';
+
 import './globals.css';
 
 /*
  * RootLayout — 앱 전체의 상위 쉘 (Django의 base.html에 대응).
- * 이 컴포넌트는 Server Component. 브라우저 API를 사용하지 않으므로 `'use client'` 없음.
- * 폰트·메타데이터·전역 CSS만 담당하고, 실제 상태를 가진 UI는 하위 Client Component에서 렌더.
+ * Server Component. 폰트·메타데이터·전역 CSS·전역 푸터만 담당하고,
+ * 인터랙티브 UI는 하위 Client Component에서 렌더한다.
  */
 
-// JetBrains Mono — 수치·도수·코드 표기용. Google Fonts에서 variable font 로드.
-// Pretendard는 globals.css의 CDN import로 로드하므로 여기서는 라틴 모노만 next/font로.
+// JetBrains Mono — 수치·도수·코드 표기용.
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono-local',
@@ -17,17 +19,32 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ['400', '500', '700'],
 });
 
+// metadataBase는 절대 URL 생성에 사용. 배포 환경의 공개 URL을 환경변수로 받고,
+// 미설정이면 로컬 개발용 폴백.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+
 export const metadata: Metadata = {
   title: {
     default: '에휴.. (Ehyo..)',
     template: '%s · 에휴..',
   },
   description: '메트로놈과 기타 스케일 가이드를 한 화면에서. 기타 연습자를 위한 웹 도구.',
-  metadataBase: new URL('http://localhost:3000'),
+  metadataBase: new URL(SITE_URL),
+  applicationName: '에휴..',
   openGraph: {
     title: '에휴.. (Ehyo..)',
     description: '메트로놈과 기타 스케일 가이드를 한 화면에서.',
     type: 'website',
+    locale: 'ko_KR',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '에휴.. (Ehyo..)',
+    description: '메트로놈과 기타 스케일 가이드를 한 화면에서.',
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -40,7 +57,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko" className={jetbrainsMono.variable}>
-      <body>{children}</body>
+      <body className="flex min-h-screen flex-col bg-bg-base text-ink-primary">
+        <div className="flex-1">{children}</div>
+        <Footer />
+      </body>
     </html>
   );
 }

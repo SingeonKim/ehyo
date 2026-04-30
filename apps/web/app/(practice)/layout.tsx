@@ -8,10 +8,12 @@ import { MetronomeDock } from '@/components/metronome/MetronomeDock';
  *
  * 탑바 우측에 MetronomeDock — 라우트 이동(예: /metronome → /fretboard)에도
  * 싱글턴 스케줄러가 계속 돌아가므로 Dock으로 어디서든 상태 인지·토글 가능.
+ *
+ * 배경/색상은 root layout body에서 지정 — 여기서는 sticky header + main만.
  */
 export default function PracticeLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-bg-base text-ink-primary">
+    <>
       <header className="sticky top-0 z-10 border-b border-ink-muted/10 bg-bg-base">
         <nav aria-label="연습 섹션 내비게이션" className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-3">
           <Link
@@ -50,6 +52,6 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
         </nav>
       </header>
       <main className="mx-auto max-w-7xl px-6 py-10">{children}</main>
-    </div>
+    </>
   );
 }
