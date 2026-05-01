@@ -13,15 +13,15 @@ import { useEffect, useRef, useState } from 'react';
 type Taunt = { readonly ko: string; readonly en: string };
 
 const TAUNTS: readonly Taunt[] = [
-  { ko: '그 실력에 잠이 오냐', en: 'You really sleeping with that skill level?' },
-  { ko: '니 기타에 먼지 졸라 많더라', en: 'Your guitar’s all dust, no notes.' },
+  { ko: '그 실력에 잠이 오나..?', en: 'You really sleeping with that skill level..?' },
+  { ko: '기타에 쌓인 먼지 좀 봐..', en: 'Your guitar’s all dust, no notes.' },
   {
     ko: '손은 기억 못 하는데 핑계는 잘 기억하네',
     en: 'Fingers forget. Excuses don’t.',
   },
-  { ko: '오늘 안 치면 내일도 못 친다', en: 'Skip today, suck tomorrow. Simple math.' },
+  { ko: '오늘 안 치면 내일도 안치겠지', en: 'Skip today, suck tomorrow. Simple math.' },
   {
-    ko: '기타는 사도 실력은 못 사긴 하지...',
+    ko: '기타는 살 수 있어도, 실력은 못 사긴 하지...',
     en: 'You bought the guitar… where’s the skill DLC?',
   },
   { ko: '지금 멈추면 거기까지가 한계다', en: 'Stop now, and that’s your peak. Congrats.' },
@@ -35,24 +35,24 @@ const TAUNTS: readonly Taunt[] = [
     en: '“No time” is just your favorite excuse, huh..?',
   },
   {
-    ko: '평생 펜타토닉 A폼! 좋은 일관성!',
+    ko: '평생 펜타토닉 A폼! 좋은 일관성이야!',
     en: 'A minor pentatonic. Forever! Nice consistency.',
   },
   {
-    ko: '10년 동안 릭 3개로 돌려막기! 굉장히 효율적이야',
+    ko: '10년 동안 릭 3개로 돌려막기! 효율성이 좋은 친구구나',
     en: 'So you’re an efficiency master—10 years, 3 licks.',
   },
-  { ko: '제발 절대 녹음해서 들어보지 마!', en: 'Don’t record it. Trust me.' },
-  { ko: '오늘도 장비 탓?', en: 'Blaming the gear again today?' },
-  { ko: '오늘도 박자랑 야차룰 중이구나...', en: 'You got beef with the rhythm or what?' },
+  { ko: '제발 절대로 녹음해서 들어보지 마!', en: 'Don’t record it. Trust me.' },
+  { ko: '오늘도 장비 탓? ㅎ', en: 'Blaming the gear again today?' },
+  { ko: '오늘도 박자랑 야차룰 중...?', en: 'You got beef with the rhythm or what?' },
   {
     ko: '뮬 매물 알림 뜰 때는 빛보다 빠르던데...',
     en: 'You’re faster than light when a gear alert pops up...',
   },
   { ko: '크로메틱은 조상님이 쳐주나?', en: 'Ancestors doing your chromatics?' },
-  { ko: '마지막으로 피크 쥔 건 기억나?', en: 'You still remember how to hold a pick?' },
+  { ko: '마지막으로 피크 쥔 건 언젠지 기억나?', en: 'You still remember how to hold a pick?' },
   {
-    ko: '그 상태로 공연하면 박수 말고 한숨 나온다',
+    ko: '그 상태로 공연하면 박수 말고 한숨 나올 듯',
     en: 'At that level, you’re getting sighs, not applause.',
   },
   {
@@ -60,7 +60,7 @@ const TAUNTS: readonly Taunt[] = [
     en: 'A gig…? You sure the audience deserves that?',
   },
   {
-    ko: '내가 니 깁슨이라면 Self 넥뿌 할 듯',
+    ko: '내가 네 깁슨이라면 Self 넥뿌 할 듯',
     en: 'If I were a Gibson, my neck would’ve snapped already.',
   },
   {
@@ -73,7 +73,7 @@ const TAUNTS: readonly Taunt[] = [
     en: 'Said you’re playing Blues, but Now I’m feeling blue.',
   },
   {
-    ko: '굳은살이 손가락이 아니라 마디에 박힌 건가?',
+    ko: '굳은살이 손가락이 아니라 손가락 관절에 박힌 건가?',
     en: 'Knuckles, not fingertips?',
   },
   {
@@ -84,21 +84,21 @@ const TAUNTS: readonly Taunt[] = [
     ko: '박자가 자유분방해서 재즈 거장인 줄 알았어',
     en: 'Such "creative" timing. You a Jazz master or what?',
   },
-  { ko: '그 실력에 부티크 페달? 그냥 당근에 올려라.', en: 'Boutique pedals with that skill? Just sell them on the used market.' },
+  { ko: '그 실력에 부티크 페달? 그냥 당근해라.', en: 'Boutique pedals with that skill? Just sell them on the used market.' },
   {
     ko: '텐션음인 건가 그냥 튜닝이 나간 건가',
     en: 'Tension note… or just out of tune?',
   },
   {
-    ko: '어차피 안 칠 거잖아. 앱 그냥 꺼...',
+    ko: '어차피 연습 안 할 거잖아. 앱 그냥 꺼...',
     en: 'You’re not gonna play anyway. Just close the app...',
   },
   {
-    ko: '게인 뒤에 숨어도 뭉개지는 게 다 들리네',
+    ko: '하이 게인에도 들리는 부정확한 소리',
     en: 'Hiding behind gain… still sounds muddy.',
   },
   {
-    ko: '너 T발 씨야? 내 한숨에 공감 좀 하고 연습 좀 해',
+    ko: '너 T발 씨야? 내 한숨에 공감 좀 해줘. 연습 좀 해...',
     en: 'Can you hear me sighing? Now go practice.',
   },
   {
@@ -125,7 +125,7 @@ const TAUNTS: readonly Taunt[] = [
     ko: '빈티지한 실력이네? 너무 녹슬고 낡은...',
     en: 'Vintage skills, huh? Too bad they’re just rusty and old.',
   },
-  {ko: '와 진 짜 기 타 너 무 잘 치 세 요.', en:'Wow... You... play... so... well...',
+  {ko: '와... 진 짜 기 타 너 무 잘 치 세 요...', en:'Wow... You... play... so... well...',
   }
 ];
 
