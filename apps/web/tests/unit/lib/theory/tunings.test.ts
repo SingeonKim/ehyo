@@ -22,8 +22,11 @@ describe('TUNING_PRESETS', () => {
 
   it('guitar-6 drop d lowers 6th string E→D', () => {
     const p = TUNING_PRESETS['guitar-6-drop-d'];
-    expect(p.tuning[0]).toBe(2); // D
-    expect(p.tuning.slice(1)).toEqual([9, 2, 7, 11, 4]);
+    const standard = TUNING_PRESETS['guitar-6-standard'];
+    expect(p.tuning).toHaveLength(6);
+    expect(p.tuning[0]).toBe(2); // D, lowered from E (4)
+    // 나머지 줄은 standard와 동일해야 한다 (drop-d는 6번줄만 변경).
+    expect(p.tuning.slice(1)).toEqual(standard.tuning.slice(1));
     expect(p.displayString).toBe('DADGBE');
   });
 

@@ -22,6 +22,8 @@ export type TuningPresetId =
   | 'bass-4-drop-d';
 
 export interface TuningPreset {
+  /** id를 필드로 중복 보유. presetsByInstrument 결과를 dropdown에 매핑할 때
+   *  React key + 배열 순회 destructure에서 id에 접근하기 위함. Record 키와 동일. */
   id: TuningPresetId;
   instrument: InstrumentKind;
   /** UI 라벨 (Tuning dropdown 표시용). */
@@ -58,7 +60,6 @@ export const TUNING_PRESETS: Record<TuningPresetId, TuningPreset> = {
     id: 'guitar-6-eb-half',
     instrument: 'guitar-6',
     label: 'E♭ Half-step',
-    // 모든 줄이 한 반음 내림. 4-1=3 (E♭), 9-1=8 (A♭) 등.
     tuning: [3, 8, 1, 6, 10, 3],
     displayString: 'E♭A♭D♭G♭B♭E♭',
   },
