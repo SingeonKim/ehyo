@@ -37,6 +37,12 @@ import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 import { chordSymbolToMidi } from '@/lib/theory/chord-voicing';
 import type { PitchClass } from '@/lib/theory/types';
 
+/**
+ * Backing 엔진 voice 식별자.
+ * store의 VoiceKind와 동일 유니온이며, 매 trigger 시 voiceMutes 게이트 키로 쓰인다.
+ */
+export type VoiceKind = 'drums' | 'bass' | 'guitar' | 'aux';
+
 import { getAudioContext, resumeAudioContext } from '../context';
 import { createMasterFxChain, type MasterFxChain } from './fx-chain';
 import { createBarScheduler, type BarScheduler } from '../scheduler/bar-scheduler';
@@ -102,6 +108,13 @@ export interface BackingEngine {
    * 충분히 빨라 사용자 입장에서 자연스러움).
    */
   setVolume(v: number): void;
+  /**
+   * voice별 mute 토글. 다음 onBar 콜백부터 적용 — 현재 마디는 이미 예약되어
+   * 그대로 발화한다(다음 비트가 아니라 다음 마디 진입 시점에 반영되는 것이 정확).
+   * voiceMutes 레코드가 trigger 시점 게이트로 동작하므로 mute=true면 해당 voice의
+   * trigger 호출 자체가 발생하지 않는다(velocity 0과 다름 — smplr scheduler 큐 부담 없음).
+   */
+  setVoiceMute(voice: VoiceKind, muted: boolean): void;
   stop(): void;
   dispose(): void;
 }
@@ -142,6 +155,18 @@ function createEngine(): BackingEngine {
   let currentBpm = 90;
   let currentDefaultBpm = 90;
   let currentLoadedBundle: LoadedBundle | null = null;
+
+  /**
+   * voice별 mute 상태. trigger 시점에 이 레코드를 읽어 호출 자체를 스킵한다.
+   * 기본값 모두 false → 기존 동작과 동일(아무것도 음소거 안 됨, 가산적 변경).
+   * store 브리지가 backing.voiceMutes 변화를 setVoiceMute로 전파한다.
+   */
+  const voiceMutes: Record<VoiceKind, boolean> = {
+    drums: false,
+    bass: false,
+    guitar: false,
+    aux: false,
+  };
 
   /** voice 객체를 lazy 생성. start/stop 사이클에서 재사용.
    *  토폴로지: voices → fxChain.input → compressor → dry/wet → masterGain → destination.
@@ -307,25 +332,35 @@ function createEngine(): BackingEngine {
         // PR-B: velocityScale를 chord 진입 시 1회 계산. voice trigger 마지막 인자로 전달.
         const vs = profile.tone.velocityScale;
 
+        // voice mute 게이트 — voiceMutes[voice]=true면 trigger 자체를 스킵해 smplr
+        // 스케줄러 큐에 들어가지 않게 한다(velocity 0과 다름). 매 마디 시작 시 한 번씩
+        // 평가되므로 토글 시 다음 마디부터 반영.
+
         // drums: smplr DrumMachine은 sample group name ('kick'/'snare'/'hat')으로 트리거
-        for (const s of pattern.drums.kick)  voices.drums.trigger('kick',  loaded.drums, t(s), s.velocity, vs);
-        for (const s of pattern.drums.snare) voices.drums.trigger('snare', loaded.drums, t(s), s.velocity, vs);
-        for (const s of pattern.drums.hat)   voices.drums.trigger('hat',   loaded.drums, t(s), s.velocity, vs);
+        if (!voiceMutes.drums) {
+          for (const s of pattern.drums.kick)  voices.drums.trigger('kick',  loaded.drums, t(s), s.velocity, vs);
+          for (const s of pattern.drums.snare) voices.drums.trigger('snare', loaded.drums, t(s), s.velocity, vs);
+          for (const s of pattern.drums.hat)   voices.drums.trigger('hat',   loaded.drums, t(s), s.velocity, vs);
+        }
 
         // bass: 루트 2옥타브 다운, 카테고리 패턴별 스텝 수로 trigger
         // -24로 C2 부근 — 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
-        const bassMidi = midi[0]! - 24;
-        for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s), s.velocity, vs);
+        if (!voiceMutes.bass) {
+          const bassMidi = midi[0]! - 24;
+          for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s), s.velocity, vs);
+        }
 
         // guitar: 카테고리 패턴별 strum — down/up 방향으로 12ms 시간차 strum
         // 코드 톤을 1옥타브 다운 — C3 부근으로 옮겨 어쿠스틱/일렉기타 컴핑 음역과 맞춤.
-        const guitarMidi = midi.map((n) => n - 12);
-        for (const s of pattern.guitar)
-          voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s), s.velocity, vs);
+        if (!voiceMutes.guitar) {
+          const guitarMidi = midi.map((n) => n - 12);
+          for (const s of pattern.guitar)
+            voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s), s.velocity, vs);
+        }
 
         // aux: funk(shaker)/bossa(clave) 패턴 — pattern.aux + loaded.aux 둘 다 있을 때만 활성화.
         // bundle은 profile.bundle 사용 (instrumentOverrides 반영). 기존 getBundle 호출 제거.
-        if (pattern.aux && voices.aux && loaded.aux) {
+        if (!voiceMutes.aux && pattern.aux && voices.aux && loaded.aux) {
           const auxKind = bundle.aux?.kind;
           if (auxKind) {
             for (const s of pattern.aux) voices.aux.trigger(loaded.aux, auxKind, t(s), s.velocity, vs);
@@ -383,6 +418,12 @@ function createEngine(): BackingEngine {
     setBpm(currentDefaultBpm);
   };
 
+  const setVoiceMute: BackingEngine['setVoiceMute'] = (voice, muted) => {
+    // 단순 boolean 갱신. trigger 시점 게이트가 매 마디 이 레코드를 읽으므로
+    // 별도 알림이 필요 없다(다음 onBar 콜백 자연 반영).
+    voiceMutes[voice] = muted;
+  };
+
   const setVolume: BackingEngine['setVolume'] = (v) => {
     if (!Number.isFinite(v)) {
       console.warn('[backing] invalid volume ignored:', v);
@@ -424,7 +465,7 @@ function createEngine(): BackingEngine {
   return {
     getState: () => state,
     subscribe: (l) => { listeners.add(l); return () => listeners.delete(l); },
-    start, setKey, setBpm, resetBpmToDefault, setVolume, stop, dispose,
+    start, setKey, setBpm, resetBpmToDefault, setVolume, setVoiceMute, stop, dispose,
   };
 }
 
@@ -488,12 +529,31 @@ if (typeof window !== 'undefined') {
     // ensureVoices가 master를 만들 때 그 값으로 초기화하므로 안전.
     engine.setVolume(useAppStore.getState().backing.volume);
 
+    // voice mute 초기 동기화 — hydration 이후 store에 영속된 mute 상태가 있으면
+    // 첫 재생 전이라도 엔진 voiceMutes에 미리 반영해 두면 UI/엔진 일관성이 깨지지 않는다.
+    const initialMutes = useAppStore.getState().backing.voiceMutes;
+    engine.setVoiceMute('drums', initialMutes.drums);
+    engine.setVoiceMute('bass', initialMutes.bass);
+    engine.setVoiceMute('guitar', initialMutes.guitar);
+    engine.setVoiceMute('aux', initialMutes.aux);
+
     useAppStore.subscribe((s, prev) => {
       if (s.fretboard.root !== prev.fretboard.root) {
         engine.setKey(s.fretboard.root);
       }
       if (s.backing.volume !== prev.backing.volume) {
         engine.setVolume(s.backing.volume);
+      }
+      // voiceMutes 변화 전파 — 4 voice 각각 비교(레퍼런스 비교가 아닌 값 비교).
+      // store는 immer로 mutate하므로 객체 reference는 항상 새로 생성되지만,
+      // 실제 값이 바뀌지 않은 경우 setVoiceMute 호출이 no-op이라 안전하다.
+      const newMutes = s.backing.voiceMutes;
+      const oldMutes = prev.backing.voiceMutes;
+      if (newMutes !== oldMutes) {
+        if (newMutes.drums !== oldMutes.drums) engine.setVoiceMute('drums', newMutes.drums);
+        if (newMutes.bass !== oldMutes.bass) engine.setVoiceMute('bass', newMutes.bass);
+        if (newMutes.guitar !== oldMutes.guitar) engine.setVoiceMute('guitar', newMutes.guitar);
+        if (newMutes.aux !== oldMutes.aux) engine.setVoiceMute('aux', newMutes.aux);
       }
       const slug = s.backing.backingPlayingSlug;
       if (!slug) return;
