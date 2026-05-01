@@ -42,6 +42,9 @@ next-env.d.ts
 # Claude Code 로컬 캐시 (agents/는 커밋 대상이므로 tsc-cache 등 개별 지정)
 .claude/tsc-cache/
 
+# pnpm screenshots raw output — 검수 후 docs/introduction/ 본 폴더로 직접 이전
+docs/introduction/auto/
+
 # Python
 __pycache__/
 *.py[cod]

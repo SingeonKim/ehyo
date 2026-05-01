@@ -9,26 +9,67 @@
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi)](https://fastapi.tiangolo.com)
 
-![Practice 통합 뷰](docs/introduction/main.png)
+![에휴.. 랜딩](docs/introduction/01_main.png)
 
 ---
 
 ## 핵심 기능
 
 ### 메트로놈
-Chris Wilson lookahead 스케줄러(25ms 콜백 / 100ms 룩어헤드, iOS 150ms)로 메인 스레드 드리프트 없이 정확한 박자.
 
-![Metronome](docs/introduction/metronome.png)
+Chris Wilson lookahead 스케줄러(25ms 콜백 / 100ms 룩어헤드, iOS 150ms)로 메인 스레드 드리프트 없이 정확한 박자. Subdivision(1/4·1/8·트리플렛·1/16·Swing) · Sound · Volume · Tap Tempo를 한 화면에서.
 
-### 지판 스케일 가이드
-16종 스케일 × 12 키. Root / Important / Regular 3단계 노트 마커, 좌·우 손잡이 전환. Guitar 6/7현 + Bass 4현 멀티 instrument 지원.
+![Metronome](docs/introduction/02_metronome.png)
 
-![Fretboard scale view](docs/introduction/scale.png)
+### 지판 스케일 가이드 — 16종 × 12 키
 
-### Practice 통합 뷰
+같은 키에서 스케일만 바꿔도 노트 분포·강조 음이 어떻게 달라지는지 한눈에 보입니다. Root / Important / Regular 3단계 마커, 좌·우 손잡이 토글, Guitar 6/7현 + Bass 4현 멀티 instrument.
+
+**Major** — 표준 7음:
+
+![Major](docs/introduction/03_fretboard_major.png)
+
+**Minor Blues** (Label = Degree 모드. 노트 이름 대신 도수 `1·b3·4·b5·5·b7`로 표기 — 키 옮겨가며 패턴을 외울 때 유용):
+
+![Minor Blues](docs/introduction/04_fretboard_minor_blues_degree.png)
+
+**Dorian**:
+
+![Dorian](docs/introduction/05_fretboard_dorian.png)
+
+### 노트 강조 색을 직접 조정
+
+스케일별로 어떤 도수를 강조할지(orange / green / blue / off) 도수 pill을 클릭해 사이클합니다. 변경은 스케일 단위로 저장되며 Reset으로 기본값 복원.
+
+**기본** — Minor Blues는 4도·5도가 orange, b5도가 blue. Root(1도)는 항상 red 고정:
+
+![Highlight default](docs/introduction/08_highlight_colors_default.png)
+![Fretboard default highlight](docs/introduction/07_fretboard_minor_blues_default.png)
+
+**커스텀** — 4도를 green으로, b7도에도 green을 추가했을 때:
+
+![Highlight custom](docs/introduction/10_highlight_colors_custom.png)
+![Fretboard custom highlight](docs/introduction/09_fretboard_minor_blues_custom.png)
+
+### Practice 통합 뷰 + 코드 오버레이
+
 sticky 지판 + 22장 코드 진행 카탈로그(blues / jazz / hard_bop / jump / minor / modal / folk / rock 등). 키·BPM·볼륨 컨트롤, Roman ↔ Absolute 표기 토글, 4-voice mute(drums/bass/guitar/aux).
 
-![Practice integrated view](docs/introduction/practice.png)
+![Catalog](docs/introduction/06_practice_blues_pop_jazz.png)
+
+재생 중에는 *현재 코드의 톤*이 지판 위에 chord overlay로 그려집니다. 같은 12-bar minor blues 안에서도 마디마다 chord-root와 chord-tone이 따라가서, 손가락이 어디로 가야 할지 즉시 보입니다.
+
+**Im7 (bar 1)** — i7 코드, root는 그대로:
+
+| 카드 (bar 1 강조) | 지판 — Im7 톤 |
+|---|---|
+| ![Im7 card](docs/introduction/12_practice_im7_card.png) | ![Im7 fretboard](docs/introduction/11_practice_im7_fretboard.png) |
+
+**V7 (bar 9)** — V7로 진입, root가 5도 위로:
+
+| 카드 (bar 9 강조) | 지판 — V7 톤 |
+|---|---|
+| ![V7 card](docs/introduction/14_practice_v7_card.png) | ![V7 fretboard](docs/introduction/13_practice_v7_fretboard.png) |
 
 배킹 트랙은 [smplr](https://github.com/danigb/smplr) 기반 SoundFont · DrumMachine · Reverb 합성 — 브라우저에서 직접 생성합니다. 카드별로 instrument · velocity · swing 정체성을 차등화해 같은 12-bar라도 jazz / shuffle / jump가 다른 질감을 가집니다.
 
@@ -92,10 +133,16 @@ E2E와 백엔드 테스트:
 
 ```bash
 # Playwright — Docker 권장 (WSL 시스템 chromium 의존 회피)
-docker compose -f docker-compose.test.yml up --exit-code-from playwright
+docker compose -f docker-compose.test.yml --profile e2e up --exit-code-from playwright
 
 # 백엔드
 cd apps/api && uv run pytest
+```
+
+README/마케팅 스크린샷 자동 캡처:
+
+```bash
+pnpm screenshots               # docs/introduction/auto/ 14장 생성 (Docker 경로)
 ```
 
 ---
@@ -117,6 +164,8 @@ apps/
       theory/             음악 이론 순수 함수 (scales, notes, chords, fretboard)
       store/              Zustand + persist (localStorage 키: my-music-app:v1)
       api/                백엔드 카탈로그 클라이언트
+    scripts/
+      capture-screenshots.mjs  README/마케팅용 14장 자동 캡처 (Playwright)
   api/                    FastAPI 백엔드
     app/
       models/             SQLAlchemy 모델 (progression_templates 등)
@@ -130,6 +179,7 @@ tests/
   e2e/                    Playwright (Docker 환경)
 docs/
   planning.md             상세 기획·로드맵
+  introduction/           README 노출용 정적 자산 (capture script 출력의 검수본)
 .claude/agents/           도메인 에이전트 7명 (CLAUDE.md 참조)
 ```
 
@@ -171,7 +221,7 @@ docs/
 
 - **`.next` 캐시 오염** → `rm -rf .next && pnpm dev`
 - **localStorage 스키마 변경 후 화면 깨짐** → `localStorage.removeItem('my-music-app:v1')` 후 새로고침
-- **Playwright `libnspr4` 에러** → Docker 경로 사용 (`docker compose -f docker-compose.test.yml up`)
+- **Playwright `libnspr4` 에러** → Docker 경로 사용 (`docker compose -f docker-compose.test.yml --profile e2e up`)
 - **WSL Fast Refresh 미반응** → 이미 `WATCHPACK_POLLING=true` 적용됨, 안 되면 dev 재시작
 
 세부 사례·해결책은 [`CLAUDE.md` 트러블슈팅 섹션](./CLAUDE.md#트러블슈팅-실제-겪은-것만)에 정리되어 있습니다.
