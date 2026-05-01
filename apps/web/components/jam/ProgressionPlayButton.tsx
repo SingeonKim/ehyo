@@ -21,6 +21,8 @@ import type { ProgressionTemplate } from '@/lib/api/progression-templates';
 import { getBackingEngine } from '@/lib/audio/backing';
 import { useAppStore } from '@/lib/store/app-store';
 import { displayChord } from '@/lib/theory/chord-display';
+import { SCALES } from '@/lib/theory/scales';
+import type { ScaleKey } from '@/lib/theory/types';
 
 export function ProgressionPlayButton({
   template,
@@ -46,6 +48,9 @@ export function ProgressionPlayButton({
   const overrideBpm = useAppStore(
     (s) => (s.backing as { bpmOverrides?: Record<string, number> }).bpmOverrides?.[template.slug],
   );
+  // 재생 시 추천 스케일을 자동 적용하기 위한 액션. 명시적 Apply 버튼은 그대로 유지 —
+  // 다른 스케일을 보다가 추천으로 돌리고 싶을 때 사용.
+  const setScale = useAppStore((s) => s.setScale);
   // engine.start()의 async 구간 (샘플 로드) 동안 로컬에서만 추적
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,6 +61,15 @@ export function ProgressionPlayButton({
     } else {
       setIsLoading(true);
       try {
+        // 카드 컨텍스트와 지판 시각이 어긋나지 않도록 재생 시작 시 추천 스케일을 한 번
+        // 적용한다. 알 수 없는 키(백엔드/프론트 SCALES 불일치)는 스킵.
+        const recommended = template.recommended_scales[0];
+        if (
+          recommended &&
+          Object.prototype.hasOwnProperty.call(SCALES, recommended)
+        ) {
+          setScale(recommended as ScaleKey);
+        }
         // overrideBpm이 undefined면 engine이 template.default_bpm을 사용
         // startBarIndex가 undefined면 0번 마디부터
         await engine.start(template, root, overrideBpm, startBarIndex);
