@@ -39,12 +39,12 @@ const TAUNTS: readonly Taunt[] = [
     en: 'A minor pentatonic. Forever! Nice consistency.',
   },
   {
-    ko: '10년동안 릭 3개로 돌려막기! 굉장히 효율적이야',
+    ko: '10년 동안 릭 3개로 돌려막기! 굉장히 효율적이야',
     en: 'So you’re an efficiency master—10 years, 3 licks.',
   },
   { ko: '제발 절대 녹음해서 들어보지 마!', en: 'Don’t record it. Trust me.' },
-  { ko: '오늘도 장비탓?', en: 'Blaming the gear again today?' },
-  { ko: '오늘도 박자랑 야차룰중이구나...', en: 'You got beef with the rhythm or what?' },
+  { ko: '오늘도 장비 탓?', en: 'Blaming the gear again today?' },
+  { ko: '오늘도 박자랑 야차룰 중이구나...', en: 'You got beef with the rhythm or what?' },
   {
     ko: '뮬 매물 알림 뜰 때는 빛보다 빠르던데...',
     en: 'You’re faster than light when a gear alert pops up...',
@@ -73,7 +73,7 @@ const TAUNTS: readonly Taunt[] = [
     en: 'Said you’re playing Blues, but Now I’m feeling blue.',
   },
   {
-    ko: '굳은살이 손가락이 아니라 마디에 박힌건가?',
+    ko: '굳은살이 손가락이 아니라 마디에 박힌 건가?',
     en: 'Knuckles, not fingertips?',
   },
   {
@@ -81,12 +81,12 @@ const TAUNTS: readonly Taunt[] = [
     en: 'I heard the band made a new group chat...',
   },
   {
-    ko: '박자가 자유분방해서 재즈 거장인줄 알았어',
+    ko: '박자가 자유분방해서 재즈 거장인 줄 알았어',
     en: 'Such "creative" timing. You a Jazz master or what?',
   },
   { ko: '그 실력에 부티크 페달? 그냥 당근에 올려라.', en: 'Boutique pedals with that skill? Just sell them on the used market.' },
   {
-    ko: '텐션음인건가 그냥 튜닝이 나간건가',
+    ko: '텐션음인 건가 그냥 튜닝이 나간 건가',
     en: 'Tension note… or just out of tune?',
   },
   {
@@ -94,11 +94,11 @@ const TAUNTS: readonly Taunt[] = [
     en: 'You’re not gonna play anyway. Just close the app...',
   },
   {
-    ko: '게인 뒤에 숨어도 뭉개지는게 다들리네',
+    ko: '게인 뒤에 숨어도 뭉개지는 게 다 들리네',
     en: 'Hiding behind gain… still sounds muddy.',
   },
   {
-    ko: '너 T발 씨야? 내 한숨에 공감좀 하고 연습좀 해',
+    ko: '너 T발 씨야? 내 한숨에 공감 좀 하고 연습 좀 해',
     en: 'Can you hear me sighing? Now go practice.',
   },
   {
