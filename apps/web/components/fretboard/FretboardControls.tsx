@@ -3,9 +3,12 @@
 import { useHasHydrated } from '@/lib/store/hooks';
 
 import { FretboardOptions } from './FretboardOptions';
+import { FretCountToggle } from './FretCountToggle';
 import { ImportantDegreesToggle } from './ImportantDegreesToggle';
+import { InstrumentSelector } from './InstrumentSelector';
 import { RootPicker } from './RootPicker';
 import { ScalePicker } from './ScalePicker';
+import { TuningPresetSelector } from './TuningPresetSelector';
 
 /*
  * 지판 컨트롤 그리드 — RootPicker / ScalePicker / FretboardOptions /
@@ -19,6 +22,10 @@ import { ScalePicker } from './ScalePicker';
  *   fretboard.root와 backing key가 단일 소스로 통합돼, 재생 중에도 root를
  *   자유롭게 변경 가능(엔진이 setKey로 다음 마디부터 전조).
  *
+ * Instrument & Tuning 섹션은 패널 최상단에 배치 — instrument는 지판의 가장
+ * 근본적 의사결정이라 root/scale 등 다른 컨트롤보다 위에 둔다. 2열 그리드와
+ * 별개의 row로 두어 풀폭으로 보이게 한다.
+ *
  * hydration gate — Surface와 동일하게 첫 렌더 DOM mismatch 방지.
  */
 
@@ -30,14 +37,27 @@ export function FretboardControls() {
   }
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[2fr_3fr]">
-      <div className="space-y-6">
-        <RootPicker />
-        <FretboardOptions />
-      </div>
-      <div className="space-y-6">
-        <ScalePicker />
-        <ImportantDegreesToggle />
+    <div className="space-y-8">
+      <section
+        aria-label="Instrument and tuning"
+        className="space-y-3 border-b border-ink-muted/10 pb-6"
+      >
+        <h3 className="font-mono text-[0.65rem] uppercase tracking-[0.25em] text-ink-muted">
+          § Instrument &amp; Tuning
+        </h3>
+        <InstrumentSelector />
+        <TuningPresetSelector />
+        <FretCountToggle />
+      </section>
+      <div className="grid gap-8 lg:grid-cols-[2fr_3fr]">
+        <div className="space-y-6">
+          <RootPicker />
+          <FretboardOptions />
+        </div>
+        <div className="space-y-6">
+          <ScalePicker />
+          <ImportantDegreesToggle />
+        </div>
       </div>
     </div>
   );
