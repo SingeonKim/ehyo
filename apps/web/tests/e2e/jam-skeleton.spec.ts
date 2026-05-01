@@ -64,13 +64,14 @@ test.describe('Sprint 2-6 — Jam Skeleton', () => {
     const card = page.getByText('12-Bar Blues (Major)').locator('..').locator('..');
     // ▶ 버튼 클릭 (정지 상태일 때 aria-label='Play')
     await card.getByRole('button', { name: /^Play$/i }).click();
-    // 첫 마디가 aria-current로 잡힘 (배킹 로딩 후 1~2초 내, 여유 8s).
+    // 첫 마디가 aria-current로 잡힘 (배킹 로딩 후 1~2초 내, 여유 15s).
     // Sprint 2-7 후속: 마디 chip이 <li>에서 <button>으로 변경되어 aria-current가
     // button에 박혀 있음 — 셀렉터를 tag-agnostic으로 갱신.
-    // 튜닝/voice-mute 확장 후속: smplr 첫 cache miss 시 5s가 빡빡해 webkit이
-    // retry까지 fail하는 회귀가 있어 8s로 여유. main도 flaky 기록 있음.
+    // 튜닝/voice-mute 확장 후속: docker chromium에서 smplr SoundFont cold start가
+    // 10s+ 걸리는 케이스 관찰됨(8s에서도 retry까지 fail). webkit은 6~7s에 안정.
+    // 15s로 cold start를 충분히 흡수 — 정상 환경에서는 1~2s에 통과해 영향 없음.
     await expect(card.locator('[aria-current="true"]')).toHaveCount(1, {
-      timeout: 8000,
+      timeout: 15000,
     });
     // 정지
     await card.getByRole('button', { name: /^Stop$/i }).click();
