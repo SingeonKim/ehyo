@@ -79,7 +79,7 @@ export function ProgressionCatalogClient({
 
       <div className="space-y-5">
         {Object.entries(groups).map(([category, items]) => (
-          <div key={category} className="space-y-2">
+          <div key={category} data-category={category} className="space-y-2">
             <p
               className={clsx(
                 'font-mono text-[0.65rem] uppercase tracking-[0.3em]',

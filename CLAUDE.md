@@ -35,7 +35,7 @@ pnpm format                  # prettier --write .
 # Docker — 백엔드 스택 (postgres + api + minio)
 docker compose up -d         # 백그라운드 기동 (postgres:5432, api:8000, minio:9000/9001)
 docker compose ps            # healthy 상태 확인
-docker compose -f docker-compose.test.yml up --exit-code-from playwright
+docker compose -f docker-compose.test.yml --profile e2e up --exit-code-from playwright
                              # 프로덕션 빌드 + E2E 결정론적 실행
 
 # API (apps/api) — FastAPI · SQLAlchemy async · Alembic

@@ -47,7 +47,7 @@ export function ImportantDegreesToggle() {
   const hasOverride = override !== undefined;
 
   return (
-    <div className="space-y-2">
+    <div data-testid="highlight-colors" className="space-y-2">
       <div className="flex items-baseline justify-between gap-4">
         <label className="font-mono text-xs uppercase tracking-widest text-ink-muted">
           Highlight Colors

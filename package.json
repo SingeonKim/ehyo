@@ -16,6 +16,7 @@
     "test:watch": "pnpm --filter @my-music-app/web test:watch",
     "test:coverage": "pnpm --filter @my-music-app/web test:coverage",
     "test:e2e": "pnpm --filter @my-music-app/web test:e2e",
+    "screenshots": "docker rm -f my-music-app-web-test my-music-app-screenshots my-music-app-playwright >/dev/null 2>&1 || true; docker compose -f docker-compose.test.yml --profile screenshots up --build --exit-code-from screenshots --abort-on-container-exit",
     "format": "pnpm --filter @my-music-app/web format"
   }
 }

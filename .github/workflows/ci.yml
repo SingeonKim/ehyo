@@ -199,7 +199,7 @@ jobs:
       - uses: pnpm/action-setup@v4
 
       - name: Docker Compose로 E2E 실행
-        run: docker compose -f docker-compose.test.yml up --exit-code-from playwright --abort-on-container-exit
+        run: docker compose -f docker-compose.test.yml --profile e2e up --exit-code-from playwright --abort-on-container-exit
 
       - name: Playwright 리포트 업로드
         if: always()

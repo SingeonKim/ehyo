@@ -1,5 +1,10 @@
 # CI용 compose. 프로덕션 빌드된 web 위에서 Playwright E2E를 수행한다.
 # 로컬에서는 `docker compose -f docker-compose.test.yml up --exit-code-from playwright` 로 실행.
+#
+# 부가 — 마케팅/README용 스크린샷 캡처는 별도 profile(`screenshots`)로 분리.
+# 평소엔 안 뜨고, `pnpm screenshots` 또는
+# `docker compose -f docker-compose.test.yml --profile screenshots up
+#   --exit-code-from screenshots --abort-on-container-exit` 로 호출.
 
 services:
   web:
@@ -10,8 +15,12 @@ services:
     container_name: my-music-app-web-test
     environment:
       NODE_ENV: production
-    ports:
-      - "3000:3000"
+    # 호스트 포트 매핑 대신 expose만 — playwright/screenshots 컨테이너는 docker
+    # 내부 네트워크로 `web:3000`에 접근하므로 호스트 노출 불필요. 사용자의
+    # `pnpm dev`(3000번)와 충돌 회피. 호스트 브라우저로 직접 보려면 임시로
+    # `ports: ["3001:3000"]`을 추가하면 된다.
+    expose:
+      - "3000"
     healthcheck:
       # alpine runner 이미지에 wget/curl 미포함 보장 안 됨.
       # node는 CMD로 사용 중이니 항상 있음 → node 내장 http로 헬스체크.
@@ -22,6 +31,10 @@ services:
       start_period: 10s
 
   playwright:
+    # E2E 전용 — `--profile e2e` 또는 default(다른 profile 미지정 시) 활성화.
+    # screenshots와 동시에 떠 같은 node_modules에 pnpm install 경합이 나는 것을
+    # 막기 위해 명시 profile.
+    profiles: ["e2e"]
     # Playwright npm 패키지 버전(apps/web/package.json)과 맞춰야 브라우저 바이너리
     # 경로 불일치로 "Executable doesn't exist at /ms-playwright/..." 에러 방지.
     image: mcr.microsoft.com/playwright:v1.59.1-jammy
@@ -40,3 +53,24 @@ services:
              pnpm install --frozen-lockfile &&
              cd apps/web &&
              pnpm exec playwright test"
+
+  screenshots:
+    # Playwright의 chromium만 사용해 마케팅 샷을 캡처. profile=screenshots 로
+    # 분리해서 평소 `up`에는 포함되지 않는다.
+    profiles: ["screenshots"]
+    image: mcr.microsoft.com/playwright:v1.59.1-jammy
+    container_name: my-music-app-screenshots
+    depends_on:
+      web:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - ./:/app
+    environment:
+      CI: "true"
+      BASE_URL: http://web:3000
+    command: >
+      sh -c "npm install -g pnpm@9.12.3 &&
+             pnpm install --frozen-lockfile &&
+             cd apps/web &&
+             node scripts/capture-screenshots.mjs"
