@@ -445,3 +445,38 @@ describe('Tuning / Instrument actions', () => {
     expect(useAppStore.getState().fretboard.frets).toBe(22);
   });
 });
+
+describe('Voice mute actions', () => {
+  beforeEach(() => {
+    useAppStore.setState((s) => {
+      s.backing.voiceMutes = { drums: false, bass: false, guitar: false, aux: false };
+    });
+  });
+
+  it('default voiceMutes are all false', () => {
+    expect(useAppStore.getState().backing.voiceMutes).toEqual({
+      drums: false, bass: false, guitar: false, aux: false,
+    });
+  });
+
+  it('toggleVoiceMute flips drums only', () => {
+    useAppStore.getState().toggleVoiceMute('drums');
+    expect(useAppStore.getState().backing.voiceMutes).toEqual({
+      drums: true, bass: false, guitar: false, aux: false,
+    });
+  });
+
+  it('toggleVoiceMute is independent per voice', () => {
+    useAppStore.getState().toggleVoiceMute('bass');
+    useAppStore.getState().toggleVoiceMute('aux');
+    expect(useAppStore.getState().backing.voiceMutes).toEqual({
+      drums: false, bass: true, guitar: false, aux: true,
+    });
+  });
+
+  it('toggleVoiceMute twice returns to false', () => {
+    useAppStore.getState().toggleVoiceMute('guitar');
+    useAppStore.getState().toggleVoiceMute('guitar');
+    expect(useAppStore.getState().backing.voiceMutes.guitar).toBe(false);
+  });
+});

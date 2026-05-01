@@ -92,6 +92,14 @@ export interface UiState {
 //   기존 backing.backingKey는 제거 — KeySelector(잼)와 RootPicker(설정)이
 //   같은 fretboard.root를 양방향으로 제어한다. 엔진은 store 브리지에서
 //   fretboard.root 변화를 구독해 setKey를 호출.
+
+/**
+ * 배킹 voice 식별자.
+ * voice별 mute 상태와 엔진 voice 라우팅의 단일 소스. 여기 유니온이 곧
+ * BackingSliceState.voiceMutes 키 집합이라 추가/제거 시 컴파일러가 강제한다.
+ */
+export type VoiceKind = 'drums' | 'bass' | 'guitar' | 'aux';
+
 export interface BackingSliceState {
   /** 런타임. 재생 중인 template.slug 또는 null. */
   backingPlayingSlug: string | null;
@@ -106,6 +114,11 @@ export interface BackingSliceState {
    * 엔진은 store 브리지에서 이 값을 구독해 master gain에 적용한다.
    */
   volume: number;
+  /**
+   * 영속. voice별 mute 상태. true면 해당 voice의 트리거를 스킵.
+   * 카드 재생 중 토글하면 다음 비트부터 반영(엔진이 trigger 시점마다 셀렉터 재평가).
+   */
+  voiceMutes: Record<VoiceKind, boolean>;
   /** 런타임. 사용자가 카드 마디를 클릭해서 선택한 슬러그. 정지 상태에서만 유효. */
   backingSelectedSlug: string | null;
   /** 런타임. 선택된 마디 인덱스. backingSelectedSlug와 항상 쌍으로 변경. */
@@ -162,6 +175,8 @@ export interface AppState {
   clearBackingBpm: (slug: string) => void;
   /** 배킹 마스터 볼륨 변경 (0~1). 엔진 브리지가 setVolume을 자동 호출. */
   setBackingVolume: (v: number) => void;
+  /** 특정 voice의 mute 상태를 토글. 재생 중이라도 다음 비트부터 반영된다. */
+  toggleVoiceMute: (voice: VoiceKind) => void;
   /**
    * 사용자 마디 선택 토글.
    *  - template + barIndex 양쪽 non-null: 선택 적용. 정지 상태면 chord 컨텍스트
@@ -232,6 +247,8 @@ const DEFAULT_BACKING: BackingSliceState = {
   bpmOverrides: {},
   // 메트로놈 볼륨(0.5)과 동일한 시작점. 사용자가 슬라이더로 조정 가능.
   volume: 0.5,
+  // 모든 voice는 기본 unmuted. 사용자가 voice mixer에서 토글.
+  voiceMutes: { drums: false, bass: false, guitar: false, aux: false },
   backingSelectedSlug: null,
   backingSelectedBarIndex: null,
 };
@@ -536,6 +553,13 @@ export const useAppStore = create<AppState>()(
           // 0~1 클램프. NaN/Infinity는 무시(기존 값 유지).
           if (!Number.isFinite(v)) return;
           s.backing.volume = Math.max(0, Math.min(1, v));
+        }),
+
+      toggleVoiceMute: (voice) =>
+        set((s) => {
+          // 단순 boolean 토글. 엔진은 매 trigger마다 store에서 voiceMutes를
+          // 재평가하므로 별도 신호 없이 다음 비트부터 반영된다.
+          s.backing.voiceMutes[voice] = !s.backing.voiceMutes[voice];
         }),
 
       setBackingSelectedBar: (template, barIndex) =>
