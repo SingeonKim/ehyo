@@ -64,11 +64,13 @@ test.describe('Sprint 2-6 — Jam Skeleton', () => {
     const card = page.getByText('12-Bar Blues (Major)').locator('..').locator('..');
     // ▶ 버튼 클릭 (정지 상태일 때 aria-label='Play')
     await card.getByRole('button', { name: /^Play$/i }).click();
-    // 첫 마디가 aria-current로 잡힘 (배킹 로딩 후 1~2초 내, 여유 5s).
+    // 첫 마디가 aria-current로 잡힘 (배킹 로딩 후 1~2초 내, 여유 8s).
     // Sprint 2-7 후속: 마디 chip이 <li>에서 <button>으로 변경되어 aria-current가
     // button에 박혀 있음 — 셀렉터를 tag-agnostic으로 갱신.
+    // 튜닝/voice-mute 확장 후속: smplr 첫 cache miss 시 5s가 빡빡해 webkit이
+    // retry까지 fail하는 회귀가 있어 8s로 여유. main도 flaky 기록 있음.
     await expect(card.locator('[aria-current="true"]')).toHaveCount(1, {
-      timeout: 5000,
+      timeout: 8000,
     });
     // 정지
     await card.getByRole('button', { name: /^Stop$/i }).click();
