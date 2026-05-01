@@ -57,17 +57,24 @@ test.describe('Tuning / Instrument extension', () => {
     const svg = page.getByRole('img', { name: /Guitar fretboard/i });
     await expect(svg).toBeVisible();
 
-    // 22프렛 baseline width
-    const before = (await svg.boundingBox())!.width;
+    // SVG는 overflow-x-auto 컨테이너 안에 있어 boundingBox.width가 viewport에
+    // clamp된다. viewBox attribute는 컨테이너 clip과 무관하게 frets에 따라 직접
+    // 변화하므로 이쪽을 비교한다.
+    const getViewBoxWidth = async () => {
+      const vb = await svg.getAttribute('viewBox');
+      if (!vb) throw new Error('SVG viewBox missing');
+      return parseFloat(vb.split(/\s+/)[2]!);
+    };
+
+    // 22프렛 baseline
+    const before = await getViewBoxWidth();
 
     // FretCountToggle 그룹 안에서 '24' 버튼 클릭 — group label로 한정해 다른 24 텍스트 충돌 방지
     const fretGroup = page.getByRole('group', { name: 'Fret count' });
     await fretGroup.getByRole('button', { name: '24', exact: true }).click();
 
-    // 24프렛이면 fret slot 수가 늘어 width 증가
-    await expect
-      .poll(async () => (await svg.boundingBox())!.width, { timeout: 3000 })
-      .toBeGreaterThan(before);
+    // 24프렛이면 fret slot 수가 늘어 viewBox width 증가
+    await expect.poll(getViewBoxWidth, { timeout: 3000 }).toBeGreaterThan(before);
   });
 
   test('voice mute drums updates aria-pressed', async ({ page }) => {
