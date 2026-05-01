@@ -4,7 +4,7 @@
 
 브라우저 하나에서 박자 잡고, 지판에서 스케일 보면서, 코드 진행 위에 잼 칠 수 있는 단일 도구를 목표로 합니다. 모든 오디오는 클라이언트 측에서 합성 — 서버는 코드 진행 카탈로그만 제공합니다.
 
-[![CI](https://github.com/SingeonKim/gn-music-app/actions/workflows/ci.yml/badge.svg)](https://github.com/SingeonKim/gn-music-app/actions/workflows/ci.yml)
+[![CI](https://github.com/SingeonKim/ehyo/actions/workflows/ci.yml/badge.svg)](https://github.com/SingeonKim/ehyo/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi)](https://fastapi.tiangolo.com)
