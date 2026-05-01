@@ -2,18 +2,35 @@
 
 기타 연습자를 위한 웹 기반 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙**.
 
-브라우저 하나에서 박자 잡고, 지판에서 스케일 보면서, 코드 진행 위에 잼 칠 수 있는 단일 도구를 목표로 한다. 모든 오디오는 클라이언트 측에서 합성 — 서버는 코드 진행 카탈로그만 제공한다.
+브라우저 하나에서 박자 잡고, 지판에서 스케일 보면서, 코드 진행 위에 잼 칠 수 있는 단일 도구를 목표로 합니다. 모든 오디오는 클라이언트 측에서 합성 — 서버는 코드 진행 카탈로그만 제공합니다.
 
-> 사용자 노출 앱 이름은 **에휴..** 입니다. 내부 식별자(npm 워크스페이스 `@my-music-app/web`, 디렉토리 `apps/web`)는 그대로 유지합니다.
+[![CI](https://github.com/SingeonKim/gn-music-app/actions/workflows/ci.yml/badge.svg)](https://github.com/SingeonKim/gn-music-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-async-009688?logo=fastapi)](https://fastapi.tiangolo.com)
+
+![Practice 통합 뷰](docs/introduction/main.png)
 
 ---
 
 ## 핵심 기능
 
-- **메트로놈** — Chris Wilson lookahead 스케줄러(25ms 콜백 / 100ms 룩어헤드, iOS 150ms). 메인 스레드 드리프트 없이 정확한 박자.
-- **지판 스케일 가이드** — 16종 스케일 × 12 키. Root / Important / Regular 3단계 노트 마커, 좌/우 손잡이 전환.
-- **배킹 트랙** — 22장 코드 진행 카탈로그(blues / jazz / hard_bop / jump / minor / modal / folk / rock 등). [smplr](https://github.com/danigb/smplr) 기반 SoundFont · DrumMachine · Reverb 합성. 카드별 instrument · velocity · swing 정체성 차등화.
-- **Practice 통합 뷰** — sticky 지판 + 코드 진행 + 키/BPM 컨트롤. Roman ↔ Absolute 표기 토글.
+### 메트로놈
+Chris Wilson lookahead 스케줄러(25ms 콜백 / 100ms 룩어헤드, iOS 150ms)로 메인 스레드 드리프트 없이 정확한 박자.
+
+![Metronome](docs/introduction/metronome.png)
+
+### 지판 스케일 가이드
+16종 스케일 × 12 키. Root / Important / Regular 3단계 노트 마커, 좌·우 손잡이 전환. Guitar 6/7현 + Bass 4현 멀티 instrument 지원.
+
+![Fretboard scale view](docs/introduction/scale.png)
+
+### Practice 통합 뷰
+sticky 지판 + 22장 코드 진행 카탈로그(blues / jazz / hard_bop / jump / minor / modal / folk / rock 등). 키·BPM·볼륨 컨트롤, Roman ↔ Absolute 표기 토글, 4-voice mute(drums/bass/guitar/aux).
+
+![Practice integrated view](docs/introduction/practice.png)
+
+배킹 트랙은 [smplr](https://github.com/danigb/smplr) 기반 SoundFont · DrumMachine · Reverb 합성 — 브라우저에서 직접 생성합니다. 카드별로 instrument · velocity · swing 정체성을 차등화해 같은 12-bar라도 jazz / shuffle / jump가 다른 질감을 가집니다.
 
 ---
 
@@ -24,7 +41,7 @@
 | 프론트엔드 | Next.js 15 (App Router), TypeScript, Tailwind CSS v4, Zustand (persist) |
 | 오디오 | Web Audio API, smplr (Soundfont · DrumMachine · Reverb) |
 | 백엔드 | FastAPI, SQLAlchemy 2.x (async), Alembic, Pydantic v2 |
-| 인프라 | PostgreSQL, MinIO (S3 호환), Docker Compose |
+| 인프라 | PostgreSQL, MinIO (S3 호환), Docker Compose, Railway |
 | 테스트 | Vitest, Testing Library, Playwright, pytest |
 
 런타임은 Node 20+, 패키지 매니저는 **pnpm 9**. 모노레포 워크스페이스(`apps/web`, `apps/api`)로 구성.
@@ -40,7 +57,7 @@ pnpm install
 pnpm dev          # http://localhost:3000
 ```
 
-배킹 트랙 카탈로그는 빌드 시점에 `lib/api/generated.ts`로 번들되어 있어, 프론트만 띄워도 모든 기능이 동작한다.
+코드 진행 카탈로그는 빌드 시점에 `lib/api/generated.ts`로 번들되어 있어, 프론트만 띄워도 모든 기능이 동작합니다.
 
 ### 백엔드 포함 (카탈로그 편집 시)
 
@@ -56,33 +73,28 @@ uv run python -m app.scripts.seed   # 카탈로그 시드 (idempotent)
 pnpm --filter @my-music-app/web types:api
 ```
 
-`lib/api/generated.ts`는 자동 생성 파일 — 직접 편집 금지.
+`lib/api/generated.ts`는 자동 생성 파일 — 직접 편집하지 마세요.
 
 ---
 
-## 검증 (커밋 전 필수)
+## 검증
+
+커밋 전 다음을 통과해야 합니다 (CI에서도 동일하게 실행).
 
 ```bash
 pnpm typecheck                 # tsc --noEmit, strict + noUncheckedIndexedAccess
 pnpm lint                      # ESLint (next/core-web-vitals + next/typescript)
 pnpm test                      # Vitest 단위 + 컴포넌트
 pnpm test:coverage             # v8 커버리지 (lib/** 타겟)
-pnpm test:e2e                  # Playwright
-
-# 단일 테스트
-pnpm test tests/unit/lib/theory/scales.test.ts
-pnpm test -t "C major"         # 이름 필터
 ```
 
-**Playwright 로컬 실행 주의** — WSL에서 시스템 chromium 라이브러리 부재 시 실패합니다. Docker 경로가 확실한 검증 방법.
+E2E와 백엔드 테스트:
 
 ```bash
+# Playwright — Docker 권장 (WSL 시스템 chromium 의존 회피)
 docker compose -f docker-compose.test.yml up --exit-code-from playwright
-```
 
-### 백엔드 테스트
-
-```bash
+# 백엔드
 cd apps/api && uv run pytest
 ```
 
@@ -130,7 +142,7 @@ docs/
 - **단일 AudioContext 원칙**: 앱 전체에서 인스턴스 1개. `lib/audio/context.ts` 싱글턴에서만 생성. 다른 곳에서 `new AudioContext()` 금지.
 - **백엔드 책임 = 카탈로그 한정**: 사용자 상태(BPM, 키, 볼륨 등)는 모두 Zustand `persist` → `localStorage`. 인증·프리셋 공유는 Phase 5+.
 - **음악 이론 레이어는 순수 함수**: `lib/theory/*` 커버리지 100% 목표. 수정은 `music-theory-guardian` 에이전트 게이트 필수.
-- **fretboard.root는 키의 단일 소스**: 지판 root와 배킹 트랙 키가 항상 동일. v9 마이그레이션에서 `backing.backingKey`를 흡수했다.
+- **fretboard.root는 키의 단일 소스**: 지판 root와 배킹 트랙 키가 항상 동일. v9 마이그레이션에서 `backing.backingKey`를 흡수했습니다.
 - **reactStrictMode: false**: AudioContext 싱글턴 보호를 위해 의도적으로 꺼둠.
 - **절대 볼륨 통일**: 카드 프로필의 `velocityScale`/`voiceGain` override 금지. 카드 정체성은 `reverbWet` + `instrumentOverrides` + 패턴(swing/triplet8/마디 변주)으로만 표현.
 - **master volume slider 라우팅**: smplr instance → `fxChain.input` → compressor → dry/wet+reverb → masterGain → ctx.destination. masterGain이 final stage라 slider가 진정한 master.
@@ -141,36 +153,42 @@ docs/
 
 ## Phase 로드맵
 
-- [x] Phase 0 — 셋업
-- [x] Phase 1 — 메트로놈 MVP
-- [x] Phase 2 — 지판 스케일 가이드
-- [x] Phase 3 — 스케일 확장 (16종)
-- [x] Phase 4 — `/jam` 통합 뷰
-  - Sprint 2-2~2-7: WebAudioFont 기반 배킹, sticky 지판, smart highlighting
-  - Sprint 2-8: smplr 백엔드 + Master FX + 9 카테고리 도메인 RhythmPattern
-  - Sprint 9: swing/triplet8 그루브 + 카드 프로필 시스템 + 17장 카드별 정체성
-  - Sprint 10: 카탈로그 17→22 (folk/rock 신규) + modal 4bar 통일 + 절대 볼륨 통일 + master volume 정상화
-- [ ] Phase 5+ — 사용자 인증·프리셋 공유 (user 테이블 + JWT)
+- [x] **Phase 0** — 셋업
+- [x] **Phase 1** — 메트로놈 MVP
+- [x] **Phase 2** — 지판 스케일 가이드
+- [x] **Phase 3** — 스케일 확장 (16종)
+- [x] **Phase 4** — `/jam` (Practice) 통합 뷰
+  - WebAudioFont → smplr 백엔드 마이그레이션, Master FX 체인, 9 카테고리 도메인 RhythmPattern
+  - swing/triplet8 그루브 + 카드 프로필 시스템
+  - 22장 카드별 instrument · tone · 패턴 정체성 차등화
+- [ ] **Phase 5+** — 사용자 인증·프리셋 공유 (user 테이블 + JWT)
 
 ---
 
 ## 트러블슈팅
 
-자주 마주치는 함정과 해결책은 [`CLAUDE.md` 트러블슈팅 섹션](./CLAUDE.md#트러블슈팅-실제-겪은-것만)에 정리되어 있다. 대표 사례:
+자주 마주치는 함정:
 
-- `.next` 캐시 오염 → `rm -rf .next && pnpm dev`
-- WSL에서 Fast Refresh 미반응 → `WATCHPACK_POLLING=true` (이미 적용됨)
-- localStorage 스키마 변경 → `localStorage.removeItem('my-music-app:v1')`
-- Playwright libnspr4 에러 → Docker 경로 권장
-- Drum hat 무음 → kit별 sample 이름 차이, `voices/drums.ts`의 `resolveHatNote` 참조
+- **`.next` 캐시 오염** → `rm -rf .next && pnpm dev`
+- **localStorage 스키마 변경 후 화면 깨짐** → `localStorage.removeItem('my-music-app:v1')` 후 새로고침
+- **Playwright `libnspr4` 에러** → Docker 경로 사용 (`docker compose -f docker-compose.test.yml up`)
+- **WSL Fast Refresh 미반응** → 이미 `WATCHPACK_POLLING=true` 적용됨, 안 되면 dev 재시작
+
+세부 사례·해결책은 [`CLAUDE.md` 트러블슈팅 섹션](./CLAUDE.md#트러블슈팅-실제-겪은-것만)에 정리되어 있습니다.
 
 ---
 
 ## 기여
 
-이 프로젝트는 개인 학습용으로 시작되어 외부 기여를 받지 않습니다. 다만 자유롭게 fork해 변형하셔도 좋습니다 (라이선스 조건 한정).
+이 프로젝트는 개인 학습용으로 시작되어 외부 PR을 적극적으로 받지는 않습니다. 다만 다음은 환영합니다:
+
+- **버그 리포트** — 특히 음악 이론 데이터 오류(스케일·도수·코드 진행) 또는 오디오 타이밍 이슈
+- **Fork** — MIT 라이선스 안에서 자유롭게 변형하셔도 좋습니다
+- **아이디어 공유** — 새로운 스케일·코드 진행·연습 패턴 제안
 
 도메인 책임 구조와 커밋 규율은 [`CLAUDE.md`](./CLAUDE.md)에 자세히 적혀 있습니다.
+
+> **Note for contributors** — 사용자 노출 앱 이름은 **에휴.. (Ehyo..)** 이지만 내부 식별자(npm 워크스페이스 `@my-music-app/web`, 디렉토리 `apps/web`, 패키지 imports)는 그대로 유지합니다. 빌드·임포트 경로 안정성을 위해 `My Music App` 내부 표기를 사용자 노출 카피로 옮기지 마세요.
 
 ---
 
