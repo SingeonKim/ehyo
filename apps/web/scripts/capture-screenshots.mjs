@@ -94,6 +94,28 @@ async function setLabelMode(page, mode) {
   await page.waitForTimeout(150);
 }
 
+// 지판 페이지의 viewport 캡처 영역을 *highlight-colors 패널 bottom*까지 확장.
+// 03~05 시리즈에서 강조 색 컨트롤이 한 화면에 같이 보이게 하기 위함.
+async function shootFretboardPageWithHighlight(page, name) {
+  const cropHeight = await page.evaluate(() => {
+    const panel = document.querySelector('[data-testid="highlight-colors"]');
+    if (!panel) return null;
+    const r = panel.getBoundingClientRect();
+    return Math.ceil(r.bottom + window.scrollY + 24); // 패널 끝 + 24px 여백
+  });
+  if (!cropHeight) {
+    console.warn(`  ! Could not measure highlight panel bottom for ${name}`);
+    await shoot(page, name);
+    return;
+  }
+  await page.screenshot({
+    path: path.join(OUT_DIR, name),
+    fullPage: true,
+    clip: { x: 0, y: 0, width: VIEWPORT.width, height: cropHeight },
+  });
+  console.log(`  ✓ ${name} (page clip @${VIEWPORT.width}×${cropHeight})`);
+}
+
 async function main() {
   // 매번 깨끗하게 — 기존 시리즈와 새 시리즈가 섞이지 않게.
   await rm(OUT_DIR, { recursive: true, force: true });
@@ -122,24 +144,24 @@ async function main() {
   await settle(page);
   await shoot(page, '02_metronome.png');
 
-  // 3. 지판 — Major
+  // 3. 지판 — Major (페이지 clip — highlight-colors 패널까지 포함)
   console.log('3/14 fretboard major');
   await page.goto(`${BASE_URL}/fretboard`);
   await settle(page);
   await setScaleByName(page, 'Major');
-  await shoot(page, '03_fretboard_major.png');
+  await shootFretboardPageWithHighlight(page, '03_fretboard_major.png');
 
   // 4. 지판 — Minor Blues + Label=Degree
   console.log('4/14 fretboard minor blues (degree label)');
   await setScaleByName(page, 'Minor Blues');
   await setLabelMode(page, 'Degree');
-  await shoot(page, '04_fretboard_minor_blues_degree.png');
+  await shootFretboardPageWithHighlight(page, '04_fretboard_minor_blues_degree.png');
 
   // 5. 지판 — Dorian (Label은 Name으로 복원)
   console.log('5/14 fretboard dorian');
   await setScaleByName(page, 'Dorian');
   await setLabelMode(page, 'Name');
-  await shoot(page, '05_fretboard_dorian.png');
+  await shootFretboardPageWithHighlight(page, '05_fretboard_dorian.png');
 
   // 6. Practice — BLUES/POP/JAZZ만 (Minor 카테고리 직전까지 clip)
   console.log('6/14 practice (BLUES/POP/JAZZ only)');

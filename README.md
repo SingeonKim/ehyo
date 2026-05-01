@@ -2,6 +2,8 @@
 
 기타 연습자를 위한 웹 기반 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙**.
 
+> 연습 자극 멘트까지
+
 브라우저 하나에서 박자 잡고, 지판에서 스케일 보면서, 코드 진행 위에 잼 칠 수 있는 단일 도구를 목표로 합니다. 모든 오디오는 클라이언트 측에서 합성 — 서버는 코드 진행 카탈로그만 제공합니다.
 
 [![CI](https://github.com/SingeonKim/ehyo/actions/workflows/ci.yml/badge.svg)](https://github.com/SingeonKim/ehyo/actions/workflows/ci.yml)
@@ -17,13 +19,19 @@
 
 ### 메트로놈
 
-Chris Wilson lookahead 스케줄러(25ms 콜백 / 100ms 룩어헤드, iOS 150ms)로 메인 스레드 드리프트 없이 정확한 박자. Subdivision(1/4·1/8·트리플렛·1/16·Swing) · Sound · Volume · Tap Tempo를 한 화면에서.
+정확한 박자. Subdivision(1/4·1/8·트리플렛·1/16·Swing) · Sound · Volume · Tap Tempo를 한 화면에서.
 
 ![Metronome](docs/introduction/02_metronome.png)
 
 ### 지판 스케일 가이드 — 16종 × 12 키
 
-같은 키에서 스케일만 바꿔도 노트 분포·강조 음이 어떻게 달라지는지 한눈에 보입니다. Root / Important / Regular 3단계 마커, 좌·우 손잡이 토글, Guitar 6/7현 + Bass 4현 멀티 instrument.
+같은 키에서 스케일만 바꿔도 노트 분포·강조 음이 어떻게 달라지는지 한눈에 보입니다.
+
+음계·도수 선택, 좌·우 선택, Guitar 6/7현 + Bass 4현 및 튜닝 선택
+
+스케일에 따른 Root / Important / Regular 3단계 마커, 커스텀 가능
+
+### 활용 예시
 
 **Major** — 표준 7음:
 
@@ -33,31 +41,31 @@ Chris Wilson lookahead 스케줄러(25ms 콜백 / 100ms 룩어헤드, iOS 150ms)
 
 ![Minor Blues](docs/introduction/04_fretboard_minor_blues_degree.png)
 
-**Dorian**:
-
-![Dorian](docs/introduction/05_fretboard_dorian.png)
 
 ### 노트 강조 색을 직접 조정
 
-스케일별로 어떤 도수를 강조할지(orange / green / blue / off) 도수 pill을 클릭해 사이클합니다. 변경은 스케일 단위로 저장되며 Reset으로 기본값 복원.
+스케일별로 어떤 도수를 강조할지(orange / green / blue / off) 도수 pill을 클릭해 사이클합니다. 변경은 스케일 단위로 저장되며 Reset으로 기본값 복원. Root(1도)는 항상 red 고정.
 
-**기본** — Minor Blues는 4도·5도가 orange, b5도가 blue. Root(1도)는 항상 red 고정:
-
-![Highlight default](docs/introduction/08_highlight_colors_default.png)
-![Fretboard default highlight](docs/introduction/07_fretboard_minor_blues_default.png)
-
-**커스텀** — 4도를 green으로, b7도에도 green을 추가했을 때:
-
-![Highlight custom](docs/introduction/10_highlight_colors_custom.png)
-![Fretboard custom highlight](docs/introduction/09_fretboard_minor_blues_custom.png)
+| 기본 — Minor Blues 4·5도 orange, b5도 blue | 커스텀 — 4도와 b7도를 green으로 |
+|---|---|
+| ![Highlight default](docs/introduction/08_highlight_colors_default.png) | ![Highlight custom](docs/introduction/10_highlight_colors_custom.png) |
+| ![Fretboard default highlight](docs/introduction/07_fretboard_minor_blues_default.png) | ![Fretboard custom highlight](docs/introduction/09_fretboard_minor_blues_custom.png) |
 
 ### Practice 통합 뷰 + 코드 오버레이
 
-sticky 지판 + 22장 코드 진행 카탈로그(blues / jazz / hard_bop / jump / minor / modal / folk / rock 등). 키·BPM·볼륨 컨트롤, Roman ↔ Absolute 표기 토글, 4-voice mute(drums/bass/guitar/aux).
+sticky 지판 + 22장 코드 진행 카탈로그(blues / jazz / hard_bop / jump / minor / modal / folk / rock 등).
+
+Roman ↔ Absolute 표기 토글, 4-voice mute(drums/bass/guitar/aux), 키·BPM·볼륨 컨트롤
 
 ![Catalog](docs/introduction/06_practice_blues_pop_jazz.png)
 
+### 재생 중 Chord Overlay
+
 재생 중에는 *현재 코드의 톤*이 지판 위에 chord overlay로 그려집니다. 같은 12-bar minor blues 안에서도 마디마다 chord-root와 chord-tone이 따라가서, 손가락이 어디로 가야 할지 즉시 보입니다.
+
+- **Red** — chord root
+- **Sky blue** — chord tone (3rd · 5th · 7th)
+- **Off-white** — color tone / tension (9th · 11th · 13th)
 
 **Im7 (bar 1)** — i7 코드, root는 그대로:
 
