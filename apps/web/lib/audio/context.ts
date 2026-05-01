@@ -13,6 +13,8 @@
  * Phase 0 현재는 인터페이스만 제공. 실제 호출은 Phase 1 메트로놈 스케줄러에서 시작된다.
  */
 
+import { unlockIosAudioSession } from './silent-unlock';
+
 let _ctx: AudioContext | null = null;
 
 /** 현재 컨텍스트를 가져온다. 없으면 생성한다. SSR 환경에선 호출 금지 (window 없음). */
@@ -37,6 +39,9 @@ export function hasAudioContext(): boolean {
  * 실패 시 null 반환 — UI가 사용자에게 안내를 띄울 수 있게.
  */
 export async function resumeAudioContext(): Promise<AudioContext | null> {
+  // iOS 무음 스위치 우회 — 호출 시점이 user gesture 콜백 안임을 호출자가 보장.
+  // await 이전에 동기적으로 실행돼야 gesture 컨텍스트가 살아 있어 play()가 허용된다.
+  unlockIosAudioSession();
   const ctx = getAudioContext();
   if (ctx.state === 'suspended') {
     try {

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { AudioMobileGuard } from '@/components/audio/AudioMobileGuard';
 import { MetronomeDock } from '@/components/metronome/MetronomeDock';
 
 /*
@@ -52,6 +53,7 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
         </nav>
       </header>
       <main className="mx-auto max-w-7xl px-6 py-10">{children}</main>
+      <AudioMobileGuard />
     </>
   );
 }

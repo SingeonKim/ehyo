@@ -7,6 +7,7 @@ import type {
 import { SUBDIVISION_COUNT } from './types';
 import { scheduleClick } from './sounds';
 import { createLookaheadScheduler } from './scheduler/lookahead-scheduler';
+import { unlockIosAudioSession } from './silent-unlock';
 
 /*
  * Chris Wilson lookahead 스케줄러 — LookaheadScheduler 코어를 재사용한 버전.
@@ -208,6 +209,8 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
 
     async start() {
       if (running) return;
+      // iOS 무음 스위치 우회 — await 이전 동기 시점에 호출해 gesture 컨텍스트 보존.
+      unlockIosAudioSession();
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
