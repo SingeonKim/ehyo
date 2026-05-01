@@ -7,6 +7,9 @@ import { FretboardClient } from '@/components/fretboard/FretboardClient';
 import { useAppStore } from '@/lib/store/app-store';
 import type { AppropriateNotes } from '@/lib/theory/chord-voicing';
 import { getFretboardNotes, getOpenStringLabels, STANDARD_TUNING } from '@/lib/theory/fretboard';
+import { resolveScaleHighlights } from '@/lib/theory/scales';
+import { TUNING_PRESETS } from '@/lib/theory/tunings';
+import type { PitchClass } from '@/lib/theory/types';
 
 /*
  * 지판 Client의 인터랙션을 jsdom 환경에서 검증.
@@ -138,6 +141,7 @@ const baseFretboardProps = {
     useFlats: false,
   }),
   openStrings: getOpenStringLabels(STANDARD_TUNING, false),
+  stringCount: STANDARD_TUNING.length,
   frets: 22 as const,
   handedness: 'right' as const,
   fretSpacing: 'uniform' as const,
@@ -289,5 +293,69 @@ describe('Fretboard color-tone and ghost markers', () => {
     );
     // out-of-scale chord-root도 ring을 받아야 함
     expect(rootCircles.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ── Variable stringCount ─────────────────────────────────────────────
+// 6현 외(7현 / 4현 베이스) 튜닝에서도 줄 개수만큼 SVG line이 그려지고,
+// 지판 height가 줄 개수에 비례해 늘어나는지 확인.
+function renderWithTuning(tuning: readonly PitchClass[]) {
+  const notes = getFretboardNotes({
+    tuning,
+    frets: 22,
+    root: 0,
+    scale: 'major',
+    highlights: resolveScaleHighlights('major', undefined),
+    useFlats: false,
+  });
+  const openStrings = getOpenStringLabels(tuning, false);
+  return render(
+    <Fretboard
+      notes={notes}
+      openStrings={openStrings}
+      stringCount={tuning.length}
+      frets={22}
+      handedness="right"
+      fretSpacing="uniform"
+      labelMode="name"
+      ghostNotes={[]}
+    />,
+  );
+}
+
+describe('Fretboard with variable stringCount', () => {
+  it('renders 6 strings for guitar-6 tuning', () => {
+    const { container } = renderWithTuning(TUNING_PRESETS['guitar-6-standard'].tuning);
+    const stringLines = container.querySelectorAll('[data-testid^="string-"]');
+    expect(stringLines).toHaveLength(6);
+  });
+
+  it('renders 7 strings for guitar-7 tuning (low B at bottom)', () => {
+    const { container } = renderWithTuning(TUNING_PRESETS['guitar-7-standard'].tuning);
+    const stringLines = container.querySelectorAll('[data-testid^="string-"]');
+    expect(stringLines).toHaveLength(7);
+  });
+
+  it('renders 4 strings for bass-4 tuning', () => {
+    const { container } = renderWithTuning(TUNING_PRESETS['bass-4-standard'].tuning);
+    const stringLines = container.querySelectorAll('[data-testid^="string-"]');
+    expect(stringLines).toHaveLength(4);
+  });
+
+  it('SVG height scales with stringCount (4 < 6 < 7)', () => {
+    const get = (tuning: readonly PitchClass[]) => {
+      const { container } = renderWithTuning(tuning);
+      const svg = container.querySelector('svg')!;
+      // viewBox는 "0 0 W H" — 4번째 토큰을 height로. height attr 우선.
+      const heightAttr = svg.getAttribute('height');
+      if (heightAttr && heightAttr !== '100%') return parseFloat(heightAttr);
+      const viewBox = svg.getAttribute('viewBox')!;
+      return parseFloat(viewBox.split(/\s+/)[3]!);
+    };
+    const h4 = get(TUNING_PRESETS['bass-4-standard'].tuning);
+    const h6 = get(TUNING_PRESETS['guitar-6-standard'].tuning);
+    const h7 = get(TUNING_PRESETS['guitar-7-standard'].tuning);
+    expect(h4).toBeLessThan(h6);
+    expect(h6).toBeLessThan(h7);
   });
 });

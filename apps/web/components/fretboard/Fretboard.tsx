@@ -19,8 +19,10 @@ import { OpenStringMarker } from './OpenStringMarker';
 
 export interface FretboardProps {
   notes: readonly NoteMark[];
-  /** 오픈 스트링 레이블 6개 — 스케일·라벨 모드 무관하게 항상 표시된다. */
+  /** 오픈 스트링 레이블 — 스케일·라벨 모드 무관하게 항상 표시된다. */
   openStrings: readonly OpenStringLabel[];
+  /** 줄 개수 (4=bass, 6=guitar, 7=7-string). SVG height/string loop의 단일 소스. */
+  stringCount: number;
   frets: 22 | 24;
   handedness: Handedness;
   fretSpacing: FretSpacing;
@@ -49,7 +51,7 @@ export interface FretboardProps {
 }
 
 // ─── 기하 상수 ──────────────────────────────
-const STRING_COUNT = 6;
+// 줄 개수는 prop(stringCount)로 받고, 그 외 기하값은 고정 상수.
 const UNIFORM_FRET_WIDTH = 48;
 const STRING_SPACING = 28;
 const PAD_TOP = 20;
@@ -95,6 +97,7 @@ const HALO_RADIUS_RATIO = 0.30;
 export function Fretboard({
   notes,
   openStrings,
+  stringCount,
   frets,
   handedness,
   fretSpacing,
@@ -108,12 +111,12 @@ export function Fretboard({
   const fretLines = computeFretLines(frets, fretSpacing);
   const lastFretX = fretLines[frets] ?? PAD_LEFT;
   const width = lastFretX + PAD_RIGHT;
-  const height = PAD_TOP + (STRING_COUNT - 1) * STRING_SPACING + PAD_BOTTOM;
+  const height = PAD_TOP + (stringCount - 1) * STRING_SPACING + PAD_BOTTOM;
 
   // 왼손잡이는 x좌표를 미러링
   const mirrorX = (x: number): number => (handedness === 'left' ? width - x : x);
 
-  // string 번호(1~6) → y 좌표 (1이 위, 6이 아래)
+  // string 번호(1~stringCount) → y 좌표 (1이 위 = 고음, stringCount가 아래 = 저음)
   const stringY = (stringNumber: number): number =>
     PAD_TOP + (stringNumber - 1) * STRING_SPACING;
 
@@ -161,7 +164,7 @@ export function Fretboard({
         x={PAD_LEFT}
         y={PAD_TOP - 4}
         width={lastFretX - PAD_LEFT}
-        height={(STRING_COUNT - 1) * STRING_SPACING + 8}
+        height={(stringCount - 1) * STRING_SPACING + 8}
         fill="var(--color-bg-elevated)"
         transform={handedness === 'left' ? `translate(${width}, 0) scale(-1, 1)` : undefined}
       />
@@ -169,7 +172,7 @@ export function Fretboard({
       {/* ── 인레이 점 ──────────────── */}
       {INLAY_POSITIONS.filter((p) => p.fret <= frets).map((inlay) => {
         const cx = mirrorX(fretCenterX(inlay.fret));
-        const cyMid = PAD_TOP + ((STRING_COUNT - 1) * STRING_SPACING) / 2;
+        const cyMid = PAD_TOP + ((stringCount - 1) * STRING_SPACING) / 2;
         if (inlay.double) {
           return (
             <g key={inlay.fret} aria-hidden="true">
@@ -198,7 +201,7 @@ export function Fretboard({
           x1={mirrorX(x)}
           y1={stringY(1) - 4}
           x2={mirrorX(x)}
-          y2={stringY(STRING_COUNT) + 4}
+          y2={stringY(stringCount) + 4}
           stroke="var(--color-ink-muted)"
           strokeWidth={1}
           opacity={0.5}
@@ -211,19 +214,20 @@ export function Fretboard({
         x={mirrorX(PAD_LEFT) - (handedness === 'left' ? NUT_WIDTH : 0)}
         y={stringY(1) - 4}
         width={NUT_WIDTH}
-        height={(STRING_COUNT - 1) * STRING_SPACING + 8}
+        height={(stringCount - 1) * STRING_SPACING + 8}
         fill="var(--color-ink-primary)"
         aria-hidden="true"
       />
 
-      {/* ── 줄 (1번 = 최상단) ────── */}
-      {Array.from({ length: STRING_COUNT }, (_, i) => {
+      {/* ── 줄 (1번 = 최상단 = 고음) ────── */}
+      {Array.from({ length: stringCount }, (_, i) => {
         const num = i + 1;
         // 굵기는 저음 줄로 갈수록 두껍게
         const strokeWidth = 1 + (num - 1) * 0.3;
         return (
           <line
             key={`string-${num}`}
+            data-testid={`string-${num}`}
             x1={mirrorX(PAD_LEFT)}
             y1={stringY(num)}
             x2={mirrorX(lastFretX)}
