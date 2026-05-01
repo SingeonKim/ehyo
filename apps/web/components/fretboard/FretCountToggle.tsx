@@ -25,7 +25,7 @@ export function FretCountToggle() {
               aria-pressed={active}
               onClick={() => setFretCount(n)}
               className={clsx(
-                'px-3 py-1 font-mono text-xs',
+                'px-3 py-1 font-mono text-xs transition-colors duration-75 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-brass',
                 active
                   ? 'bg-bg-elevated text-accent-brass'
                   : 'bg-transparent text-ink-muted hover:text-ink-primary',

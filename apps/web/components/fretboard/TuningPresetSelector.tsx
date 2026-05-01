@@ -29,7 +29,7 @@ export function TuningPresetSelector() {
         value={tuningId}
         onChange={(e) => setTuning(e.target.value as TuningPresetId)}
         aria-label="Tuning preset"
-        className="border border-ink-muted/30 bg-bg-elevated px-2 py-1 font-mono text-xs text-ink-primary"
+        className="appearance-none border border-ink-muted/30 bg-bg-elevated px-2 py-1 pr-7 font-mono text-xs text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-brass [background-image:url('data:image/svg+xml;utf8,<svg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2010%206%22%20fill=%22none%22%20stroke=%22currentColor%22%20stroke-width=%221.5%22><path%20d=%22M1%201l4%204%204-4%22/></svg>')] bg-[length:0.6rem] bg-[right_0.5rem_center] bg-no-repeat"
       >
         {presets.map((p) => (
           <option key={p.id} value={p.id}>

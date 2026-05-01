@@ -36,7 +36,7 @@ export function InstrumentSelector() {
             aria-pressed={active}
             onClick={() => setInstrument(kind)}
             className={clsx(
-              'px-3 py-1.5 font-mono text-xs uppercase tracking-[0.15em] transition-colors',
+              'px-3 py-1.5 font-mono text-xs uppercase tracking-[0.15em] transition-colors duration-75 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-brass',
               active
                 ? 'bg-bg-elevated text-accent-brass'
                 : 'bg-transparent text-ink-muted hover:text-ink-primary',

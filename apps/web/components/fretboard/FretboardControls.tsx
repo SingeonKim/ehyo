@@ -42,7 +42,7 @@ export function FretboardControls() {
         aria-label="Instrument and tuning"
         className="space-y-3 border-b border-ink-muted/10 pb-6"
       >
-        <h3 className="font-mono text-[0.65rem] uppercase tracking-[0.25em] text-ink-muted">
+        <h3 className="font-mono text-[0.65rem] uppercase tracking-[0.3em] text-ink-muted">
           § Instrument &amp; Tuning
         </h3>
         <InstrumentSelector />
