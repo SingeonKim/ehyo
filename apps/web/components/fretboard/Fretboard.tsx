@@ -318,30 +318,18 @@ export function Fretboard({
         </g>
       )}
 
-      {/* ── 코드 오버레이 — chord-root + chord-tone 두 layer ───────────
+      {/* ── 코드 오버레이 — chord-tone + chord-root 두 layer ───────────
           노트 마커보다 먼저(아래 레이어)에 그려서 노트 원이 위에 남는다.
-          chord-root는 빨강 ring(stroke 2.5), chord-tone은 파랑 ring(stroke 2). */}
+          그룹 내부에서는 chord-tone(파랑)을 먼저, chord-root(빨강)를 나중에 그린다.
+          SVG paint order = source order이므로, 같은 위치에서 root ring이 tone ring을
+          가린다. 인접 fret에서 ring 둘레가 겹칠 때 root가 시각적으로 잘리지 않게 하려는
+          의도. stroke는 root 2.5 / tone 2로 root가 한 단계 더 뚜렷. */}
       {appropriateNotes && (appropriateNotes.chordRoot !== null || appropriateNotes.chordTones.size > 0) && (
         <g
           key={chordSymbol ?? 'idle-chord'}
           className="chord-overlay"
           aria-hidden="true"
         >
-          {appropriateNotes.chordRoot !== null && (
-            <g data-overlay-tier="chord-root">
-              {ringPositions(appropriateNotes.chordRoot).map((p) => (
-                <circle
-                  key={`overlay-root-${p.string}-${p.fret}`}
-                  cx={mirrorX(fretCenterX(p.fret))}
-                  cy={stringY(p.string)}
-                  r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
-                  fill="none"
-                  stroke="var(--color-chord-overlay-root)"
-                  strokeWidth={2.5}
-                />
-              ))}
-            </g>
-          )}
           {appropriateNotes.chordTones.size > 0 && (
             <g data-overlay-tier="chord-tone">
               {[...appropriateNotes.chordTones].flatMap((pc) =>
@@ -357,6 +345,21 @@ export function Fretboard({
                   />
                 )),
               )}
+            </g>
+          )}
+          {appropriateNotes.chordRoot !== null && (
+            <g data-overlay-tier="chord-root">
+              {ringPositions(appropriateNotes.chordRoot).map((p) => (
+                <circle
+                  key={`overlay-root-${p.string}-${p.fret}`}
+                  cx={mirrorX(fretCenterX(p.fret))}
+                  cy={stringY(p.string)}
+                  r={UNIFORM_FRET_WIDTH * HALO_RADIUS_RATIO}
+                  fill="none"
+                  stroke="var(--color-chord-overlay-root)"
+                  strokeWidth={2.5}
+                />
+              ))}
             </g>
           )}
         </g>
