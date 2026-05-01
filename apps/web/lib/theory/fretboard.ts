@@ -14,8 +14,13 @@ import { SCALES, type ScaleHighlights } from './scales';
  * 렌더링 시에는 반대 방향(index 5가 위)으로 뒤집는다.
  */
 
-/** 표준 튜닝: 6번줄부터 EADGBE. */
-export const STANDARD_TUNING: readonly PitchClass[] = [4, 9, 2, 7, 11, 4] as const;
+/**
+ * 표준 튜닝: 6번줄부터 EADGBE.
+ * tunings.ts의 'guitar-6-standard' preset과 동일. 별칭 re-export로
+ * 기존 import(테스트 30+개)와 호환을 유지한다. 신규 코드는 store 셀렉터
+ * useTuning()을 통해 동적 tuning을 받기를 권장.
+ */
+export { STANDARD_TUNING } from './tunings';
 
 /** 지판 상 한 노트의 속성. */
 export interface NoteMark {

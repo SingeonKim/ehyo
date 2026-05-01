@@ -387,6 +387,22 @@ interface FretboardConfig {
 
 좌/우 손잡이 전환은 SVG `scale(-1, 1)` + 텍스트 역변환.
 
+##### 멀티 instrument · tuning preset (v12 확장)
+
+`feat/fretboard-tuning-instrument` 머지 이후 6현 기타 단일에서 3페르소나(6현 기타 / 7현 기타 / 4현 베이스)로 확장.
+
+| Instrument | 줄 개수 | Tuning 프리셋 |
+|---|---|---|
+| Guitar 6 | 6 | Standard, Drop D, DADGAD, E♭ Half-step |
+| Guitar 7 | 7 | Standard (BEADGBE) |
+| Bass 4 | 4 | Standard (EADG), Drop D (DADG) |
+
+Store에는 `fretboard.tuning: TuningPresetId`만 저장. 컴포넌트는 `useTuning()`이 반환하는 `readonly PitchClass[]`를 받아 SVG가 4/6/7줄로 자동 렌더(SVG height = stringCount × 32px). 음악 이론 / 카탈로그 / 코드 보이싱 도메인은 instrument-agnostic이라 영향 없음 — 지판 시각화 레이어만 가변.
+
+새 튜닝 프리셋 추가는 `lib/theory/tunings.ts`의 `TUNING_PRESETS` Record + `presetsByInstrument` 분기 + `DEFAULT_PRESET_BY_INSTRUMENT` 매핑 세 곳을 갱신한다. 신규 instrument(예: 5현 베이스, 만돌린)도 같은 세 곳만 손대면 된다.
+
+연계 기능 — Voice mute(`backing.voiceMutes`): 4-voice(drums/bass/guitar/aux) 개별 음소거. 베이스/7현 사용자가 자기 voice를 빼고 backing 위에 자기 연주를 얹는 시나리오 지원. 토글은 *다음 마디부터* 반영.
+
 #### 6.2.6 인터랙션
 - Root 선택: 12음 chromatic wheel 또는 드롭다운
 - 스케일 선택: 카테고리별 아코디언

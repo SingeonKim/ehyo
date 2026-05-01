@@ -9,7 +9,7 @@
  * useAppStore.getState()를 통해 직접 검증한다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { __migrate, useAppStore } from '@/lib/store/app-store';
 
@@ -402,5 +402,144 @@ describe('setBackingSelectedBar', () => {
     expect(s.backing.backingSelectedBarIndex).toBeNull();
     expect(s.backing.backingCurrentChord).toBeNull();
     expect(s.backing.backingPlayingCategory).toBeNull();
+  });
+});
+
+describe('Tuning / Instrument actions', () => {
+  beforeEach(() => {
+    useAppStore.setState((s) => {
+      s.fretboard.tuning = 'guitar-6-standard';
+    });
+  });
+
+  it('default tuning is guitar-6-standard', () => {
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-6-standard');
+  });
+
+  it('setTuning updates store without touching root', () => {
+    useAppStore.getState().setRoot(7); // G
+    useAppStore.getState().setTuning('guitar-6-drop-d');
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-6-drop-d');
+    expect(useAppStore.getState().fretboard.root).toBe(7); // root preserved
+  });
+
+  it('setInstrument keeps tuning if already in that instrument', () => {
+    useAppStore.getState().setTuning('guitar-6-drop-d');
+    useAppStore.getState().setInstrument('guitar-6');
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-6-drop-d');
+  });
+
+  it('setInstrument switches to default preset for new instrument', () => {
+    useAppStore.getState().setTuning('guitar-6-drop-d');
+    useAppStore.getState().setInstrument('bass-4');
+    expect(useAppStore.getState().fretboard.tuning).toBe('bass-4-standard');
+
+    useAppStore.getState().setInstrument('guitar-7');
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-7-standard');
+  });
+
+  it('setFretCount updates frets', () => {
+    useAppStore.getState().setFretCount(24);
+    expect(useAppStore.getState().fretboard.frets).toBe(24);
+    useAppStore.getState().setFretCount(22);
+    expect(useAppStore.getState().fretboard.frets).toBe(22);
+  });
+});
+
+describe('Voice mute actions', () => {
+  beforeEach(() => {
+    useAppStore.setState((s) => {
+      s.backing.voiceMutes = { drums: false, bass: false, guitar: false, aux: false };
+    });
+  });
+
+  it('default voiceMutes are all false', () => {
+    expect(useAppStore.getState().backing.voiceMutes).toEqual({
+      drums: false, bass: false, guitar: false, aux: false,
+    });
+  });
+
+  it('toggleVoiceMute flips drums only', () => {
+    useAppStore.getState().toggleVoiceMute('drums');
+    expect(useAppStore.getState().backing.voiceMutes).toEqual({
+      drums: true, bass: false, guitar: false, aux: false,
+    });
+  });
+
+  it('toggleVoiceMute is independent per voice', () => {
+    useAppStore.getState().toggleVoiceMute('bass');
+    useAppStore.getState().toggleVoiceMute('aux');
+    expect(useAppStore.getState().backing.voiceMutes).toEqual({
+      drums: false, bass: true, guitar: false, aux: true,
+    });
+  });
+
+  it('toggleVoiceMute twice returns to false', () => {
+    useAppStore.getState().toggleVoiceMute('guitar');
+    useAppStore.getState().toggleVoiceMute('guitar');
+    expect(useAppStore.getState().backing.voiceMutes.guitar).toBe(false);
+  });
+});
+
+describe('persist v11 → v12 migrate', () => {
+  it('adds fretboard.tuning when missing', () => {
+    const oldState = {
+      fretboard: { root: 0, scale: 'major', frets: 22 },
+      backing: { volume: 0.5, backingPlayingCategory: null },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const fb = migrated.fretboard as Record<string, unknown>;
+    expect(fb.tuning).toBe('guitar-6-standard');
+  });
+
+  it('adds backing.voiceMutes when missing', () => {
+    const oldState = {
+      fretboard: { root: 0, scale: 'major' },
+      backing: { volume: 0.5 },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const backing = migrated.backing as Record<string, unknown>;
+    expect(backing.voiceMutes).toEqual({
+      drums: false,
+      bass: false,
+      guitar: false,
+      aux: false,
+    });
+  });
+
+  it('preserves user-set tuning when migrating from older versions', () => {
+    const oldState = {
+      fretboard: { root: 7, scale: 'minor', tuning: 'bass-4-drop-d' },
+      backing: {},
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const fb = migrated.fretboard as Record<string, unknown>;
+    expect(fb.tuning).toBe('bass-4-drop-d'); // already valid, untouched
+  });
+
+  it('preserves user-set voiceMutes', () => {
+    const oldState = {
+      fretboard: {},
+      backing: { voiceMutes: { drums: true, bass: false, guitar: false, aux: false } },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const backing = migrated.backing as Record<string, unknown>;
+    expect((backing.voiceMutes as Record<string, boolean>).drums).toBe(true);
+  });
+
+  it('does not corrupt other fields', () => {
+    const oldState = {
+      fretboard: { root: 5, scale: 'dorian', frets: 24, accidentalMode: 'sharp' },
+      backing: { volume: 0.7, bpmOverrides: { 'card-x': 100 } },
+      ui: { chordDisplayMode: 'absolute' },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const fb = migrated.fretboard as Record<string, unknown>;
+    const backing = migrated.backing as Record<string, unknown>;
+    expect(fb.root).toBe(5);
+    expect(fb.scale).toBe('dorian');
+    expect(fb.frets).toBe(24);
+    expect(backing.volume).toBe(0.7);
+    expect((backing.bpmOverrides as Record<string, number>)['card-x']).toBe(100);
   });
 });

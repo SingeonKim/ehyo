@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 
+import { useAppStore } from '@/lib/store/app-store';
+import { TUNING_PRESETS, type InstrumentKind } from '@/lib/theory/tunings';
+import type { PitchClass } from '@/lib/theory/types';
+
 /*
  * Zustand persist + Next.js App Router의 hydration 불일치 방지.
  *
@@ -18,4 +22,20 @@ export function useHasHydrated(): boolean {
     setHydrated(true);
   }, []);
   return hydrated;
+}
+
+/**
+ * 현재 선택된 튜닝의 PitchClass 배열을 반환.
+ * store는 TuningPresetId만 보관하고, 컴포넌트는 array를 받아
+ * 데이터 형태 변경에 영향받지 않도록 격리.
+ */
+export function useTuning(): readonly PitchClass[] {
+  const id = useAppStore((s) => s.fretboard.tuning);
+  return TUNING_PRESETS[id].tuning;
+}
+
+/** 현재 instrument kind. UI 분기(InstrumentSelector active state)에 사용. */
+export function useInstrument(): InstrumentKind {
+  const id = useAppStore((s) => s.fretboard.tuning);
+  return TUNING_PRESETS[id].instrument;
 }

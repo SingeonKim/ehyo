@@ -3,13 +3,12 @@
 import { useMemo } from 'react';
 
 import { useAppStore } from '@/lib/store/app-store';
-import { useHasHydrated } from '@/lib/store/hooks';
+import { useHasHydrated, useTuning } from '@/lib/store/hooks';
 import {
   getAppropriateNotes,
   type AppropriateNotes,
 } from '@/lib/theory/chord-voicing';
 import {
-  STANDARD_TUNING,
   getFretboardNotes,
   getGhostFretboardPositions,
   getOpenStringLabels,
@@ -42,6 +41,7 @@ import { Fretboard } from './Fretboard';
 export function FretboardSurface() {
   const hydrated = useHasHydrated();
 
+  const tuning = useTuning();
   const root = useAppStore((s) => s.fretboard.root);
   const scale = useAppStore((s) => s.fretboard.scale);
   const handedness = useAppStore((s) => s.fretboard.handedness);
@@ -90,14 +90,14 @@ export function FretboardSurface() {
   const notes = useMemo(() => {
     const highlights = resolveScaleHighlights(scale, highlightsOverride);
     return getFretboardNotes({
-      tuning: STANDARD_TUNING,
+      tuning,
       frets,
       root,
       scale,
       highlights,
       useFlats,
     });
-  }, [root, scale, frets, highlightsOverride, useFlats]);
+  }, [tuning, root, scale, frets, highlightsOverride, useFlats]);
 
   const ghostNotes = useMemo<readonly GhostNote[]>(() => {
     if (!appropriateNotes) return [];
@@ -119,16 +119,16 @@ export function FretboardSurface() {
     }
     if (outOfScalePcs.size === 0) return [];
     return getGhostFretboardPositions({
-      tuning: STANDARD_TUNING,
+      tuning,
       frets,
       pitchClasses: outOfScalePcs,
       useFlats,
     });
-  }, [appropriateNotes, notes, frets, useFlats]);
+  }, [appropriateNotes, notes, frets, tuning, useFlats]);
 
   const openStrings = useMemo(
-    () => getOpenStringLabels(STANDARD_TUNING, useFlats),
-    [useFlats],
+    () => getOpenStringLabels(tuning, useFlats),
+    [tuning, useFlats],
   );
 
   if (!hydrated) {
@@ -146,6 +146,7 @@ export function FretboardSurface() {
       <Fretboard
         notes={notes}
         openStrings={openStrings}
+        stringCount={tuning.length}
         frets={frets}
         handedness={handedness}
         fretSpacing={fretSpacing}

@@ -15,6 +15,12 @@ import { SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
 import type { ChordDisplayMode } from '@/lib/theory/chord-display';
 import { GENRE_RULES, type ProgressionCategory } from '@/lib/theory/genre-rules';
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
+import {
+  TUNING_PRESETS,
+  DEFAULT_PRESET_BY_INSTRUMENT,
+  type InstrumentKind,
+  type TuningPresetId,
+} from '@/lib/theory/tunings';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -64,6 +70,8 @@ export interface FretboardState {
   fretSpacing: FretSpacing;
   /** 이명동음 표기 모드. 기본 'auto'(Root의 전통 조표). */
   accidentalMode: AccidentalMode;
+  /** 신규: 선택된 튜닝 프리셋 id. instrument 정보도 이 id에서 파생. */
+  tuning: TuningPresetId;
 }
 
 // ─── UI ────────────────────────────────────────────────────
@@ -84,6 +92,14 @@ export interface UiState {
 //   기존 backing.backingKey는 제거 — KeySelector(잼)와 RootPicker(설정)이
 //   같은 fretboard.root를 양방향으로 제어한다. 엔진은 store 브리지에서
 //   fretboard.root 변화를 구독해 setKey를 호출.
+
+/**
+ * 배킹 voice 식별자.
+ * voice별 mute 상태와 엔진 voice 라우팅의 단일 소스. 여기 유니온이 곧
+ * BackingSliceState.voiceMutes 키 집합이라 추가/제거 시 컴파일러가 강제한다.
+ */
+export type VoiceKind = 'drums' | 'bass' | 'guitar' | 'aux';
+
 export interface BackingSliceState {
   /** 런타임. 재생 중인 template.slug 또는 null. */
   backingPlayingSlug: string | null;
@@ -98,6 +114,11 @@ export interface BackingSliceState {
    * 엔진은 store 브리지에서 이 값을 구독해 master gain에 적용한다.
    */
   volume: number;
+  /**
+   * 영속. voice별 mute 상태. true면 해당 voice의 트리거를 스킵.
+   * 카드 재생 중 토글하면 다음 비트부터 반영(엔진이 trigger 시점마다 셀렉터 재평가).
+   */
+  voiceMutes: Record<VoiceKind, boolean>;
   /** 런타임. 사용자가 카드 마디를 클릭해서 선택한 슬러그. 정지 상태에서만 유효. */
   backingSelectedSlug: string | null;
   /** 런타임. 선택된 마디 인덱스. backingSelectedSlug와 항상 쌍으로 변경. */
@@ -137,6 +158,10 @@ export interface AppState {
   /** 현재 스케일의 override를 제거해 SCALE_HIGHLIGHTS 기본값으로 되돌린다. */
   resetHighlights: (scale: ScaleKey) => void;
 
+  setTuning: (id: TuningPresetId) => void;
+  setInstrument: (kind: InstrumentKind) => void;
+  setFretCount: (frets: 22 | 24) => void;
+
   // 배킹 액션
   /** engine subscriber 전용 — UI에서 호출 금지. slug + category 동시 set. */
   _setBackingPlayingTemplate: (template: ProgressionTemplate | null) => void;
@@ -150,6 +175,8 @@ export interface AppState {
   clearBackingBpm: (slug: string) => void;
   /** 배킹 마스터 볼륨 변경 (0~1). 엔진 브리지가 setVolume을 자동 호출. */
   setBackingVolume: (v: number) => void;
+  /** 특정 voice의 mute 상태를 토글. 재생 중이라도 다음 비트부터 반영된다. */
+  toggleVoiceMute: (voice: VoiceKind) => void;
   /**
    * 사용자 마디 선택 토글.
    *  - template + barIndex 양쪽 non-null: 선택 적용. 정지 상태면 chord 컨텍스트
@@ -205,6 +232,7 @@ const DEFAULT_FRETBOARD: FretboardState = {
   frets: 22,
   fretSpacing: 'uniform',
   accidentalMode: 'auto',
+  tuning: 'guitar-6-standard',
 };
 
 const DEFAULT_UI: UiState = {
@@ -219,6 +247,8 @@ const DEFAULT_BACKING: BackingSliceState = {
   bpmOverrides: {},
   // 메트로놈 볼륨(0.5)과 동일한 시작점. 사용자가 슬라이더로 조정 가능.
   volume: 0.5,
+  // 모든 voice는 기본 unmuted. 사용자가 voice mixer에서 토글.
+  voiceMutes: { drums: false, bass: false, guitar: false, aux: false },
   backingSelectedSlug: null,
   backingSelectedBarIndex: null,
 };
@@ -314,6 +344,26 @@ function migrate(persistedState: unknown, version: number): unknown {
     const backing = (s.backing as Record<string, unknown>) ?? {};
     if (!('backingPlayingCategory' in backing)) {
       backing.backingPlayingCategory = null;
+    }
+    s.backing = backing;
+  }
+  // v11 → v12: fretboard.tuning 신규 + backing.voiceMutes 신규.
+  //   tuning은 6현 standard로 시작 — 기존 6현 사용자에게 가장 자연스러운 default.
+  //   voiceMutes는 4 voice 모두 false — 기존 동작과 동일(아무것도 음소거 안 됨).
+  if (version < 12) {
+    const fb = (s.fretboard as Record<string, unknown>) ?? {};
+    if (typeof fb.tuning !== 'string') {
+      fb.tuning = 'guitar-6-standard';
+    }
+    s.fretboard = fb;
+
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    if (
+      !backing.voiceMutes ||
+      typeof backing.voiceMutes !== 'object' ||
+      Array.isArray(backing.voiceMutes)
+    ) {
+      backing.voiceMutes = { drums: false, bass: false, guitar: false, aux: false };
     }
     s.backing = backing;
   }
@@ -462,6 +512,26 @@ export const useAppStore = create<AppState>()(
           delete s.fretboard.highlightsByScale[scale];
         }),
 
+      setTuning: (id) =>
+        set((s) => {
+          s.fretboard.tuning = id;
+        }),
+
+      setInstrument: (kind) =>
+        set((s) => {
+          // 현재 tuning이 새 instrument에 속하면 유지, 아니면 default로 전환.
+          // 같은 instrument 안에서의 변형 보존이 사용자 의도에 가까움.
+          const currentInstrument = TUNING_PRESETS[s.fretboard.tuning].instrument;
+          if (currentInstrument !== kind) {
+            s.fretboard.tuning = DEFAULT_PRESET_BY_INSTRUMENT[kind];
+          }
+        }),
+
+      setFretCount: (frets) =>
+        set((s) => {
+          s.fretboard.frets = frets;
+        }),
+
       _setBackingPlayingTemplate: (template) =>
         set((s) => {
           if (!template) {
@@ -503,6 +573,13 @@ export const useAppStore = create<AppState>()(
           // 0~1 클램프. NaN/Infinity는 무시(기존 값 유지).
           if (!Number.isFinite(v)) return;
           s.backing.volume = Math.max(0, Math.min(1, v));
+        }),
+
+      toggleVoiceMute: (voice) =>
+        set((s) => {
+          // 단순 boolean 토글. 엔진은 매 trigger마다 store에서 voiceMutes를
+          // 재평가하므로 별도 신호 없이 다음 비트부터 반영된다.
+          s.backing.voiceMutes[voice] = !s.backing.voiceMutes[voice];
         }),
 
       setBackingSelectedBar: (template, barIndex) =>
@@ -552,7 +629,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 11,
+      version: 12,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -564,6 +641,7 @@ export const useAppStore = create<AppState>()(
       // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합 (Key 동기화).
       // v9 → v10: backing.volume 추가 — 배킹 마스터 볼륨.
       // v10 → v11: backing.backingPlayingCategory 추가 (Sprint 2-7 스마트 하이라이팅).
+      // v11 → v12: fretboard.tuning + backing.voiceMutes 추가 (튜닝/악기 확장).
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({

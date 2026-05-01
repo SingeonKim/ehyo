@@ -26,6 +26,7 @@ import { BackingVolumeSlider } from './BackingVolumeSlider';
 import { ChordDisplayModeToggle } from './ChordDisplayModeToggle';
 import { KeySelector } from './KeySelector';
 import { ProgressionCard } from './ProgressionCard';
+import { VoiceMutePanel } from './VoiceMutePanel';
 
 const CATEGORY_LABELS: Record<string, string> = {
   blues: 'Blues',
@@ -69,6 +70,7 @@ export function ProgressionCatalogClient({
           <ChordDisplayModeToggle />
           <KeySelector />
           <BackingVolumeSlider />
+          <VoiceMutePanel />
           <span className="font-mono text-[0.65rem] text-ink-muted">
             {templates.length} progressions
           </span>
