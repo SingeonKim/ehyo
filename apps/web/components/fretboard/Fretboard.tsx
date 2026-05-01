@@ -53,7 +53,7 @@ const STRING_COUNT = 6;
 const UNIFORM_FRET_WIDTH = 48;
 const STRING_SPACING = 28;
 const PAD_TOP = 20;
-const PAD_BOTTOM = 30; // 프렛 번호 공간
+const PAD_BOTTOM = 38; // 프렛 번호 공간 (라벨 fontSize 13 + 아래 여백)
 const PAD_LEFT = 60; // 오픈 포지션 노트 공간
 const PAD_RIGHT = 20;
 const NUT_WIDTH = 6;
@@ -245,7 +245,7 @@ export function Fretboard({
               x={mirrorX(fretCenterX(n))}
               y={height - 8}
               textAnchor="middle"
-              fontSize={10}
+              fontSize={13}
               fontFamily="var(--font-mono)"
               fill="var(--color-ink-muted)"
               aria-hidden="true"
