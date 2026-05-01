@@ -15,6 +15,12 @@ import { SCALE_HIGHLIGHTS } from '@/lib/theory/scales';
 import type { ChordDisplayMode } from '@/lib/theory/chord-display';
 import { GENRE_RULES, type ProgressionCategory } from '@/lib/theory/genre-rules';
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
+import {
+  TUNING_PRESETS,
+  DEFAULT_PRESET_BY_INSTRUMENT,
+  type InstrumentKind,
+  type TuningPresetId,
+} from '@/lib/theory/tunings';
 
 /*
  * 앱 전역 상태 — Zustand + persist.
@@ -64,6 +70,8 @@ export interface FretboardState {
   fretSpacing: FretSpacing;
   /** 이명동음 표기 모드. 기본 'auto'(Root의 전통 조표). */
   accidentalMode: AccidentalMode;
+  /** 신규: 선택된 튜닝 프리셋 id. instrument 정보도 이 id에서 파생. */
+  tuning: TuningPresetId;
 }
 
 // ─── UI ────────────────────────────────────────────────────
@@ -137,6 +145,10 @@ export interface AppState {
   /** 현재 스케일의 override를 제거해 SCALE_HIGHLIGHTS 기본값으로 되돌린다. */
   resetHighlights: (scale: ScaleKey) => void;
 
+  setTuning: (id: TuningPresetId) => void;
+  setInstrument: (kind: InstrumentKind) => void;
+  setFretCount: (frets: 22 | 24) => void;
+
   // 배킹 액션
   /** engine subscriber 전용 — UI에서 호출 금지. slug + category 동시 set. */
   _setBackingPlayingTemplate: (template: ProgressionTemplate | null) => void;
@@ -205,6 +217,7 @@ const DEFAULT_FRETBOARD: FretboardState = {
   frets: 22,
   fretSpacing: 'uniform',
   accidentalMode: 'auto',
+  tuning: 'guitar-6-standard',
 };
 
 const DEFAULT_UI: UiState = {
@@ -460,6 +473,26 @@ export const useAppStore = create<AppState>()(
           // override를 삭제하면 resolveScaleHighlights가 SCALE_HIGHLIGHTS
           // 기본값을 반환한다. 앞으로 기본값이 바뀌어도 리셋한 스케일은 항상 최신.
           delete s.fretboard.highlightsByScale[scale];
+        }),
+
+      setTuning: (id) =>
+        set((s) => {
+          s.fretboard.tuning = id;
+        }),
+
+      setInstrument: (kind) =>
+        set((s) => {
+          // 현재 tuning이 새 instrument에 속하면 유지, 아니면 default로 전환.
+          // 같은 instrument 안에서의 변형 보존이 사용자 의도에 가까움.
+          const currentInstrument = TUNING_PRESETS[s.fretboard.tuning].instrument;
+          if (currentInstrument !== kind) {
+            s.fretboard.tuning = DEFAULT_PRESET_BY_INSTRUMENT[kind];
+          }
+        }),
+
+      setFretCount: (frets) =>
+        set((s) => {
+          s.fretboard.frets = frets;
         }),
 
       _setBackingPlayingTemplate: (template) =>

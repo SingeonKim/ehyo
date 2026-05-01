@@ -9,7 +9,7 @@
  * useAppStore.getState()를 통해 직접 검증한다.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { __migrate, useAppStore } from '@/lib/store/app-store';
 
@@ -402,5 +402,46 @@ describe('setBackingSelectedBar', () => {
     expect(s.backing.backingSelectedBarIndex).toBeNull();
     expect(s.backing.backingCurrentChord).toBeNull();
     expect(s.backing.backingPlayingCategory).toBeNull();
+  });
+});
+
+describe('Tuning / Instrument actions', () => {
+  beforeEach(() => {
+    useAppStore.setState((s) => {
+      s.fretboard.tuning = 'guitar-6-standard';
+    });
+  });
+
+  it('default tuning is guitar-6-standard', () => {
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-6-standard');
+  });
+
+  it('setTuning updates store without touching root', () => {
+    useAppStore.getState().setRoot(7); // G
+    useAppStore.getState().setTuning('guitar-6-drop-d');
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-6-drop-d');
+    expect(useAppStore.getState().fretboard.root).toBe(7); // root preserved
+  });
+
+  it('setInstrument keeps tuning if already in that instrument', () => {
+    useAppStore.getState().setTuning('guitar-6-drop-d');
+    useAppStore.getState().setInstrument('guitar-6');
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-6-drop-d');
+  });
+
+  it('setInstrument switches to default preset for new instrument', () => {
+    useAppStore.getState().setTuning('guitar-6-drop-d');
+    useAppStore.getState().setInstrument('bass-4');
+    expect(useAppStore.getState().fretboard.tuning).toBe('bass-4-standard');
+
+    useAppStore.getState().setInstrument('guitar-7');
+    expect(useAppStore.getState().fretboard.tuning).toBe('guitar-7-standard');
+  });
+
+  it('setFretCount updates frets', () => {
+    useAppStore.getState().setFretCount(24);
+    expect(useAppStore.getState().fretboard.frets).toBe(24);
+    useAppStore.getState().setFretCount(22);
+    expect(useAppStore.getState().fretboard.frets).toBe(22);
   });
 });

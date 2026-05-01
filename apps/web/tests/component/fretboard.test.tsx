@@ -30,6 +30,7 @@ afterEach(() => {
       frets: 22,
       fretSpacing: 'uniform',
       accidentalMode: 'auto',
+      tuning: 'guitar-6-standard',
     },
   });
 });
