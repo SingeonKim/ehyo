@@ -480,3 +480,66 @@ describe('Voice mute actions', () => {
     expect(useAppStore.getState().backing.voiceMutes.guitar).toBe(false);
   });
 });
+
+describe('persist v11 → v12 migrate', () => {
+  it('adds fretboard.tuning when missing', () => {
+    const oldState = {
+      fretboard: { root: 0, scale: 'major', frets: 22 },
+      backing: { volume: 0.5, backingPlayingCategory: null },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const fb = migrated.fretboard as Record<string, unknown>;
+    expect(fb.tuning).toBe('guitar-6-standard');
+  });
+
+  it('adds backing.voiceMutes when missing', () => {
+    const oldState = {
+      fretboard: { root: 0, scale: 'major' },
+      backing: { volume: 0.5 },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const backing = migrated.backing as Record<string, unknown>;
+    expect(backing.voiceMutes).toEqual({
+      drums: false,
+      bass: false,
+      guitar: false,
+      aux: false,
+    });
+  });
+
+  it('preserves user-set tuning when migrating from older versions', () => {
+    const oldState = {
+      fretboard: { root: 7, scale: 'minor', tuning: 'bass-4-drop-d' },
+      backing: {},
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const fb = migrated.fretboard as Record<string, unknown>;
+    expect(fb.tuning).toBe('bass-4-drop-d'); // already valid, untouched
+  });
+
+  it('preserves user-set voiceMutes', () => {
+    const oldState = {
+      fretboard: {},
+      backing: { voiceMutes: { drums: true, bass: false, guitar: false, aux: false } },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const backing = migrated.backing as Record<string, unknown>;
+    expect((backing.voiceMutes as Record<string, boolean>).drums).toBe(true);
+  });
+
+  it('does not corrupt other fields', () => {
+    const oldState = {
+      fretboard: { root: 5, scale: 'dorian', frets: 24, accidentalMode: 'sharp' },
+      backing: { volume: 0.7, bpmOverrides: { 'card-x': 100 } },
+      ui: { chordDisplayMode: 'absolute' },
+    };
+    const migrated = __migrate(oldState, 11) as Record<string, unknown>;
+    const fb = migrated.fretboard as Record<string, unknown>;
+    const backing = migrated.backing as Record<string, unknown>;
+    expect(fb.root).toBe(5);
+    expect(fb.scale).toBe('dorian');
+    expect(fb.frets).toBe(24);
+    expect(backing.volume).toBe(0.7);
+    expect((backing.bpmOverrides as Record<string, number>)['card-x']).toBe(100);
+  });
+});

@@ -347,6 +347,26 @@ function migrate(persistedState: unknown, version: number): unknown {
     }
     s.backing = backing;
   }
+  // v11 → v12: fretboard.tuning 신규 + backing.voiceMutes 신규.
+  //   tuning은 6현 standard로 시작 — 기존 6현 사용자에게 가장 자연스러운 default.
+  //   voiceMutes는 4 voice 모두 false — 기존 동작과 동일(아무것도 음소거 안 됨).
+  if (version < 12) {
+    const fb = (s.fretboard as Record<string, unknown>) ?? {};
+    if (typeof fb.tuning !== 'string') {
+      fb.tuning = 'guitar-6-standard';
+    }
+    s.fretboard = fb;
+
+    const backing = (s.backing as Record<string, unknown>) ?? {};
+    if (
+      !backing.voiceMutes ||
+      typeof backing.voiceMutes !== 'object' ||
+      Array.isArray(backing.voiceMutes)
+    ) {
+      backing.voiceMutes = { drums: false, bass: false, guitar: false, aux: false };
+    }
+    s.backing = backing;
+  }
   return persistedState;
 }
 
@@ -609,7 +629,7 @@ export const useAppStore = create<AppState>()(
     {
       name: 'my-music-app:v1',
       storage: createJSONStorage(() => localStorage),
-      version: 11,
+      version: 12,
       // v1 → v2: importantDegreesByScale → highlightsByScale 스키마 전환.
       // v2 → v3: SCALE_HIGHLIGHTS 기본값 I-IV-V 재조정. override 초기화.
       // v3 → v4: accidentalMode 필드 추가. 기존 데이터에 없으면 'auto'로.
@@ -621,6 +641,7 @@ export const useAppStore = create<AppState>()(
       // v8 → v9: backing.backingKey 제거 → fretboard.root로 통합 (Key 동기화).
       // v9 → v10: backing.volume 추가 — 배킹 마스터 볼륨.
       // v10 → v11: backing.backingPlayingCategory 추가 (Sprint 2-7 스마트 하이라이팅).
+      // v11 → v12: fretboard.tuning + backing.voiceMutes 추가 (튜닝/악기 확장).
       migrate,
       // 런타임 전용 상태는 저장 제외
       partialize: (state) => ({
