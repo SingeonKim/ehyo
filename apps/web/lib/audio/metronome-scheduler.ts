@@ -28,6 +28,10 @@ import { unlockIosAudioSession } from './silent-unlock';
 
 const SWING_DELAY = 0.33; // 0 = 스트레이트, 0.33 ≈ 재즈 셔플, 0.5 = 3연음의 2음째
 
+// 메트로놈 마스터 gain — 클릭 합성음이 묻혀 들린다는 피드백을 받아 +4dB(≈ 1.585×) 증폭.
+// 백킹 트랙 채널은 별도 fxChain → ctx.destination 경로라 영향 없음.
+const MASTER_GAIN = 1.585;
+
 // LookaheadScheduler에 전달할 intervalSeconds.
 // 값 자체는 메트로놈 windowing에서 무시되지만, LookaheadScheduler 내부 while이
 // Worker tick당 onTick을 몇 번 부르는지에 영향을 준다.
@@ -80,7 +84,7 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
   let currentSubdiv = 0;
   /** 출력 gain — stop 시 즉시 끊기 위함. */
   const master = audioContext.createGain();
-  master.gain.value = 1;
+  master.gain.value = MASTER_GAIN;
   master.connect(audioContext.destination);
 
   const listeners = new Set<SchedulerListener>();
@@ -240,7 +244,7 @@ export function createMetronomeScheduler(options: SchedulerOptions): MetronomeSc
       try {
         master.gain.cancelScheduledValues(audioContext.currentTime);
         master.gain.setValueAtTime(0, audioContext.currentTime);
-        master.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.02);
+        master.gain.linearRampToValueAtTime(MASTER_GAIN, audioContext.currentTime + 0.02);
       } catch {
         // mock context에서 실패 가능 — 무시
       }
