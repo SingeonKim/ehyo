@@ -279,6 +279,33 @@
     ]
   },
   {
+    "slug": "autumn-leaves",
+    "name": "Autumn Leaves (16-bar form)",
+    "category": "jazz",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 90,
+    "recommended_scales": ["dorian", "harmonic_minor", "natural_minor"],
+    "progression": [
+      { "bar": 1,  "chord": "iim7" },
+      { "bar": 2,  "chord": "V7" },
+      { "bar": 3,  "chord": "Imaj7" },
+      { "bar": 4,  "chord": "IVmaj7" },
+      { "bar": 5,  "chord": "viim7b5" },
+      { "bar": 6,  "chord": "III7" },
+      { "bar": 7,  "chord": "vim7" },
+      { "bar": 8,  "chord": "vim7" },
+      { "bar": 9,  "chord": "iim7" },
+      { "bar": 10, "chord": "V7" },
+      { "bar": 11, "chord": "Imaj7" },
+      { "bar": 12, "chord": "IVmaj7" },
+      { "bar": 13, "chord": "viim7b5" },
+      { "bar": 14, "chord": "III7" },
+      { "bar": 15, "chord": "vim7" },
+      { "bar": 16, "chord": "vim7" }
+    ]
+  },
+  {
     "slug": "minor-i-VI-III-VII",
     "name": "Minor i–VI–III–VII",
     "category": "minor",

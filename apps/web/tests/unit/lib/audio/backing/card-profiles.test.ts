@@ -32,7 +32,13 @@ const SPRINT10_SLUGS = [
   'phrygian-vamp',
 ];
 
+// Sprint 11 PR-C: autumn-leaves
+const SPRINT11_SLUGS = [
+  'autumn-leaves',
+];
+
 const ALL_22_SLUGS = [...CATALOG_17_SLUGS, ...SPRINT10_SLUGS];
+const ALL_23_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS];
 
 describe('CARD_PROFILES', () => {
   it('has entries for all 17 catalog slugs', () => {
@@ -41,9 +47,9 @@ describe('CARD_PROFILES', () => {
     }
   });
 
-  it('has no extra slugs beyond catalog (22 slugs after Sprint 10)', () => {
+  it('has no extra slugs beyond catalog (23 slugs after Sprint 11 PR-C)', () => {
     for (const slug of Object.keys(CARD_PROFILES)) {
-      expect(ALL_22_SLUGS).toContain(slug);
+      expect(ALL_23_SLUGS).toContain(slug);
     }
   });
 });
@@ -59,9 +65,9 @@ describe('__assertCardProfilesMatch', () => {
     warn.mockRestore();
   });
 
-  it('does not warn when sets match (22 slugs after Sprint 10)', () => {
+  it('does not warn when sets match (23 slugs after Sprint 11 PR-C)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    __assertCardProfilesMatch(ALL_22_SLUGS);
+    __assertCardProfilesMatch(ALL_23_SLUGS);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -143,8 +149,8 @@ describe('CARD_PROFILES — Sprint 10 신규 5장', () => {
   });
 });
 
-describe('__assertCardProfilesMatch — Sprint 10 22 슬러그 정합성', () => {
-  it('22 슬러그 카탈로그와 정합성 매치', () => {
+describe('__assertCardProfilesMatch — Sprint 11 23 슬러그 정합성', () => {
+  it('23 슬러그 카탈로그와 정합성 매치', () => {
     const catalogSlugs = [
       // Sprint 9 17장
       '12-bar-blues-major', '12-bar-blues-minor', '12-bar-blues-quick-change',
@@ -160,6 +166,8 @@ describe('__assertCardProfilesMatch — Sprint 10 22 슬러그 정합성', () =>
       'folk-I-IV-V', 'ballad-I-V-vi-IV',
       'rock-I-bVII-IV', 'rock-12-bar',
       'phrygian-vamp',
+      // Sprint 11 신규 1장 (PR-C)
+      'autumn-leaves',
     ];
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     __assertCardProfilesMatch(catalogSlugs);
