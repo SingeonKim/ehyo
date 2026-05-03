@@ -365,7 +365,7 @@ function createEngine(): BackingEngine {
         if (!voiceMutes.guitar) {
           const guitarMidi = midi.map((n) => n - 12);
           for (const s of pattern.guitar)
-            voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s), s.velocity, vs);
+            voices.guitar.strum(s.direction, guitarMidi, loaded.guitar, strumDurSec, t(s), s.velocity, vs, s.voicingMode);
         }
 
         // aux: funk(shaker)/bossa(clave) 패턴 — pattern.aux + loaded.aux 둘 다 있을 때만 활성화.

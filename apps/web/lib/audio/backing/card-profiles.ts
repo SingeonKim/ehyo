@@ -164,6 +164,23 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
       reverbWet: 0.12,
     },
   },
+  // power-ballad: lush hall reverb 0.30. distortion → clean override (arpeggio 적합).
+  // half-time 16bar: pb_intro(sparse) → pb_main(quarter hat) → pb_climax(8분 hat + tom fills) → pb_resolve(crash).
+  // velocityScale/voiceGain override 없음 — 절대 볼륨 통일.
+  'power-ballad-rock': {
+    rhythmVariant: 'power_ballad',
+    toneProfile: { reverbWet: 0.30 },
+    instrumentOverrides: {
+      guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
+    },
+  },
+  // punk-garage: 카탈로그 최저 reverb 0.08 (직접적 aggressive 사운드).
+  // distortion guitar(rock default) 유지. voicingMode='power'는 패턴에서.
+  // 8bar 170bpm: bar 8 climax crash. velocityScale/voiceGain override 없음.
+  'punk-garage-rock': {
+    rhythmVariant: 'punk_8th',
+    toneProfile: { reverbWet: 0.08 },
+  },
   // Spanish/exotic phrygian. modal default가 clean이라 distortion 명시 override.
   'phrygian-vamp': {
     rhythmVariant: 'phrygian_dark',
