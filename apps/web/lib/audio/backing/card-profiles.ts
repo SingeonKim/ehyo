@@ -114,6 +114,10 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   'bossa-i-iv-ii-v': {
     toneProfile: { reverbWet: 0.25 },
   },
+  // 8bar major chromatic. bossa default 0.20 그대로. velocityScale/voiceGain override 없음.
+  'bossa-major-ipanema': {
+    rhythmVariant: 'bossa_chromatic',
+  },
 
   // ── modal 3장 ────────────────────────────────────────────────────
   'dorian-vamp': {

@@ -817,6 +817,25 @@
     ]
   },
   {
+    "slug": "bossa-major-ipanema",
+    "name": "Bossa Nova (Major Chromatic 8-bar)",
+    "category": "bossa",
+    "bars": 8,
+    "time_signature": "4/4",
+    "default_bpm": 132,
+    "recommended_scales": ["major", "lydian", "major_pentatonic"],
+    "progression": [
+      { "bar": 1, "chord": "Imaj7" },
+      { "bar": 2, "chord": "II7" },
+      { "bar": 3, "chord": "iim7" },
+      { "bar": 4, "chord": "bII7" },
+      { "bar": 5, "chord": "Imaj7" },
+      { "bar": 6, "chord": "II7" },
+      { "bar": 7, "chord": "iim7" },
+      { "bar": 8, "chord": "bII7" }
+    ]
+  },
+  {
     "slug": "folk-I-IV-V",
     "name": "Folk I–IV–V",
     "category": "folk",
