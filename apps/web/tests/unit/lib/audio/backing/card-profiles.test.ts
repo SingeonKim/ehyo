@@ -43,12 +43,16 @@ const SPRINT11_SLUGS = [
 // Sprint 11 PR-G: travis-pick-folk (8bar fingerstyle, 슬래시 코드 descending bass)
 const SPRINT11_PG_SLUGS = ['travis-pick-folk'];
 
+// Sprint 11 PR-H: rock pair — power-ballad-rock (16bar) + punk-garage-rock (8bar)
+const SPRINT11_PH_SLUGS = ['power-ballad-rock', 'punk-garage-rock'];
+
 const ALL_22_SLUGS = [...CATALOG_17_SLUGS, ...SPRINT10_SLUGS];
 const ALL_23_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 1)];
 const ALL_24_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 2)];
 const ALL_25_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 3)];
 const ALL_26_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS];
 const ALL_27_SLUGS = [...ALL_26_SLUGS, ...SPRINT11_PG_SLUGS];
+const ALL_29_SLUGS = [...ALL_27_SLUGS, ...SPRINT11_PH_SLUGS];
 
 describe('CARD_PROFILES', () => {
   it('has entries for all 17 catalog slugs', () => {
@@ -57,9 +61,9 @@ describe('CARD_PROFILES', () => {
     }
   });
 
-  it('has no extra slugs beyond catalog (27 slugs after Sprint 11 PR-G)', () => {
+  it('has no extra slugs beyond catalog (29 slugs after Sprint 11 PR-H)', () => {
     for (const slug of Object.keys(CARD_PROFILES)) {
-      expect(ALL_27_SLUGS).toContain(slug);
+      expect(ALL_29_SLUGS).toContain(slug);
     }
   });
 });
@@ -75,9 +79,9 @@ describe('__assertCardProfilesMatch', () => {
     warn.mockRestore();
   });
 
-  it('does not warn when sets match (27 slugs after Sprint 11 PR-G)', () => {
+  it('does not warn when sets match (29 slugs after Sprint 11 PR-H)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    __assertCardProfilesMatch(ALL_27_SLUGS);
+    __assertCardProfilesMatch(ALL_29_SLUGS);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -186,8 +190,8 @@ describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-E)', () => {
   });
 });
 
-describe('__assertCardProfilesMatch — Sprint 11 27 슬러그 정합성', () => {
-  it('27 슬러그 카탈로그와 정합성 매치', () => {
+describe('__assertCardProfilesMatch — Sprint 11 29 슬러그 정합성', () => {
+  it('29 슬러그 카탈로그와 정합성 매치', () => {
     const catalogSlugs = [
       // Sprint 9 17장
       '12-bar-blues-major', '12-bar-blues-minor', '12-bar-blues-quick-change',
@@ -210,6 +214,9 @@ describe('__assertCardProfilesMatch — Sprint 11 27 슬러그 정합성', () =>
       'bossa-major-ipanema',
       // Sprint 11 신규 1장 (PR-G)
       'travis-pick-folk',
+      // Sprint 11 신규 2장 (PR-H)
+      'power-ballad-rock',
+      'punk-garage-rock',
     ];
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     __assertCardProfilesMatch(catalogSlugs);
@@ -245,5 +252,33 @@ describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-G)', () => {
     expect(p?.toneProfile?.voiceGain).toBeUndefined();
     // acoustic_guitar_steel(folk default) 유지 — instrument override 없음
     expect(p?.instrumentOverrides).toBeUndefined();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-H)', () => {
+  it('power-ballad-rock: rhythmVariant=power_ballad, reverbWet 0.30, clean guitar override', () => {
+    const p = CARD_PROFILES['power-ballad-rock'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('power_ballad');
+    // lush hall reverb — rock default 0.14보다 훨씬 wet
+    expect(p?.toneProfile?.reverbWet).toBe(0.30);
+    // distortion → clean (arpeggio/ballad 정체성)
+    expect(p?.instrumentOverrides?.guitar?.instrument).toBe('electric_guitar_clean');
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+  });
+
+  it('punk-garage-rock: rhythmVariant=punk_8th, reverbWet 0.08 (카탈로그 최저)', () => {
+    const p = CARD_PROFILES['punk-garage-rock'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('punk_8th');
+    // 카탈로그 최저 reverb — 직접적 aggressive punk 사운드
+    expect(p?.toneProfile?.reverbWet).toBe(0.08);
+    // distortion guitar(rock default) 유지 — instrument override 없음
+    expect(p?.instrumentOverrides).toBeUndefined();
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
   });
 });

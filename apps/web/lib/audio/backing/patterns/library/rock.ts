@@ -253,6 +253,219 @@ export const ROCK_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // ── power_ballad variant — November Rain 패밀리 ────────────────────────
+    // half-time + clean arpeggio (instrument override). 4 슬롯 dynamic build.
+    // pb_intro(1-4 verse) → pb_main(5-12) → pb_climax(13-15 chorus) → pb_resolve(16).
+
+    pb_intro: {
+      drums: {
+        // half-time (kick 1·3박, snare 3박만, hat 비움)
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:2:0' }],
+        hat: [],
+      },
+      bass: {
+        steps: [{ time: '0:0:0', velocity: 0.85 }],
+      },
+      // sparse arpeggio — 1·3박만
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.5 },
+        { time: '0:2:0', direction: 'up', velocity: 0.45 },
+      ],
+    },
+
+    pb_main: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:2:0' }],
+        // hat 4분 ride
+        hat: [
+          { time: '0:0:0', velocity: 0.45 },
+          { time: '0:1:0', velocity: 0.45 },
+          { time: '0:2:0', velocity: 0.45 },
+          { time: '0:3:0', velocity: 0.45 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+        ],
+      },
+      // arpeggio 4분 4 steps (1박당 1 hit)
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.55 },
+        { time: '0:1:0', direction: 'up', velocity: 0.5 },
+        { time: '0:2:0', direction: 'down', velocity: 0.55 },
+        { time: '0:3:0', direction: 'up', velocity: 0.5 },
+      ],
+    },
+
+    pb_climax: {
+      drums: {
+        kick: [
+          { time: '0:0:0' },
+          { time: '0:1:2', velocity: 0.85 },
+          { time: '0:2:0' },
+        ],
+        snare: [{ time: '0:1:0' }, { time: '0:3:0' }],
+        // hat 8분 8 hits
+        hat: [
+          { time: '0:0:0', velocity: 0.5 },
+          { time: '0:0:2', velocity: 0.45 },
+          { time: '0:1:0', velocity: 0.5 },
+          { time: '0:1:2', velocity: 0.45 },
+          { time: '0:2:0', velocity: 0.5 },
+          { time: '0:2:2', velocity: 0.45 },
+          { time: '0:3:0', velocity: 0.5 },
+          { time: '0:3:2', velocity: 0.45 },
+        ],
+        // tom fills 2·4박 후반
+        tom: [
+          { time: '0:1:2', velocity: 0.6 },
+          { time: '0:3:2', velocity: 0.7 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.9 },
+          { time: '0:1:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.9 },
+          { time: '0:3:0', velocity: 0.85 },
+        ],
+      },
+      // full strum 8분
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.7 },
+        { time: '0:0:2', direction: 'up', velocity: 0.65 },
+        { time: '0:1:0', direction: 'down', velocity: 0.7 },
+        { time: '0:1:2', direction: 'up', velocity: 0.65 },
+        { time: '0:2:0', direction: 'down', velocity: 0.7 },
+        { time: '0:2:2', direction: 'up', velocity: 0.65 },
+        { time: '0:3:0', direction: 'down', velocity: 0.7 },
+        { time: '0:3:2', direction: 'up', velocity: 0.65 },
+      ],
+    },
+
+    pb_resolve: {
+      drums: {
+        kick: [{ time: '0:0:0', velocity: 0.95 }],
+        snare: [],
+        hat: [],
+        crash: [{ time: '0:0:0', velocity: 0.9 }],
+      },
+      bass: {
+        steps: [{ time: '0:0:0', velocity: 0.95 }],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.85 },
+      ],
+    },
+
+    // ── punk_8th variant — Ramones 4-chord, fast + power chord ─────────────
+    // 8분 down-only + voicingMode='power' (root + p5만, no 3rd).
+    // rock default distortion_guitar 유지.
+
+    punk_main: {
+      drums: {
+        // kick 4박 다 (driving)
+        kick: [
+          { time: '0:0:0' },
+          { time: '0:1:0' },
+          { time: '0:2:0' },
+          { time: '0:3:0' },
+        ],
+        // snare 2·4박 강하게
+        snare: [
+          { time: '0:1:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.85 },
+        ],
+        // hat 8분 8 hits, 강하게
+        hat: [
+          { time: '0:0:0', velocity: 0.65 },
+          { time: '0:0:2', velocity: 0.6 },
+          { time: '0:1:0', velocity: 0.65 },
+          { time: '0:1:2', velocity: 0.6 },
+          { time: '0:2:0', velocity: 0.65 },
+          { time: '0:2:2', velocity: 0.6 },
+          { time: '0:3:0', velocity: 0.65 },
+          { time: '0:3:2', velocity: 0.6 },
+        ],
+      },
+      bass: {
+        // 8분 root pumping
+        steps: [
+          { time: '0:0:0', velocity: 0.9 },
+          { time: '0:0:2', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.9 },
+          { time: '0:1:2', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.9 },
+          { time: '0:2:2', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.9 },
+          { time: '0:3:2', velocity: 0.85 },
+        ],
+      },
+      // 8분 down-only + power chord (root + p5)
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.85, voicingMode: 'power' },
+        { time: '0:0:2', direction: 'down', velocity: 0.8,  voicingMode: 'power' },
+        { time: '0:1:0', direction: 'down', velocity: 0.85, voicingMode: 'power' },
+        { time: '0:1:2', direction: 'down', velocity: 0.8,  voicingMode: 'power' },
+        { time: '0:2:0', direction: 'down', velocity: 0.85, voicingMode: 'power' },
+        { time: '0:2:2', direction: 'down', velocity: 0.8,  voicingMode: 'power' },
+        { time: '0:3:0', direction: 'down', velocity: 0.85, voicingMode: 'power' },
+        { time: '0:3:2', direction: 'down', velocity: 0.8,  voicingMode: 'power' },
+      ],
+    },
+
+    punk_climax: {
+      drums: {
+        kick: [
+          { time: '0:0:0' },
+          { time: '0:1:0' },
+          { time: '0:2:0' },
+          { time: '0:3:0' },
+        ],
+        snare: [
+          { time: '0:1:0', velocity: 0.9 },
+          { time: '0:3:0', velocity: 0.9 },
+        ],
+        hat: [
+          { time: '0:0:0', velocity: 0.7 },
+          { time: '0:0:2', velocity: 0.65 },
+          { time: '0:1:0', velocity: 0.7 },
+          { time: '0:1:2', velocity: 0.65 },
+          { time: '0:2:0', velocity: 0.7 },
+          { time: '0:2:2', velocity: 0.65 },
+          { time: '0:3:0', velocity: 0.7 },
+          { time: '0:3:2', velocity: 0.65 },
+        ],
+        crash: [{ time: '0:0:0', velocity: 0.95 }],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.95 },
+          { time: '0:0:2', velocity: 0.9 },
+          { time: '0:1:0', velocity: 0.95 },
+          { time: '0:1:2', velocity: 0.9 },
+          { time: '0:2:0', velocity: 0.95 },
+          { time: '0:2:2', velocity: 0.9 },
+          { time: '0:3:0', velocity: 0.95 },
+          { time: '0:3:2', velocity: 0.9 },
+        ],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.95, voicingMode: 'power' },
+        { time: '0:0:2', direction: 'down', velocity: 0.9,  voicingMode: 'power' },
+        { time: '0:1:0', direction: 'down', velocity: 0.95, voicingMode: 'power' },
+        { time: '0:1:2', direction: 'down', velocity: 0.9,  voicingMode: 'power' },
+        { time: '0:2:0', direction: 'down', velocity: 0.95, voicingMode: 'power' },
+        { time: '0:2:2', direction: 'down', velocity: 0.9,  voicingMode: 'power' },
+        { time: '0:3:0', direction: 'down', velocity: 0.95, voicingMode: 'power' },
+        { time: '0:3:2', direction: 'down', velocity: 0.9,  voicingMode: 'power' },
+      ],
+    },
+
     // rock_12bar_turnaround: 12마디 V7 climax — 4박 fill로 다음 사이클 진입
     rock_12bar_turnaround: {
       drums: {
@@ -286,15 +499,26 @@ export const ROCK_RHYTHM: CategoryRhythm = {
    * 미지정 시 기존 4마디 이상 fill/pickup 동작 유지.
    */
   selectSlot: (tpl, idx, variant) => {
+    const local = idx % tpl.bars;
+
+    if (variant === 'power_ballad') {
+      if (local === 15) return 'pb_resolve';
+      if (local >= 12) return 'pb_climax';  // 13-15
+      if (local <= 3) return 'pb_intro';    // 1-4
+      return 'pb_main';                      // 5-12
+    }
+
+    if (variant === 'punk_8th') {
+      return local === tpl.bars - 1 ? 'punk_climax' : 'punk_main';
+    }
+
     if (variant === 'rock_mixo') return 'rock_mixo';
     if (variant === 'rock_12bar') {
-      const local = idx % tpl.bars;
       if (local === 8) return 'rock_12bar_tension';
       if (local === 10) return 'rock_12bar_resolve';
       if (local === 11) return 'rock_12bar_turnaround';
       return 'rock_12bar_drive';
     }
-    const local = idx % tpl.bars;
     if (tpl.bars >= 4 && local === tpl.bars - 1) return 'fill_quarter';
     if (tpl.bars >= 4 && local === tpl.bars - 2) return 'pickup_eighth';
     return 'groove';

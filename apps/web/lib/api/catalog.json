@@ -1238,6 +1238,132 @@
     ]
   },
   {
+    "slug": "power-ballad-rock",
+    "name": "Power Ballad (16-bar)",
+    "category": "rock",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 75,
+    "recommended_scales": [
+      "major",
+      "minor_pentatonic",
+      "natural_minor"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "vim"
+      },
+      {
+        "bar": 2,
+        "chord": "IV"
+      },
+      {
+        "bar": 3,
+        "chord": "I"
+      },
+      {
+        "bar": 4,
+        "chord": "V"
+      },
+      {
+        "bar": 5,
+        "chord": "vim"
+      },
+      {
+        "bar": 6,
+        "chord": "IV"
+      },
+      {
+        "bar": 7,
+        "chord": "I"
+      },
+      {
+        "bar": 8,
+        "chord": "V"
+      },
+      {
+        "bar": 9,
+        "chord": "IV"
+      },
+      {
+        "bar": 10,
+        "chord": "I"
+      },
+      {
+        "bar": 11,
+        "chord": "V"
+      },
+      {
+        "bar": 12,
+        "chord": "vim"
+      },
+      {
+        "bar": 13,
+        "chord": "bVII"
+      },
+      {
+        "bar": 14,
+        "chord": "V"
+      },
+      {
+        "bar": 15,
+        "chord": "I"
+      },
+      {
+        "bar": 16,
+        "chord": "I"
+      }
+    ]
+  },
+  {
+    "slug": "punk-garage-rock",
+    "name": "Punk / Garage (8-bar)",
+    "category": "rock",
+    "bars": 8,
+    "time_signature": "4/4",
+    "default_bpm": 170,
+    "recommended_scales": [
+      "major_pentatonic",
+      "minor_pentatonic",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "IV"
+      },
+      {
+        "bar": 3,
+        "chord": "V"
+      },
+      {
+        "bar": 4,
+        "chord": "V"
+      },
+      {
+        "bar": 5,
+        "chord": "I"
+      },
+      {
+        "bar": 6,
+        "chord": "IV"
+      },
+      {
+        "bar": 7,
+        "chord": "V"
+      },
+      {
+        "bar": 8,
+        "chord": "I"
+      }
+    ]
+  },
+  {
     "slug": "phrygian-vamp",
     "name": "Phrygian Vamp (Spanish)",
     "category": "modal",

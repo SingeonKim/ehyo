@@ -35,7 +35,11 @@ export type BassPattern = {
 };
 
 // keys 필드 제거 — Sprint 2-4부터 guitar로 대체.
-export type StrumStep = BeatStep & { direction: 'down' | 'up' };
+export type StrumStep = BeatStep & {
+  direction: 'down' | 'up';
+  /** Optional — voicing 옵션. 'power' = root + perfect 5th만. 미지정 = 'full'. */
+  voicingMode?: 'full' | 'power';
+};
 export type StrumPattern = StrumStep[];
 
 export type TrackPattern = {
