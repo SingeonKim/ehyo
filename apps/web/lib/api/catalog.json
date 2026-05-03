@@ -760,6 +760,33 @@
     ]
   },
   {
+    "slug": "cissy-strut-funk",
+    "name": "Cissy Strut Funk (16-bar form)",
+    "category": "funk",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 96,
+    "recommended_scales": ["dorian", "minor_pentatonic", "minor_blues"],
+    "progression": [
+      { "bar": 1,  "chord": "i7" },
+      { "bar": 2,  "chord": "i7" },
+      { "bar": 3,  "chord": "i7" },
+      { "bar": 4,  "chord": "i7" },
+      { "bar": 5,  "chord": "iv7" },
+      { "bar": 6,  "chord": "iv7" },
+      { "bar": 7,  "chord": "i7" },
+      { "bar": 8,  "chord": "i7" },
+      { "bar": 9,  "chord": "i7" },
+      { "bar": 10, "chord": "i7" },
+      { "bar": 11, "chord": "i7" },
+      { "bar": 12, "chord": "i7" },
+      { "bar": 13, "chord": "bIII7" },
+      { "bar": 14, "chord": "iv7" },
+      { "bar": 15, "chord": "V7" },
+      { "bar": 16, "chord": "i7" }
+    ]
+  },
+  {
     "slug": "bossa-i-iv-ii-v",
     "name": "Bossa I–IV–ii–V",
     "category": "bossa",

@@ -105,6 +105,12 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   'funk-i7-vamp': {
     toneProfile: { reverbWet: 0.12 },
   },
+  // 16bar Cissy Strut form (The Meters). funk default reverbWet 0.12 그대로.
+  // velocityScale/voiceGain override 없음 — 절대 볼륨 통일.
+  // 정체성은 funk_form_16 패턴(stop-time bar 16) + funk default tone으로만 표현.
+  'cissy-strut-funk': {
+    rhythmVariant: 'funk_form_16',
+  },
   'bossa-i-iv-ii-v': {
     toneProfile: { reverbWet: 0.25 },
   },
