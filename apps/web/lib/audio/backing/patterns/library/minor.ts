@@ -70,6 +70,87 @@ export const MINOR_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // ── epic_minor_halftime variant ─────────────────────────────────
+    // cinematic dread — half-time feel, tom 강조, bar 13 buildup, bar 16 crash 해결.
+    // 기본 마디 (bar 1-12, 14-15): kick 1·3박만, snare 3박만, hat 4분만.
+    epic_main: {
+      drums: {
+        // half-time: kick 1·3박만 (4-on-the-floor 대신 대공간감 표현)
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        // snare 3박만 (2/4 backbeat 제거 — cinematic 장엄함)
+        snare: [{ time: '0:2:0' }],
+        // hat 4분만 (8분 비움 — 넓은 공간감 확보)
+        hat: [
+          { time: '0:0:0', velocity: 0.4 },
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:2:0', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.4 },
+        ],
+      },
+      bass: {
+        // sustained low — 1박만 타격 후 홀드 (cinematic 중후함)
+        steps: [{ time: '0:0:0', velocity: 0.9 }],
+      },
+      // sustained power-chord-arpeggio: 1·3박 down strum
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.6 },
+        { time: '0:2:0', direction: 'down', velocity: 0.5 },
+      ],
+    },
+
+    // bar 13(iv) 도착 강조 — tom velocity crescendo buildup.
+    // kick/snare/hat 위치는 epic_main과 의도적으로 동일 (half-time groove 베이스 유지).
+    // 차별점은 hat velocity 0.5(epic_main 0.4 대비) + tom 4 entries.
+    epic_climax: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [{ time: '0:2:0' }],
+        hat: [
+          { time: '0:0:0', velocity: 0.5 },
+          { time: '0:1:0', velocity: 0.5 },
+          { time: '0:2:0', velocity: 0.5 },
+          { time: '0:3:0', velocity: 0.5 },
+        ],
+        // tom buildup — 각 박 후반(8분 위치)에 velocity crescendo 0.5→0.8
+        tom: [
+          { time: '0:0:2', velocity: 0.5 },
+          { time: '0:1:2', velocity: 0.6 },
+          { time: '0:2:2', velocity: 0.7 },
+          { time: '0:3:2', velocity: 0.8 },
+        ],
+      },
+      bass: {
+        steps: [{ time: '0:0:0', velocity: 0.95 }],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.7 },
+        { time: '0:2:0', direction: 'down', velocity: 0.6 },
+      ],
+    },
+
+    // bar 16(i) 귀환 — crash + tom roll로 장엄한 끝맺음.
+    epic_resolve: {
+      drums: {
+        kick: [{ time: '0:0:0', velocity: 0.95 }],
+        snare: [],
+        hat: [],
+        // 1박에 crash로 해결감 표현 (LM-2: 'crash' 확인됨)
+        crash: [{ time: '0:0:0', velocity: 0.9 }],
+        // tom roll 마무리
+        tom: [
+          { time: '0:0:2', velocity: 0.6 },
+          { time: '0:1:0', velocity: 0.7 },
+          { time: '0:1:2', velocity: 0.8 },
+        ],
+      },
+      bass: {
+        steps: [{ time: '0:0:0', velocity: 0.95 }],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.85 },
+      ],
+    },
+
     pickup: {
       drums: {
         // groove_8th + 4박 후반 스네어·킥 추가
@@ -103,9 +184,20 @@ export const MINOR_RHYTHM: CategoryRhythm = {
   /**
    * 마지막 마디 → pickup.
    * BPM 90 이하 → sparse 16th, 91 이상 → 8th.
+   *
+   * epic_minor_halftime: bar 13(idx 12) = climax, bar 16(idx 15) = resolve, 나머지 = main.
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
     const local = idx % tpl.bars;
+    // epic_minor_halftime — 16bar cinematic half-time 전용 분기
+    // bar 14·15(local 13·14) V는 climax 직후 긴장 유지 → epic_main의 sparse half-time이
+    // 의도적으로 공간감 표현. tom 없는 게 정답.
+    if (variant === 'epic_minor_halftime') {
+      if (local === 12) return 'epic_climax';   // bar 13: iv 도착 강조
+      if (local === 15) return 'epic_resolve';  // bar 16: i 귀환 crash 해결
+      return 'epic_main';
+    }
+    // 기존 minor 분기 — BPM과 마지막 마디 기준
     if (local === tpl.bars - 1) return 'pickup';
     return tpl.default_bpm <= 90 ? 'groove_16th_sparse' : 'groove_8th';
   },
