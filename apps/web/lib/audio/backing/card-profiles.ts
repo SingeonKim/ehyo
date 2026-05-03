@@ -142,6 +142,14 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     rhythmVariant: 'ballad_pick',
     toneProfile: { reverbWet: 0.30 },
   },
+  // 8bar fingerstyle. Dust in the Wind 패밀리 — 슬래시 코드(I/VII, vim/V, I/III)로
+  // descending bass(C→B→A→G→F→E→D→C) 표현. PR-A chordBassMidi 첫 사용 사례.
+  // folk default 0.18 → 0.25 (intimate acoustic 공간감). acoustic_guitar_steel 유지.
+  // velocityScale/voiceGain override 없음 — 절대 볼륨 통일.
+  'travis-pick-folk': {
+    rhythmVariant: 'travis_pick',
+    toneProfile: { reverbWet: 0.25 },
+  },
   // Mixolydian rock — distortion guitar(rock default) + dry.
   'rock-I-bVII-IV': {
     rhythmVariant: 'rock_mixo',

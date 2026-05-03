@@ -40,11 +40,15 @@ const SPRINT11_SLUGS = [
   'bossa-major-ipanema',
 ];
 
+// Sprint 11 PR-G: travis-pick-folk (8bar fingerstyle, 슬래시 코드 descending bass)
+const SPRINT11_PG_SLUGS = ['travis-pick-folk'];
+
 const ALL_22_SLUGS = [...CATALOG_17_SLUGS, ...SPRINT10_SLUGS];
 const ALL_23_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 1)];
 const ALL_24_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 2)];
 const ALL_25_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 3)];
 const ALL_26_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS];
+const ALL_27_SLUGS = [...ALL_26_SLUGS, ...SPRINT11_PG_SLUGS];
 
 describe('CARD_PROFILES', () => {
   it('has entries for all 17 catalog slugs', () => {
@@ -53,9 +57,9 @@ describe('CARD_PROFILES', () => {
     }
   });
 
-  it('has no extra slugs beyond catalog (26 slugs after Sprint 11 PR-F)', () => {
+  it('has no extra slugs beyond catalog (27 slugs after Sprint 11 PR-G)', () => {
     for (const slug of Object.keys(CARD_PROFILES)) {
-      expect(ALL_26_SLUGS).toContain(slug);
+      expect(ALL_27_SLUGS).toContain(slug);
     }
   });
 });
@@ -71,9 +75,9 @@ describe('__assertCardProfilesMatch', () => {
     warn.mockRestore();
   });
 
-  it('does not warn when sets match (26 slugs after Sprint 11 PR-F)', () => {
+  it('does not warn when sets match (27 slugs after Sprint 11 PR-G)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    __assertCardProfilesMatch(ALL_26_SLUGS);
+    __assertCardProfilesMatch(ALL_27_SLUGS);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -182,8 +186,8 @@ describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-E)', () => {
   });
 });
 
-describe('__assertCardProfilesMatch — Sprint 11 26 슬러그 정합성', () => {
-  it('26 슬러그 카탈로그와 정합성 매치', () => {
+describe('__assertCardProfilesMatch — Sprint 11 27 슬러그 정합성', () => {
+  it('27 슬러그 카탈로그와 정합성 매치', () => {
     const catalogSlugs = [
       // Sprint 9 17장
       '12-bar-blues-major', '12-bar-blues-minor', '12-bar-blues-quick-change',
@@ -204,6 +208,8 @@ describe('__assertCardProfilesMatch — Sprint 11 26 슬러그 정합성', () =>
       'epic-minor-cinematic',
       'cissy-strut-funk',
       'bossa-major-ipanema',
+      // Sprint 11 신규 1장 (PR-G)
+      'travis-pick-folk',
     ];
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     __assertCardProfilesMatch(catalogSlugs);
@@ -223,6 +229,21 @@ describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-F)', () => {
     // bossa default reverbWet 0.20 사용 — 카드 override 없음
     expect(p?.toneProfile?.reverbWet).toBeUndefined();
     // instrument override 없음
+    expect(p?.instrumentOverrides).toBeUndefined();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-G)', () => {
+  it('travis-pick-folk: rhythmVariant=travis_pick, reverbWet 0.25 (intimate acoustic)', () => {
+    const p = CARD_PROFILES['travis-pick-folk'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('travis_pick');
+    // folk default 0.18 → 0.25 intimate 공간감
+    expect(p?.toneProfile?.reverbWet).toBe(0.25);
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+    // acoustic_guitar_steel(folk default) 유지 — instrument override 없음
     expect(p?.instrumentOverrides).toBeUndefined();
   });
 });
