@@ -142,6 +142,9 @@ export const JAZZ_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // autumn_turnaround — drums/guitar는 autumn_walk와 의도적 중복.
+    // 차별점은 bass에 0:3:2 chromatic approach(velocity 0.7) 1 step 추가뿐.
+    // BarPattern 타입상 슬롯 단위 데이터 복제가 불가피하다.
     autumn_turnaround: {
       drums: {
         kick: [],

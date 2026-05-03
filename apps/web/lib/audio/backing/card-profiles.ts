@@ -84,7 +84,7 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     toneProfile: { reverbWet: 0.25 },
   },
 
-  // ── jazz / minor / funk / bossa 각 1장 ────────────────────────────
+  // ── jazz 2장 / minor 1장 / funk 1장 / bossa 1장 ────────────────────
   'jazz-ii-V-I': {
     toneProfile: { reverbWet: 0.22 },
   },
