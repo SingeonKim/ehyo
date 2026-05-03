@@ -43,6 +43,17 @@ describe('funk funk_form_16 variant', () => {
     expect(a!.bass.steps).toEqual(b!.bass.steps);
   });
 
+  it('funk_b_iv — guitar down velocity 0.75 (iv7 harmonic accent)', () => {
+    // funk_b_iv 슬롯 분리 근거: harmonic 변화에 맞춰 guitar down velocity만 0.75로 강조.
+    // 이 테스트가 없으면 미래에 DRY 위반으로 슬롯이 제거될 위험.
+    const b = FUNK_RHYTHM.patterns.funk_b_iv;
+    expect(b).toBeDefined();
+    const downStrokes = b!.guitar.filter((s) => s.direction === 'down');
+    const upStrokes = b!.guitar.filter((s) => s.direction === 'up');
+    expect(downStrokes.every((s) => s.velocity === 0.75)).toBe(true);
+    expect(upStrokes.every((s) => s.velocity === 0.7)).toBe(true);
+  });
+
   it('funk_bridge_c — bar 13-15 추가 액센트 (kick 4 entries)', () => {
     const slot = FUNK_RHYTHM.patterns.funk_bridge_c;
     expect(slot).toBeDefined();
