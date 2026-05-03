@@ -96,6 +96,12 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   },
   // 카테고리 default 그대로.
   'minor-i-VI-III-VII': {},
+  // cinematic hall reverb 0.35. minor default electric_guitar_clean 유지 (sustained arpeggio 적합).
+  // half-time 16bar: bar 13 tom crescendo buildup, bar 16 crash resolve.
+  'epic-minor-cinematic': {
+    rhythmVariant: 'epic_minor_halftime',
+    toneProfile: { reverbWet: 0.35 },
+  },
   'funk-i7-vamp': {
     toneProfile: { reverbWet: 0.12 },
   },

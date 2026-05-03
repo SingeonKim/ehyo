@@ -336,6 +336,33 @@
     ]
   },
   {
+    "slug": "epic-minor-cinematic",
+    "name": "Epic Minor (Cinematic 16-bar)",
+    "category": "minor",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 70,
+    "recommended_scales": ["natural_minor", "harmonic_minor", "minor_pentatonic"],
+    "progression": [
+      { "bar": 1,  "chord": "i" },
+      { "bar": 2,  "chord": "VI" },
+      { "bar": 3,  "chord": "III" },
+      { "bar": 4,  "chord": "VII" },
+      { "bar": 5,  "chord": "iv" },
+      { "bar": 6,  "chord": "VI" },
+      { "bar": 7,  "chord": "VII" },
+      { "bar": 8,  "chord": "i" },
+      { "bar": 9,  "chord": "i" },
+      { "bar": 10, "chord": "VI" },
+      { "bar": 11, "chord": "III" },
+      { "bar": 12, "chord": "VII" },
+      { "bar": 13, "chord": "iv" },
+      { "bar": 14, "chord": "V" },
+      { "bar": 15, "chord": "V" },
+      { "bar": 16, "chord": "i" }
+    ]
+  },
+  {
     "slug": "dorian-vamp",
     "name": "Dorian Vamp (i–IV)",
     "category": "modal",
