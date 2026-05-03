@@ -32,17 +32,19 @@ const SPRINT10_SLUGS = [
   'phrygian-vamp',
 ];
 
-// Sprint 11 PR-C: autumn-leaves, PR-D: epic-minor-cinematic, PR-E: cissy-strut-funk
+// Sprint 11 PR-C: autumn-leaves, PR-D: epic-minor-cinematic, PR-E: cissy-strut-funk, PR-F: bossa-major-ipanema
 const SPRINT11_SLUGS = [
   'autumn-leaves',
   'epic-minor-cinematic',
   'cissy-strut-funk',
+  'bossa-major-ipanema',
 ];
 
 const ALL_22_SLUGS = [...CATALOG_17_SLUGS, ...SPRINT10_SLUGS];
 const ALL_23_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 1)];
 const ALL_24_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 2)];
-const ALL_25_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS];
+const ALL_25_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 3)];
+const ALL_26_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS];
 
 describe('CARD_PROFILES', () => {
   it('has entries for all 17 catalog slugs', () => {
@@ -51,9 +53,9 @@ describe('CARD_PROFILES', () => {
     }
   });
 
-  it('has no extra slugs beyond catalog (25 slugs after Sprint 11 PR-E)', () => {
+  it('has no extra slugs beyond catalog (26 slugs after Sprint 11 PR-F)', () => {
     for (const slug of Object.keys(CARD_PROFILES)) {
-      expect(ALL_25_SLUGS).toContain(slug);
+      expect(ALL_26_SLUGS).toContain(slug);
     }
   });
 });
@@ -69,9 +71,9 @@ describe('__assertCardProfilesMatch', () => {
     warn.mockRestore();
   });
 
-  it('does not warn when sets match (25 slugs after Sprint 11 PR-E)', () => {
+  it('does not warn when sets match (26 slugs after Sprint 11 PR-F)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    __assertCardProfilesMatch(ALL_25_SLUGS);
+    __assertCardProfilesMatch(ALL_26_SLUGS);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -180,8 +182,8 @@ describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-E)', () => {
   });
 });
 
-describe('__assertCardProfilesMatch — Sprint 11 25 슬러그 정합성', () => {
-  it('25 슬러그 카탈로그와 정합성 매치', () => {
+describe('__assertCardProfilesMatch — Sprint 11 26 슬러그 정합성', () => {
+  it('26 슬러그 카탈로그와 정합성 매치', () => {
     const catalogSlugs = [
       // Sprint 9 17장
       '12-bar-blues-major', '12-bar-blues-minor', '12-bar-blues-quick-change',
@@ -197,14 +199,30 @@ describe('__assertCardProfilesMatch — Sprint 11 25 슬러그 정합성', () =>
       'folk-I-IV-V', 'ballad-I-V-vi-IV',
       'rock-I-bVII-IV', 'rock-12-bar',
       'phrygian-vamp',
-      // Sprint 11 신규 3장 (PR-C, PR-D, PR-E)
+      // Sprint 11 신규 4장 (PR-C, PR-D, PR-E, PR-F)
       'autumn-leaves',
       'epic-minor-cinematic',
       'cissy-strut-funk',
+      'bossa-major-ipanema',
     ];
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     __assertCardProfilesMatch(catalogSlugs);
     expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-F)', () => {
+  it('bossa-major-ipanema: rhythmVariant=bossa_chromatic, toneProfile/instrumentOverrides 없음', () => {
+    const p = CARD_PROFILES['bossa-major-ipanema'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('bossa_chromatic');
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+    // bossa default reverbWet 0.20 사용 — 카드 override 없음
+    expect(p?.toneProfile?.reverbWet).toBeUndefined();
+    // instrument override 없음
+    expect(p?.instrumentOverrides).toBeUndefined();
   });
 });
