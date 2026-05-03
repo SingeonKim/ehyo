@@ -34,7 +34,7 @@
  */
 
 import type { ProgressionTemplate } from '@/lib/api/progression-templates';
-import { chordSymbolToMidi } from '@/lib/theory/chord-voicing';
+import { chordBassMidi, chordSymbolToMidi } from '@/lib/theory/chord-voicing';
 import type { PitchClass } from '@/lib/theory/types';
 
 /**
@@ -343,11 +343,16 @@ function createEngine(): BackingEngine {
           for (const s of pattern.drums.hat)   voices.drums.trigger('hat',   loaded.drums, t(s), s.velocity, vs);
         }
 
-        // bass: 루트 2옥타브 다운, 카테고리 패턴별 스텝 수로 trigger
+        // bass: 루트 2옥타브 다운, 카테고리 패턴별 스텝 수로 trigger.
+        // 슬래시 코드(예: I/VII)면 bassSemitones 기준 베이스 노트를 사용해
+        // descending bass line(C→B→A→G...)을 표현할 수 있다.
         // -24로 C2 부근 — 어쿠스틱 업라이트/일렉 베이스 저역과 맞는다.
         if (!voiceMutes.bass) {
-          const bassMidi = midi[0]! - 24;
-          for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s), s.velocity, vs);
+          const bassRootMidi = chordBassMidi(symbol, currentKeyRoot);
+          if (bassRootMidi !== null) {
+            const bassMidi = bassRootMidi - 24;
+            for (const s of pattern.bass.steps) voices.bass.trigger(bassMidi, loaded.bass, beatSec, t(s), s.velocity, vs);
+          }
         }
 
         // guitar: 카테고리 패턴별 strum — down/up 방향으로 12ms 시간차 strum

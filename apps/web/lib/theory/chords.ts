@@ -63,6 +63,10 @@ export interface ParsedChord {
   quality: ChordQuality;
   /** 화성 구성 피치 클래스 목록 (키에 루트를 적용하면 실제 연주 노트). */
   semitones: readonly number[];
+  /** 슬래시 코드의 베이스 도수 (1~7). 슬래시 없으면 undefined. */
+  bassDegree?: number;
+  /** 베이스의 반음 오프셋 (0~11, b/# prefix 적용 후). 슬래시 없으면 undefined. */
+  bassSemitones?: number;
 }
 
 /**
@@ -83,6 +87,45 @@ const QUALITY_INTERVALS: Record<ChordQuality, readonly number[]> = {
 };
 
 /**
+ * 베이스 부분 파싱 — 도수(1~7) + 단일 b/# prefix만. quality suffix는 거부.
+ * 슬래시 코드의 베이스 표기 전용 헬퍼 (internal — export 안 함).
+ *
+ * 예: 'VII' → { degree: 7, semitones: 11 }
+ *     'bVII' → { degree: 7, semitones: 10 }
+ *     '#IV' → { degree: 4, semitones: 6 }
+ *
+ * 거부 예: 'bb3' (이중 prefix), '8' (존재하지 않는 도수), 'Vmaj7' (suffix 포함).
+ */
+function parseBassDegree(s: string): { degree: number; semitones: number } | null {
+  let prefixOffset = 0;
+  let body = s;
+  if (body.startsWith('b')) {
+    // bb 또는 b# 조합은 거부 — 단일 prefix만 허용
+    if (body.length < 2 || body[1] === 'b' || body[1] === '#') return null;
+    prefixOffset = -1;
+    body = body.slice(1);
+  } else if (body.startsWith('#')) {
+    if (body.length < 2 || body[1] === '#' || body[1] === 'b') return null;
+    prefixOffset = 1;
+    body = body.slice(1);
+  }
+  // 본체는 정확히 도수(I~VII)만 허용 — 추가 suffix 있으면 거부 (VII7 같은 표기 불가)
+  let degree: number | undefined;
+  for (const candidate of ['VII', 'III', 'VI', 'IV', 'II', 'V', 'I']) {
+    if (body.toUpperCase() === candidate) {
+      degree = ROMAN_TO_DIGIT[candidate];
+      break;
+    }
+  }
+  if (degree === undefined) return null;
+  const baseRoot = DEGREE_OFFSET[degree];
+  if (baseRoot === undefined) return null;
+  // 음수 모듈로 방어: bI = (0 - 1 + 12) % 12 = 11
+  const semitones = (baseRoot + prefixOffset + 12) % 12;
+  return { degree, semitones };
+}
+
+/**
  * 로마 숫자 코드 표기를 파싱. 실패 시 null.
  *
  * 예:
@@ -94,8 +137,30 @@ const QUALITY_INTERVALS: Record<ChordQuality, readonly number[]> = {
  *   "vii°"    → degree 7, diminished
  *   "iiø7"    → degree 2, half_diminished7
  *   "III+"    → degree 3, augmented
+ *   "I/VII"   → degree 1, major, bassDegree 7, bassSemitones 11
+ *   "vim/V"   → degree 6, minor, bassDegree 5, bassSemitones 7
  */
 export function parseRoman(symbol: string): Omit<ParsedChord, 'semitones'> | null {
+  // 슬래시 코드 분리 — 'V/VII' → chord='V', bass='VII'
+  // 이중 슬래시(V//VII)와 본체 없는 (/VII) 케이스는 여기서 거부.
+  const slashIdx = symbol.indexOf('/');
+  if (slashIdx >= 0) {
+    const chordPart = symbol.slice(0, slashIdx);
+    const bassPart = symbol.slice(slashIdx + 1);
+    // 본체가 비거나, 베이스 부분이 비거나, 이중 슬래시면 거부
+    if (!chordPart || !bassPart || bassPart.includes('/')) return null;
+
+    // chord 본체는 슬래시 없는 경로로 재귀 파싱
+    const chord = parseRoman(chordPart);
+    if (!chord) return null;
+
+    // 베이스 부분은 도수 + b/# prefix만 허용 (quality suffix 불가)
+    const bass = parseBassDegree(bassPart);
+    if (!bass) return null;
+
+    return { ...chord, bassDegree: bass.degree, bassSemitones: bass.semitones };
+  }
+
   // 접두사 b/#: 도수 자체의 반음 변형 (♭7도 = bVII, ♯4도 = #IV).
   // 단일 b 또는 # 만 허용 — bb/##/b#/#b 같은 조합은 거부.
   let prefixOffset = 0;
