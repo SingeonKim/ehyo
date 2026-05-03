@@ -25,6 +25,12 @@ export interface GuitarVoice {
     time: number,
     velocity?: number,
     velocityScale?: number,
+    /**
+     * voicingMode='full'(default): 모든 pitch 트리거 — 일반 코드 보이싱.
+     * voicingMode='power': root + perfect 5th(7 반음)만 트리거 = power chord.
+     *   5th 부재 시 root only 폴백. punk-garage 카드에서 사용.
+     */
+    voicingMode?: 'full' | 'power',
   ): void;
   /** voice 내부 GainNode 스케일 즉시 세팅. 카드 시작 시 프로파일 voiceGain 적용. */
   setVoiceGain(scale: number): void;
@@ -44,9 +50,17 @@ export function createGuitarVoice(destination?: AudioNode): GuitarVoice {
   const pendingStops: StopFn[] = [];
 
   return {
-    strum(direction, midiNotes, soundfont, durationSec, time, velocity = 0.6, velocityScale = 1) {
+    strum(direction, midiNotes, soundfont, durationSec, time, velocity = 0.6, velocityScale = 1, voicingMode = 'full') {
+      // voicingMode='power': root + perfect 5th(7 반음)만 추출. 5th 없으면 root only.
+      // midiNotes가 비어 있으면 아무것도 안 함.
+      let notes: readonly number[] = midiNotes;
+      if (voicingMode === 'power' && midiNotes.length > 0) {
+        const root = Math.min(...midiNotes);
+        const p5 = root + 7;
+        notes = midiNotes.includes(p5) ? [root, p5] : [root];
+      }
       // down: 저음 → 고음(오름차순), up: 고음 → 저음(내림차순)
-      const sorted = [...midiNotes].sort((a, b) => a - b);
+      const sorted = [...notes].sort((a, b) => a - b);
       const order = direction === 'down' ? sorted : sorted.reverse();
       // velocity × velocityScale를 [0,1]로 clamp 후 smplr 0~127 변환 (루프 밖 1회 계산)
       const scaled = Math.max(0, Math.min(1, velocity * velocityScale));

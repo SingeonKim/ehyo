@@ -23,6 +23,10 @@ export type DrumPattern = {
   kick: BeatStep[];
   snare: BeatStep[];
   hat: BeatStep[];
+  /** Optional — 카드 climax/fill에서 사용. kit 부재 시 snare 폴백. */
+  tom?: BeatStep[];
+  /** Optional — 카드 climax 끝 액센트. kit 부재 시 clap → snare 폴백. */
+  crash?: BeatStep[];
 };
 
 export type BassPattern = {
