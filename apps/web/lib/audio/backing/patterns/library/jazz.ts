@@ -10,7 +10,8 @@ import type { CategoryRhythm } from '../types';
 
 export const JAZZ_RHYTHM: CategoryRhythm = {
   // 정통 jazz swing: long-short 비율 0.66 (2:1 트리플렛 감각)
-  swing: { default: 0.66 },
+  // autumn_leaves는 0.62 — 보다 평탄한 medium swing (ballad tempo 90bpm 배려)
+  swing: { default: 0.66, perVariant: { autumn_leaves: 0.62 } },
 
   patterns: {
     walk: {
@@ -102,13 +103,87 @@ export const JAZZ_RHYTHM: CategoryRhythm = {
         { time: '0:3:0', direction: 'down', velocity: 0.4 },
       ],
     },
+
+    // autumn_leaves variant — 16bar AABA form. Freddie Green 2박만(4박 drop)으로
+    // walk보다 sparse. brush snare velocity 0.25로 더 부드럽게.
+    autumn_walk: {
+      drums: {
+        // 재즈 킥은 비움
+        kick: [],
+        // brush snare — walk(0.3)보다 더 소프트하게
+        snare: [
+          { time: '0:1:2', velocity: 0.25 },
+          { time: '0:3:2', velocity: 0.25 },
+        ],
+        // walk와 동일 triplet8 ride — 일관된 groove 유지
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
+        ],
+      },
+      bass: {
+        // 4-to-the-bar walking quarters
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.85 },
+        ],
+      },
+      // Freddie Green 2박만 — 4박 drop으로 walk(2·4박)보다 더 sparse
+      guitar: [
+        { time: '0:1:0', direction: 'down', velocity: 0.35 },
+      ],
+    },
+
+    autumn_turnaround: {
+      drums: {
+        kick: [],
+        snare: [
+          { time: '0:1:2', velocity: 0.25 },
+          { time: '0:3:2', velocity: 0.25 },
+        ],
+        hat: [
+          { time: '0:0:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:0:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:1:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:1:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:2:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:2:2', unit: 'triplet8', velocity: 0.45 },
+          { time: '0:3:0', unit: 'triplet8', velocity: 0.55 },
+          { time: '0:3:2', unit: 'triplet8', velocity: 0.45 },
+        ],
+      },
+      bass: {
+        // 4박-and에 chromatic approach 추가 — bar 16 vim7 → bar 1 iim7 매끄러운 진입
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:1:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+          { time: '0:3:0', velocity: 0.85 },
+          { time: '0:3:2', velocity: 0.7 },
+        ],
+      },
+      guitar: [
+        { time: '0:1:0', direction: 'down', velocity: 0.35 },
+      ],
+    },
   },
 
   /**
-   * 마지막 마디 → walk_approach (chromatic approach로 반복 진입).
-   * 나머지 → walk.
+   * autumn_leaves variant: bar 16(마지막) → autumn_turnaround, 나머지 → autumn_walk.
+   * 기본: 마지막 마디 → walk_approach (chromatic approach로 반복 진입), 나머지 → walk.
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
+    if (variant === 'autumn_leaves') {
+      return idx % tpl.bars === tpl.bars - 1 ? 'autumn_turnaround' : 'autumn_walk';
+    }
     const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'walk_approach';
     return 'walk';

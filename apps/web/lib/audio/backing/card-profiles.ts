@@ -88,6 +88,12 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
   'jazz-ii-V-I': {
     toneProfile: { reverbWet: 0.22 },
   },
+  // 16bar AABA form. perVariant swing 0.62, Blue Note dry.
+  // jazz default electric_guitar_jazz 그대로 사용.
+  'autumn-leaves': {
+    rhythmVariant: 'autumn_leaves',
+    toneProfile: { reverbWet: 0.20 },
+  },
   // 카테고리 default 그대로.
   'minor-i-VI-III-VII': {},
   'funk-i7-vamp': {
