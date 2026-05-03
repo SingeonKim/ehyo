@@ -21,7 +21,7 @@ describe('chord-display — slash chord', () => {
   it('I/VII in F# (key=6) — sharp key', () => {
     // F# key는 sharp key (isFlatKey false). F# major + VII = E# = F (반음 5)
     const result = romanToAbsolute('I/VII', 6);
-    expect(result).toMatch(/^F#\/F$/); // F# major + VII = F (실제 F#의 VII는 E#=F)
+    expect(result).toBe('F#/F'); // F# major + VII = E#(=F), sharp key 표기
   });
 
   it('displayChord roman mode normalizes case and preserves slash', () => {
