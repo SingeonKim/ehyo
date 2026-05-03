@@ -217,7 +217,9 @@ export const FOLK_RHYTHM: CategoryRhythm = {
       ],
     },
 
-    // 마지막 마디 — root sustain only (다음 사이클 없음, 자연스런 해결)
+    // 마지막 마디 — 반복 재생 시 연속성을 위해 1박 sustain + 3박 thumb 유지.
+    // travis_main의 1·3박 alternating thumb 패턴을 dynamic을 줄여 약하게 이어감 →
+    // bar 8 → bar 1로 매끈하게 loop.
     travis_resolve: {
       drums: {
         kick: [],
@@ -225,12 +227,16 @@ export const FOLK_RHYTHM: CategoryRhythm = {
         hat: [],
       },
       bass: {
-        // 1박 root sustain only — 하강 베이스 라인 종점
-        steps: [{ time: '0:0:0', velocity: 0.95 }],
+        // 1박 root + 3박 thumb (alternating 유지, 두 번째는 약하게)
+        steps: [
+          { time: '0:0:0', velocity: 0.9 },
+          { time: '0:2:0', velocity: 0.65 },
+        ],
       },
-      // 1박에 final pluck — 나머지 박은 침묵으로 해결
+      // 1박 final pluck + 3박-and 부드러운 pickup으로 다음 사이클 진입 예고
       guitar: [
-        { time: '0:0:0', direction: 'down', velocity: 0.7 },
+        { time: '0:0:0', direction: 'down', velocity: 0.65 },
+        { time: '0:3:2', direction: 'up', velocity: 0.35 },
       ],
     },
   },

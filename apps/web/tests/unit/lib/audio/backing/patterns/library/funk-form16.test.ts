@@ -22,12 +22,23 @@ describe('funk funk_form_16 variant', () => {
     expect(map.bar16).toBe('funk_stop_resolve');
   });
 
-  it('funk_stop_resolve — kick 1박만, snare 4박만, hat 비움 (stop-time)', () => {
+  it('funk_stop_resolve — kick 1박 + snare 4박 strong + 4박-and ghost pickup (반복 연속성)', () => {
     const slot = FUNK_RHYTHM.patterns.funk_stop_resolve;
     expect(slot).toBeDefined();
+    // kick 1박 stab 유지 (stop-time 정체성)
     expect(slot!.drums.kick).toEqual([{ time: '0:0:0', velocity: 0.95 }]);
-    expect(slot!.drums.snare).toEqual([{ time: '0:3:0', velocity: 0.9 }]);
-    expect(slot!.drums.hat).toEqual([]);
+    // snare 4박 strong + 4박-and ghost (다음 사이클 pickup)
+    expect(slot!.drums.snare).toEqual([
+      { time: '0:3:0', velocity: 0.9 },
+      { time: '0:3:2', velocity: 0.4 },
+    ]);
+    // hat 4박-and 한 번만 (1·2박 정적 유지로 stop-time 보존)
+    expect(slot!.drums.hat).toEqual([{ time: '0:3:2', velocity: 0.35 }]);
+    // bass 1박 stab + 4박-and pickup → bar 1 i7 root anticipation
+    expect(slot!.bass.steps).toEqual([
+      { time: '0:0:0', velocity: 0.95 },
+      { time: '0:3:2', velocity: 0.65 },
+    ]);
   });
 
   it('funk_a_main과 funk_b_iv는 동일 그루브(harmonic만 다름)', () => {

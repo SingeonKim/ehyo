@@ -38,15 +38,22 @@ describe('folk travis_pick variant', () => {
     ]);
   });
 
-  it('travis_resolve — 마지막 마디 root sustain (1박만)', () => {
+  it('travis_resolve — 1박 root + 3박 thumb (반복 연속성), guitar 4박-and pickup', () => {
     const slot = FOLK_RHYTHM.patterns.travis_resolve;
     expect(slot).toBeDefined();
+    // 드럼 비움 유지 (idiom)
     expect(slot!.drums.kick).toEqual([]);
     expect(slot!.drums.snare).toEqual([]);
     expect(slot!.drums.hat).toEqual([]);
-    expect(slot!.bass.steps).toEqual([{ time: '0:0:0', velocity: 0.95 }]);
+    // bass alternating thumb 2 steps — 두 번째는 약하게(0.65)
+    expect(slot!.bass.steps).toEqual([
+      { time: '0:0:0', velocity: 0.9 },
+      { time: '0:2:0', velocity: 0.65 },
+    ]);
+    // guitar 1박 final + 4박-and soft pickup으로 다음 사이클 진입
     expect(slot!.guitar).toEqual([
-      { time: '0:0:0', direction: 'down', velocity: 0.7 },
+      { time: '0:0:0', direction: 'down', velocity: 0.65 },
+      { time: '0:3:2', direction: 'up', velocity: 0.35 },
     ]);
   });
 

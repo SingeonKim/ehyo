@@ -129,6 +129,7 @@ export const MINOR_RHYTHM: CategoryRhythm = {
     },
 
     // bar 16(i) 귀환 — crash + tom roll로 장엄한 끝맺음.
+    // 반복 재생 시 연속성을 위해 bass·guitar 3박 soft sustain + tom 2 echo 추가.
     epic_resolve: {
       drums: {
         kick: [{ time: '0:0:0', velocity: 0.95 }],
@@ -136,18 +137,26 @@ export const MINOR_RHYTHM: CategoryRhythm = {
         hat: [],
         // 1박에 crash로 해결감 표현 (LM-2: 'crash' 확인됨)
         crash: [{ time: '0:0:0', velocity: 0.9 }],
-        // tom roll 마무리
+        // tom roll 마무리 + 후반부 soft echo로 다음 사이클(bar 1 i) 자연 진입
         tom: [
           { time: '0:0:2', velocity: 0.6 },
           { time: '0:1:0', velocity: 0.7 },
           { time: '0:1:2', velocity: 0.8 },
+          { time: '0:2:2', velocity: 0.5 },  // soft echo
+          { time: '0:3:2', velocity: 0.4 },  // 더 약한 pickup
         ],
       },
       bass: {
-        steps: [{ time: '0:0:0', velocity: 0.95 }],
+        // 1박 strong + 3박 soft sustain — 다음 i 진입 호흡
+        steps: [
+          { time: '0:0:0', velocity: 0.95 },
+          { time: '0:2:0', velocity: 0.55 },
+        ],
       },
+      // 1박 final strum + 3박 soft ring — sustained guitar 정체성 유지
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.85 },
+        { time: '0:2:0', direction: 'down', velocity: 0.45 },
       ],
     },
 

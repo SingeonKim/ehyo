@@ -347,18 +347,32 @@ export const ROCK_RHYTHM: CategoryRhythm = {
       ],
     },
 
+    // bar 16 — crash 해결이 핵심이지만 반복 재생 시 연속성을 위해
+    // 3박 soft kick + hat ride 2개 + bass·guitar sustain으로 다음 사이클(bar 1 vim) 예고.
     pb_resolve: {
       drums: {
-        kick: [{ time: '0:0:0', velocity: 0.95 }],
+        kick: [
+          { time: '0:0:0', velocity: 0.95 },
+          { time: '0:2:0', velocity: 0.6 },  // 3박 soft kick — 다음 loop 호흡
+        ],
         snare: [],
-        hat: [],
+        // 3·4박 ride hat — pulse 유지하며 vim 진입
+        hat: [
+          { time: '0:2:0', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.4 },
+        ],
         crash: [{ time: '0:0:0', velocity: 0.9 }],
       },
       bass: {
-        steps: [{ time: '0:0:0', velocity: 0.95 }],
+        steps: [
+          { time: '0:0:0', velocity: 0.95 },
+          { time: '0:2:0', velocity: 0.65 },  // 3박 soft sustain
+        ],
       },
+      // 1박 final + 3박 soft up — clean arpeggio ring out
       guitar: [
         { time: '0:0:0', direction: 'down', velocity: 0.85 },
+        { time: '0:2:0', direction: 'up', velocity: 0.45 },
       ],
     },
 

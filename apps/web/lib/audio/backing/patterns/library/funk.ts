@@ -281,19 +281,26 @@ export const FUNK_RHYTHM: CategoryRhythm = {
 
     /**
      * funk_stop_resolve: stop-time bar 16.
-     * funk의 본질 — 한 박 멈춤. kick 1박, snare 4박, hat/aux 완전 비움.
-     * bass도 1박 stab만. guitar는 1박 + 4박 끝맺음.
+     * funk의 본질 — 박 멈춤이지만 반복 재생 시 다음 사이클(bar 1 i7) 진입을 위해
+     * 4박-and ghost snare + 4박-and bass pickup으로 미세한 연속성 확보.
+     * stop-time 정체성은 1·2박 hat 완전 비움 + 3박 정적으로 유지.
      */
     funk_stop_resolve: {
       drums: {
         kick: [{ time: '0:0:0', velocity: 0.95 }],
-        snare: [{ time: '0:3:0', velocity: 0.9 }],
-        // stop-time — hat 완전 비움
-        hat: [],
+        snare: [
+          { time: '0:3:0', velocity: 0.9 },
+          { time: '0:3:2', velocity: 0.4 },  // 4박-and ghost — 다음 사이클 pickup
+        ],
+        // stop-time — hat 4박-and 한 번만 (다음 마디 호흡)
+        hat: [{ time: '0:3:2', velocity: 0.35 }],
       },
       bass: {
-        // 1박 stab만 — stop-time
-        steps: [{ time: '0:0:0', velocity: 0.95 }],
+        // 1박 stab + 4박-and pickup → bar 1 i7 root anticipation
+        steps: [
+          { time: '0:0:0', velocity: 0.95 },
+          { time: '0:3:2', velocity: 0.65 },
+        ],
       },
       // 1박 강한 stab + 4박 끝맺음
       guitar: [

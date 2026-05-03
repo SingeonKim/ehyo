@@ -27,8 +27,13 @@ describe('rock power_ballad variant', () => {
     expect(slot!.drums.tom!.length).toBeGreaterThan(0);
   });
 
-  it('pb_resolve — 1박 crash + sustain', () => {
+  it('pb_resolve — 1박 crash + 3박 soft sustain (반복 연속성)', () => {
     const slot = ROCK_RHYTHM.patterns.pb_resolve;
     expect(slot!.drums.crash).toEqual([{ time: '0:0:0', velocity: 0.9 }]);
+    // 다음 사이클(bar 1 vim)로 이어가기 위해 3박 soft kick + hat ride 2개 + bass·guitar sustain
+    expect(slot!.drums.kick).toHaveLength(2);
+    expect(slot!.drums.hat).toHaveLength(2);
+    expect(slot!.bass.steps).toHaveLength(2);
+    expect(slot!.guitar).toHaveLength(2);
   });
 });

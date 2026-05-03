@@ -34,12 +34,15 @@ describe('minor epic_minor_halftime variant', () => {
     expect(toms.map((s) => s.velocity)).toEqual([0.5, 0.6, 0.7, 0.8]);
   });
 
-  it('epic_resolve는 1박에 strong crash + tom roll', () => {
+  it('epic_resolve — crash + tom roll 5 entries (반복 연속성) + bass·guitar 3박 sustain', () => {
     const slot = MINOR_RHYTHM.patterns.epic_resolve;
     expect(slot).toBeDefined();
     expect(slot!.drums.crash).toEqual([{ time: '0:0:0', velocity: 0.9 }]);
-    // tom roll 3 entries로 마무리
-    expect(slot!.drums.tom).toHaveLength(3);
+    // tom roll: 빌드업 3 + 후반부 soft echo 2 = 5 entries (다음 사이클 진입 호흡)
+    expect(slot!.drums.tom).toHaveLength(5);
+    // bass·guitar 3박 soft sustain — 1박만 끊기지 않게
+    expect(slot!.bass.steps).toHaveLength(2);
+    expect(slot!.guitar).toHaveLength(2);
   });
 
   it('기존 minor variant 회귀 — variant 미지정 시 기본 슬롯', () => {
