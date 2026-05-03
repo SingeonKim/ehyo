@@ -66,6 +66,32 @@ export function chordSymbolToMidi(
 }
 
 /**
+ * 베이스 voice용 단일 MIDI 노트 번호 반환.
+ *
+ * 슬래시 코드(예: 'I/VII')면 bassSemitones를, 아니면 chord root의 semitones를 사용.
+ * engine이 bass voice trigger 직전에 호출해 chord root 대신 슬래시 베이스를 쓸 수 있게 한다.
+ *
+ * 예:
+ *   chordBassMidi('V', 0, 4)      → 67  (G4 — V in C key의 root)
+ *   chordBassMidi('I/VII', 0, 4)  → 71  (B4 — VII bass in C key)
+ *   chordBassMidi('vim/V', 0, 4)  → 67  (G4 — V bass in C key)
+ *
+ * MIDI = 12 * (octave + 1) + pitchClass (C4=60, G4=67, B4=71)
+ */
+export function chordBassMidi(
+  symbol: string,
+  keyRoot: PitchClass,
+  rootOctave: number = DEFAULT_OCTAVE,
+): number | null {
+  const chord = romanToChord(symbol);
+  if (!chord) return null;
+  // 슬래시 코드면 bassSemitones, 아니면 chord root의 semitones[0]
+  const semitones = chord.bassSemitones ?? chord.semitones[0]!;
+  const bassPc = pitchClassFromRoot(keyRoot, semitones);
+  return 12 * (rootOctave + 1) + bassPc;
+}
+
+/**
  * MIDI 노트 번호 → 주파수(Hz).
  * Tone.Frequency를 쓰지 않는 이유: 테스트에서 Tone 전체 모킹 시
  * 이 함수가 여전히 독립적으로 동작해야 하므로.
