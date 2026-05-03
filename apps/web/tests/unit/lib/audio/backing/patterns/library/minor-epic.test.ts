@@ -25,18 +25,21 @@ describe('minor epic_minor_halftime variant', () => {
     expect(slot!.drums.snare.map((s) => s.time)).toEqual(['0:2:0']);
   });
 
-  it('epic_climax는 tom 강조', () => {
+  it('epic_climax는 tom 4 entries velocity crescendo (0.5→0.8)', () => {
     const slot = MINOR_RHYTHM.patterns.epic_climax;
     expect(slot).toBeDefined();
-    expect(slot!.drums.tom).toBeDefined();
-    expect(slot!.drums.tom!.length).toBeGreaterThan(0);
+    const toms = slot!.drums.tom!;
+    expect(toms).toHaveLength(4);
+    expect(toms.map((s) => s.time)).toEqual(['0:0:2', '0:1:2', '0:2:2', '0:3:2']);
+    expect(toms.map((s) => s.velocity)).toEqual([0.5, 0.6, 0.7, 0.8]);
   });
 
-  it('epic_resolve는 1박에 crash', () => {
+  it('epic_resolve는 1박에 strong crash + tom roll', () => {
     const slot = MINOR_RHYTHM.patterns.epic_resolve;
     expect(slot).toBeDefined();
-    expect(slot!.drums.crash).toBeDefined();
-    expect(slot!.drums.crash![0]!.time).toBe('0:0:0');
+    expect(slot!.drums.crash).toEqual([{ time: '0:0:0', velocity: 0.9 }]);
+    // tom roll 3 entries로 마무리
+    expect(slot!.drums.tom).toHaveLength(3);
   });
 
   it('기존 minor variant 회귀 — variant 미지정 시 기본 슬롯', () => {

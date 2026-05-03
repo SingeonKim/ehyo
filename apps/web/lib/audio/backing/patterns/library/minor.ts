@@ -99,6 +99,8 @@ export const MINOR_RHYTHM: CategoryRhythm = {
     },
 
     // bar 13(iv) 도착 강조 — tom velocity crescendo buildup.
+    // kick/snare/hat 위치는 epic_main과 의도적으로 동일 (half-time groove 베이스 유지).
+    // 차별점은 hat velocity 0.5(epic_main 0.4 대비) + tom 4 entries.
     epic_climax: {
       drums: {
         kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
@@ -186,15 +188,16 @@ export const MINOR_RHYTHM: CategoryRhythm = {
    * epic_minor_halftime: bar 13(idx 12) = climax, bar 16(idx 15) = resolve, 나머지 = main.
    */
   selectSlot: (tpl, idx, variant) => {
+    const local = idx % tpl.bars;
     // epic_minor_halftime — 16bar cinematic half-time 전용 분기
+    // bar 14·15(local 13·14) V는 climax 직후 긴장 유지 → epic_main의 sparse half-time이
+    // 의도적으로 공간감 표현. tom 없는 게 정답.
     if (variant === 'epic_minor_halftime') {
-      const local = idx % tpl.bars;
       if (local === 12) return 'epic_climax';   // bar 13: iv 도착 강조
       if (local === 15) return 'epic_resolve';  // bar 16: i 귀환 crash 해결
       return 'epic_main';
     }
     // 기존 minor 분기 — BPM과 마지막 마디 기준
-    const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return tpl.default_bpm <= 90 ? 'groove_16th_sparse' : 'groove_8th';
   },
