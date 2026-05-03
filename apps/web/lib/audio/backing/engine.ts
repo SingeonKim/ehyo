@@ -336,11 +336,16 @@ function createEngine(): BackingEngine {
         // 스케줄러 큐에 들어가지 않게 한다(velocity 0과 다름). 매 마디 시작 시 한 번씩
         // 평가되므로 토글 시 다음 마디부터 반영.
 
-        // drums: smplr DrumMachine은 sample group name ('kick'/'snare'/'hat')으로 트리거
+        // drums: smplr DrumMachine은 sample group name으로 트리거.
+        // tom/crash는 DrumPattern optional 필드 — 정의된 카드(climax 표현)에서만 발화.
         if (!voiceMutes.drums) {
           for (const s of pattern.drums.kick)  voices.drums.trigger('kick',  loaded.drums, t(s), s.velocity, vs);
           for (const s of pattern.drums.snare) voices.drums.trigger('snare', loaded.drums, t(s), s.velocity, vs);
           for (const s of pattern.drums.hat)   voices.drums.trigger('hat',   loaded.drums, t(s), s.velocity, vs);
+          if (pattern.drums.tom)
+            for (const s of pattern.drums.tom)   voices.drums.trigger('tom',   loaded.drums, t(s), s.velocity, vs);
+          if (pattern.drums.crash)
+            for (const s of pattern.drums.crash) voices.drums.trigger('crash', loaded.drums, t(s), s.velocity, vs);
         }
 
         // bass: 루트 2옥타브 다운, 카테고리 패턴별 스텝 수로 trigger.
