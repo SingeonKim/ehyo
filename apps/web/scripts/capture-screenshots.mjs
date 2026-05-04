@@ -163,18 +163,45 @@ async function main() {
   await setLabelMode(page, 'Name');
   await shootFretboardPageWithHighlight(page, '05_fretboard_dorian.png');
 
-  // 6. Practice — BLUES/POP/JAZZ만 (Minor 카테고리 직전까지 clip)
-  console.log('6/14 practice (BLUES/POP/JAZZ only)');
+  // 6. Practice — BLUES/POP까지 (Jazz 카테고리 직전까지 clip).
+  //    Quick Change 카드를 Key=A·Label=Degree로 재생, bar 10/12 (IV7) 시점에 캡처.
+  //    sticky 지판은 Practice 페이지에 라벨 토글이 노출되지 않아 fretboard 페이지에서
+  //    먼저 LabelMode='Degree'로 설정 → store persist → jam 페이지에서 그대로 사용.
+  console.log('6/14 practice (BLUES/POP only — Quick Change · Key A · IV7)');
+  await page.goto(`${BASE_URL}/fretboard`);
+  await settle(page);
+  await setLabelMode(page, 'Degree');
+
   await page.goto(`${BASE_URL}/jam`);
   await settle(page);
-  const minorY = await page.evaluate(() => {
-    const el = document.querySelector('[data-category="minor"]');
+
+  // Key를 A(PitchClass 9)로
+  await page.getByLabel('Backing track key').selectOption('9');
+  await page.waitForTimeout(200);
+
+  const quickChange = page.locator('[data-testid="progression-card-12-bar-blues-quick-change"]');
+  await quickChange.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(200);
+  await quickChange.getByRole('button', { name: 'Play' }).click();
+
+  // bar 10/12 (IV7) 진입 대기 — Quick Change BPM 기준 1마디 ~2초, 30초 타임아웃이면 충분.
+  await page.waitForFunction(
+    () => /bar 10\/12/.test(document.body.textContent ?? ''),
+    null,
+    { timeout: 60_000 },
+  );
+  // 캡처 직전 페이지 상단으로 스크롤 — clip은 0,0 기준.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(150);
+
+  const jazzY = await page.evaluate(() => {
+    const el = document.querySelector('[data-category="jazz"]');
     if (!el) return null;
     const r = el.getBoundingClientRect();
     return r.top + window.scrollY;
   });
-  if (minorY) {
-    const cropHeight = Math.round(minorY - 12);
+  if (jazzY) {
+    const cropHeight = Math.round(jazzY - 12);
     await page.screenshot({
       path: path.join(OUT_DIR, '06_practice_blues_pop_jazz.png'),
       fullPage: true,
@@ -182,8 +209,12 @@ async function main() {
     });
     console.log(`  ✓ 06_practice_blues_pop_jazz.png (clipped at y=${cropHeight})`);
   } else {
-    console.warn('  ! Could not locate Minor category, skipping');
+    console.warn('  ! Could not locate Jazz category, skipping');
   }
+
+  // 후속 시나리오에 영향 주지 않게 재생 정지.
+  await quickChange.getByRole('button', { name: 'Stop' }).click().catch(() => {});
+  await page.waitForTimeout(200);
 
   // 7~10. Minor Blues highlight 시리즈 — 지판 영역만 + Highlight Colors 패널만
   console.log('7/14 fretboard minor blues default (svg only)');
