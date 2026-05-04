@@ -9,6 +9,9 @@
 
 ## [Unreleased]
 
+### Changed
+- Practice 카테고리 라벨 색상을 8개 모두 distinct하게 매핑 — funk(copper) / bossa(rose) / folk(teal) / rock(signal). `--color-highlight-rose` · `--color-highlight-teal` 토큰 신규.
+
 ## [1.0.0] - 2026-05-04
 
 기타 연습용 메트로놈 + 스케일 가이드 + 배킹 트랙의 첫 안정 버전. Phase 0~4(Sprint 11)의 누적 결과.
