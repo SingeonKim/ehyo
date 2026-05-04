@@ -1,6 +1,6 @@
 [project]
 name = "music-app-api"
-version = "0.1.0"
+version = "1.0.0"
 description = "FastAPI backend for my-music-app (Phase 5+)"
 requires-python = ">=3.12"
 dependencies = [

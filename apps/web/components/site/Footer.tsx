@@ -35,7 +35,7 @@ export function Footer() {
           >
             <GitHubMark />
           </a>
-          <p className="tabular-nums">v0.1.0</p>
+          <p className="tabular-nums">v1.0.0</p>
         </div>
       </div>
     </footer>

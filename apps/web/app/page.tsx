@@ -16,7 +16,7 @@ export default function HomePage() {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
           ehyo · 에휴
         </p>
-        <p className="font-mono text-xs tabular-nums text-ink-muted">v0.1.0</p>
+        <p className="font-mono text-xs tabular-nums text-ink-muted">v1.0.0</p>
       </header>
 
       <section className="py-24">
