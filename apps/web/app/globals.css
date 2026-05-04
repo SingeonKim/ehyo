@@ -35,6 +35,8 @@
   --color-highlight-orange: #E8A14E;
   --color-highlight-green: #8BBF73;
   --color-highlight-blue: #5EB0E5;
+  --color-highlight-rose: #D08A8E;   /* dusty rose — bossa */
+  --color-highlight-teal: #6FA8A0;   /* muted teal — folk */
   /* 호환 유지용 — 기존 참조가 남아있다면 orange로 폴백 */
   --color-scale-important: var(--color-highlight-orange);
 

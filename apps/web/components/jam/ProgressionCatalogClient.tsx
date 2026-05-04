@@ -34,6 +34,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   jazz: 'Jazz',
   minor: 'Minor',
   modal: 'Modal',
+  funk: 'Funk',
+  bossa: 'Bossa',
+  folk: 'Folk',
+  rock: 'Rock',
 };
 
 const CATEGORY_ACCENT: Record<string, string> = {
@@ -42,6 +46,10 @@ const CATEGORY_ACCENT: Record<string, string> = {
   jazz: 'text-accent-brass',
   minor: 'text-ink-secondary',
   modal: 'text-highlight-green',
+  funk: 'text-accent-copper',
+  bossa: 'text-highlight-rose',
+  folk: 'text-highlight-teal',
+  rock: 'text-accent-signal',
 };
 
 export function ProgressionCatalogClient({
