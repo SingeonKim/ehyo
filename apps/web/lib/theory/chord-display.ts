@@ -33,15 +33,30 @@ export function normalizeRomanCase(symbol: string): string {
   if (!parsed) return symbol;
   const upper = UPPER_ROMAN[parsed.degree - 1];
   if (!upper) return symbol;
-  return upper + QUALITY_SUFFIX[parsed.quality];
+  const head = upper + QUALITY_SUFFIX[parsed.quality];
+  // 슬래시 코드면 원본 문자열의 베이스 부분을 그대로 보존 (b/# prefix 포함)
+  if (parsed.bassDegree !== undefined) {
+    const slashIdx = symbol.indexOf('/');
+    const bassPart = symbol.slice(slashIdx + 1);
+    return `${head}/${bassPart}`;
+  }
+  return head;
 }
 
 export function romanToAbsolute(symbol: string, keyRoot: PitchClass): string {
   const parsed = parseRoman(symbol);
   if (!parsed) return symbol;
   const rootPc = pitchClassFromRoot(keyRoot, parsed.rootSemitones);
-  const noteName = getNoteName(rootPc, isFlatKey(keyRoot));
-  return noteName + QUALITY_SUFFIX[parsed.quality];
+  const useFlatNotation = isFlatKey(keyRoot);
+  const noteName = getNoteName(rootPc, useFlatNotation);
+  const head = noteName + QUALITY_SUFFIX[parsed.quality];
+  // 슬래시 코드면 베이스 노트를 절대 표기로 변환해 추가
+  if (parsed.bassSemitones !== undefined) {
+    const bassPc = pitchClassFromRoot(keyRoot, parsed.bassSemitones);
+    const bassName = getNoteName(bassPc, useFlatNotation);
+    return `${head}/${bassName}`;
+  }
+  return head;
 }
 
 export function displayChord(

@@ -32,7 +32,27 @@ const SPRINT10_SLUGS = [
   'phrygian-vamp',
 ];
 
+// Sprint 11 PR-C: autumn-leaves, PR-D: epic-minor-cinematic, PR-E: cissy-strut-funk, PR-F: bossa-major-ipanema
+const SPRINT11_SLUGS = [
+  'autumn-leaves',
+  'epic-minor-cinematic',
+  'cissy-strut-funk',
+  'bossa-major-ipanema',
+];
+
+// Sprint 11 PR-G: travis-pick-folk (8bar fingerstyle, 슬래시 코드 descending bass)
+const SPRINT11_PG_SLUGS = ['travis-pick-folk'];
+
+// Sprint 11 PR-H: rock pair — power-ballad-rock (16bar) + punk-garage-rock (8bar)
+const SPRINT11_PH_SLUGS = ['power-ballad-rock', 'punk-garage-rock'];
+
 const ALL_22_SLUGS = [...CATALOG_17_SLUGS, ...SPRINT10_SLUGS];
+const ALL_23_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 1)];
+const ALL_24_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 2)];
+const ALL_25_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS.slice(0, 3)];
+const ALL_26_SLUGS = [...ALL_22_SLUGS, ...SPRINT11_SLUGS];
+const ALL_27_SLUGS = [...ALL_26_SLUGS, ...SPRINT11_PG_SLUGS];
+const ALL_29_SLUGS = [...ALL_27_SLUGS, ...SPRINT11_PH_SLUGS];
 
 describe('CARD_PROFILES', () => {
   it('has entries for all 17 catalog slugs', () => {
@@ -41,9 +61,9 @@ describe('CARD_PROFILES', () => {
     }
   });
 
-  it('has no extra slugs beyond catalog (22 slugs after Sprint 10)', () => {
+  it('has no extra slugs beyond catalog (29 slugs after Sprint 11 PR-H)', () => {
     for (const slug of Object.keys(CARD_PROFILES)) {
-      expect(ALL_22_SLUGS).toContain(slug);
+      expect(ALL_29_SLUGS).toContain(slug);
     }
   });
 });
@@ -59,9 +79,9 @@ describe('__assertCardProfilesMatch', () => {
     warn.mockRestore();
   });
 
-  it('does not warn when sets match (22 slugs after Sprint 10)', () => {
+  it('does not warn when sets match (29 slugs after Sprint 11 PR-H)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    __assertCardProfilesMatch(ALL_22_SLUGS);
+    __assertCardProfilesMatch(ALL_29_SLUGS);
     expect(warn).not.toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -143,8 +163,35 @@ describe('CARD_PROFILES — Sprint 10 신규 5장', () => {
   });
 });
 
-describe('__assertCardProfilesMatch — Sprint 10 22 슬러그 정합성', () => {
-  it('22 슬러그 카탈로그와 정합성 매치', () => {
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-D)', () => {
+  it('epic-minor-cinematic: rhythmVariant=epic_minor_halftime, reverbWet 0.35 (cinematic hall)', () => {
+    const p = CARD_PROFILES['epic-minor-cinematic'];
+    expect(p?.rhythmVariant).toBe('epic_minor_halftime');
+    expect(p?.toneProfile?.reverbWet).toBe(0.35);
+    // velocityScale/voiceGain override 없음 — 절대 볼륨 통일
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    // instrument override 없음 — minor default electric_guitar_clean 그대로
+    expect(p?.instrumentOverrides).toBeUndefined();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-E)', () => {
+  it('cissy-strut-funk: rhythmVariant=funk_form_16, toneProfile override 없음', () => {
+    const p = CARD_PROFILES['cissy-strut-funk'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('funk_form_16');
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+    // funk default reverbWet 0.12 그대로 — 카드 override 없음
+    expect(p?.toneProfile?.reverbWet).toBeUndefined();
+    // instrument override 없음 — funk default electric_guitar_clean 그대로
+    expect(p?.instrumentOverrides).toBeUndefined();
+  });
+});
+
+describe('__assertCardProfilesMatch — Sprint 11 29 슬러그 정합성', () => {
+  it('29 슬러그 카탈로그와 정합성 매치', () => {
     const catalogSlugs = [
       // Sprint 9 17장
       '12-bar-blues-major', '12-bar-blues-minor', '12-bar-blues-quick-change',
@@ -160,10 +207,78 @@ describe('__assertCardProfilesMatch — Sprint 10 22 슬러그 정합성', () =>
       'folk-I-IV-V', 'ballad-I-V-vi-IV',
       'rock-I-bVII-IV', 'rock-12-bar',
       'phrygian-vamp',
+      // Sprint 11 신규 4장 (PR-C, PR-D, PR-E, PR-F)
+      'autumn-leaves',
+      'epic-minor-cinematic',
+      'cissy-strut-funk',
+      'bossa-major-ipanema',
+      // Sprint 11 신규 1장 (PR-G)
+      'travis-pick-folk',
+      // Sprint 11 신규 2장 (PR-H)
+      'power-ballad-rock',
+      'punk-garage-rock',
     ];
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     __assertCardProfilesMatch(catalogSlugs);
     expect(warnSpy).not.toHaveBeenCalled();
     warnSpy.mockRestore();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-F)', () => {
+  it('bossa-major-ipanema: rhythmVariant=bossa_chromatic, toneProfile/instrumentOverrides 없음', () => {
+    const p = CARD_PROFILES['bossa-major-ipanema'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('bossa_chromatic');
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+    // bossa default reverbWet 0.20 사용 — 카드 override 없음
+    expect(p?.toneProfile?.reverbWet).toBeUndefined();
+    // instrument override 없음
+    expect(p?.instrumentOverrides).toBeUndefined();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-G)', () => {
+  it('travis-pick-folk: rhythmVariant=travis_pick, reverbWet 0.25 (intimate acoustic)', () => {
+    const p = CARD_PROFILES['travis-pick-folk'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('travis_pick');
+    // folk default 0.18 → 0.25 intimate 공간감
+    expect(p?.toneProfile?.reverbWet).toBe(0.25);
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+    // acoustic_guitar_steel(folk default) 유지 — instrument override 없음
+    expect(p?.instrumentOverrides).toBeUndefined();
+  });
+});
+
+describe('CARD_PROFILES — Sprint 11 신규 카드 (PR-H)', () => {
+  it('power-ballad-rock: rhythmVariant=power_ballad, reverbWet 0.30, clean guitar override', () => {
+    const p = CARD_PROFILES['power-ballad-rock'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('power_ballad');
+    // lush hall reverb — rock default 0.14보다 훨씬 wet
+    expect(p?.toneProfile?.reverbWet).toBe(0.30);
+    // distortion → clean (arpeggio/ballad 정체성)
+    expect(p?.instrumentOverrides?.guitar?.instrument).toBe('electric_guitar_clean');
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
+  });
+
+  it('punk-garage-rock: rhythmVariant=punk_8th, reverbWet 0.08 (카탈로그 최저)', () => {
+    const p = CARD_PROFILES['punk-garage-rock'];
+    expect(p).toBeDefined();
+    expect(p?.rhythmVariant).toBe('punk_8th');
+    // 카탈로그 최저 reverb — 직접적 aggressive punk 사운드
+    expect(p?.toneProfile?.reverbWet).toBe(0.08);
+    // distortion guitar(rock default) 유지 — instrument override 없음
+    expect(p?.instrumentOverrides).toBeUndefined();
+    // 절대 볼륨 통일 — velocityScale/voiceGain override 없음
+    expect(p?.toneProfile?.velocityScale).toBeUndefined();
+    expect(p?.toneProfile?.voiceGain).toBeUndefined();
   });
 });

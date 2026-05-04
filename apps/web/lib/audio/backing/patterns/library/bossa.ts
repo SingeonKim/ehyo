@@ -100,14 +100,94 @@ export const BOSSA_RHYTHM: CategoryRhythm = {
         { time: '0:3:2', velocity: 0.6 },
       ],
     },
+
+    // ── bossa_chromatic variant — major key + descending chromatic ────
+    // Ipanema 패밀리. 기존 bossa 드럼/베이스 패턴 재사용, guitar는 마디당
+    // 4× stab(1·2·3·4박)으로 quick chord change 표현.
+    bossa_chromatic_main: {
+      drums: {
+        // bossa nova 표준 — kick 1·3박
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        // snare cross-stick 2·4박, 약하게
+        snare: [
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.4 },
+        ],
+        // hat 8분
+        hat: [
+          { time: '0:0:0', velocity: 0.4 },
+          { time: '0:0:2', velocity: 0.35 },
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:1:2', velocity: 0.35 },
+          { time: '0:2:0', velocity: 0.4 },
+          { time: '0:2:2', velocity: 0.35 },
+          { time: '0:3:0', velocity: 0.4 },
+          { time: '0:3:2', velocity: 0.35 },
+        ],
+      },
+      bass: {
+        // bossa 베이스: 1·3박 root
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+        ],
+      },
+      // 마디당 4× stab — 1·2·3·4박. quick chord change 표현(매 마디 다른 코드).
+      guitar: [
+        { time: '0:0:0', direction: 'down' as const, velocity: 0.55 },
+        { time: '0:1:0', direction: 'down' as const, velocity: 0.5 },
+        { time: '0:2:0', direction: 'down' as const, velocity: 0.55 },
+        { time: '0:3:0', direction: 'down' as const, velocity: 0.5 },
+      ],
+    },
+
+    // bar 8 — 마지막 stab(0:3:0)을 살짝 강하게(0.6) 다음 사이클 진입 액센트.
+    // drums/bass/hat은 main과 동일 (의도적 중복 — bossa groove 베이스 유지).
+    bossa_chromatic_resolve: {
+      drums: {
+        kick: [{ time: '0:0:0' }, { time: '0:2:0' }],
+        snare: [
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:3:0', velocity: 0.4 },
+        ],
+        hat: [
+          { time: '0:0:0', velocity: 0.4 },
+          { time: '0:0:2', velocity: 0.35 },
+          { time: '0:1:0', velocity: 0.4 },
+          { time: '0:1:2', velocity: 0.35 },
+          { time: '0:2:0', velocity: 0.4 },
+          { time: '0:2:2', velocity: 0.35 },
+          { time: '0:3:0', velocity: 0.4 },
+          { time: '0:3:2', velocity: 0.35 },
+        ],
+      },
+      bass: {
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+        ],
+      },
+      guitar: [
+        { time: '0:0:0', direction: 'down' as const, velocity: 0.55 },
+        { time: '0:1:0', direction: 'down' as const, velocity: 0.5 },
+        { time: '0:2:0', direction: 'down' as const, velocity: 0.55 },
+        // 마지막 stab 살짝 강하게 (다음 사이클 진입 액센트)
+        { time: '0:3:0', direction: 'down' as const, velocity: 0.6 },
+      ],
+    },
   },
 
   /**
-   * 마지막 마디 → pickup.
-   * 2마디 단위로 clave 방향 전환: Math.floor(idx/2) 짝수 → 3_2, 홀수 → 2_3.
+   * bossa_chromatic variant: bar 1~7 → main, bar 8(마지막) → resolve.
+   * 기존 default: 마지막 마디 → pickup, 2마디 단위 clave 방향 전환.
    */
-  selectSlot: (tpl, idx, _variant) => {
+  selectSlot: (tpl, idx, variant) => {
     const local = idx % tpl.bars;
+    if (variant === 'bossa_chromatic') {
+      // bar 8(idx 7, local=bars-1)은 resolve, 나머지는 main
+      return local === tpl.bars - 1 ? 'bossa_chromatic_resolve' : 'bossa_chromatic_main';
+    }
+    // 기존 bossa 분기 — clave 방향 교체 + 마지막 pickup
     if (local === tpl.bars - 1) return 'pickup';
     return Math.floor(idx / 2) % 2 === 0 ? 'clave_3_2' : 'clave_2_3';
   },

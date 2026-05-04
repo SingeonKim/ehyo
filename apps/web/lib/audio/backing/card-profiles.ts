@@ -84,17 +84,39 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     toneProfile: { reverbWet: 0.25 },
   },
 
-  // ── jazz / minor / funk / bossa 각 1장 ────────────────────────────
+  // ── jazz 2장 / minor 1장 / funk 1장 / bossa 1장 ────────────────────
   'jazz-ii-V-I': {
     toneProfile: { reverbWet: 0.22 },
   },
+  // 16bar AABA form. perVariant swing 0.62, Blue Note dry.
+  // jazz default electric_guitar_jazz 그대로 사용.
+  'autumn-leaves': {
+    rhythmVariant: 'autumn_leaves',
+    toneProfile: { reverbWet: 0.20 },
+  },
   // 카테고리 default 그대로.
   'minor-i-VI-III-VII': {},
+  // cinematic hall reverb 0.35. minor default electric_guitar_clean 유지 (sustained arpeggio 적합).
+  // half-time 16bar: bar 13 tom crescendo buildup, bar 16 crash resolve.
+  'epic-minor-cinematic': {
+    rhythmVariant: 'epic_minor_halftime',
+    toneProfile: { reverbWet: 0.35 },
+  },
   'funk-i7-vamp': {
     toneProfile: { reverbWet: 0.12 },
   },
+  // 16bar Cissy Strut form (The Meters). funk default reverbWet 0.12 그대로.
+  // velocityScale/voiceGain override 없음 — 절대 볼륨 통일.
+  // 정체성은 funk_form_16 패턴(stop-time bar 16) + funk default tone으로만 표현.
+  'cissy-strut-funk': {
+    rhythmVariant: 'funk_form_16',
+  },
   'bossa-i-iv-ii-v': {
     toneProfile: { reverbWet: 0.25 },
+  },
+  // 8bar major chromatic. bossa default 0.20 그대로. velocityScale/voiceGain override 없음.
+  'bossa-major-ipanema': {
+    rhythmVariant: 'bossa_chromatic',
   },
 
   // ── modal 3장 ────────────────────────────────────────────────────
@@ -120,6 +142,14 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     rhythmVariant: 'ballad_pick',
     toneProfile: { reverbWet: 0.30 },
   },
+  // 8bar fingerstyle. Dust in the Wind 패밀리 — 슬래시 코드(I/VII, vim/V, I/III)로
+  // descending bass(C→B→A→G→F→E→D→C) 표현. PR-A chordBassMidi 첫 사용 사례.
+  // folk default 0.18 → 0.25 (intimate acoustic 공간감). acoustic_guitar_steel 유지.
+  // velocityScale/voiceGain override 없음 — 절대 볼륨 통일.
+  'travis-pick-folk': {
+    rhythmVariant: 'travis_pick',
+    toneProfile: { reverbWet: 0.25 },
+  },
   // Mixolydian rock — distortion guitar(rock default) + dry.
   'rock-I-bVII-IV': {
     rhythmVariant: 'rock_mixo',
@@ -133,6 +163,23 @@ export const CARD_PROFILES: Readonly<Record<string, CardProfile>> = {
     toneProfile: {
       reverbWet: 0.12,
     },
+  },
+  // power-ballad: lush hall reverb 0.30. distortion → clean override (arpeggio 적합).
+  // half-time 16bar: pb_intro(sparse) → pb_main(quarter hat) → pb_climax(8분 hat + tom fills) → pb_resolve(crash).
+  // velocityScale/voiceGain override 없음 — 절대 볼륨 통일.
+  'power-ballad-rock': {
+    rhythmVariant: 'power_ballad',
+    toneProfile: { reverbWet: 0.30 },
+    instrumentOverrides: {
+      guitar: { instrument: 'electric_guitar_clean', octaveShift: -1 },
+    },
+  },
+  // punk-garage: 카탈로그 최저 reverb 0.08 (직접적 aggressive 사운드).
+  // distortion guitar(rock default) 유지. voicingMode='power'는 패턴에서.
+  // 8bar 170bpm: bar 8 climax crash. velocityScale/voiceGain override 없음.
+  'punk-garage-rock': {
+    rhythmVariant: 'punk_8th',
+    toneProfile: { reverbWet: 0.08 },
   },
   // Spanish/exotic phrygian. modal default가 clean이라 distortion 명시 override.
   'phrygian-vamp': {

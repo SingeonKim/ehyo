@@ -56,17 +56,80 @@ function resolveHatNote(dm: DrumMachine): string {
  */
 const HAT_VELOCITY_SCALE = 0.7;
 
+/**
+ * smplr DrumMachine kit별 'tom' sample 이름 동적 lookup.
+ *
+ * kit별 실제 이름(drum sample audit 2026-05-03 기준):
+ *   LM-2:    tom-h / tom-m / tom-l / tom-ll / tom-hh
+ *   TR-808:  mid-tom / tom-hi / tom-low
+ *   CR-8000: tom-high / tom-low
+ *
+ * 우선순위 — mid 패밀리 > low > high > generic > startsWith('tom') > snare-l > snare 폴백.
+ * 중간 음역 tom이 배킹 climax fill에 가장 자연스럽게 앉는다.
+ */
+const TOM_NOTE_CACHE = new WeakMap<DrumMachine, string>();
+function resolveTomNote(dm: DrumMachine): string {
+  const cached = TOM_NOTE_CACHE.get(dm);
+  if (cached) return cached;
+  const names = dm.sampleNames ?? [];
+  const resolved =
+    names.find((n) => n === 'tom-mid') ??
+    names.find((n) => n === 'mid-tom') ??
+    names.find((n) => n === 'tom-m') ??
+    names.find((n) => n === 'tom-low') ??
+    names.find((n) => n === 'tom-l') ??
+    names.find((n) => n === 'tom-high') ??
+    names.find((n) => n === 'tom-hi') ??
+    names.find((n) => n === 'tom-h') ??
+    names.find((n) => n === 'tom') ??
+    names.find((n) => n.startsWith('tom')) ??
+    names.find((n) => n === 'snare-l') ??
+    'snare';
+  TOM_NOTE_CACHE.set(dm, resolved);
+  return resolved;
+}
+
+/**
+ * smplr DrumMachine kit별 'crash' sample 이름 동적 lookup.
+ *
+ * kit별 실제 이름(drum sample audit 2026-05-03 기준):
+ *   LM-2:    crash
+ *   TR-808:  cymbal  (no 'crash')
+ *   CR-8000: cymball (double-L 오타 — 의도된 표기)
+ *
+ * ⚠️ 'cymball' (double-L)은 CR-8000의 실제 sample 이름. 오타가 아님.
+ * 우선순위 — crash literal > cymbal > cymball(CR-8000) > cymb* > clap > snare 폴백.
+ */
+const CRASH_NOTE_CACHE = new WeakMap<DrumMachine, string>();
+function resolveCrashNote(dm: DrumMachine): string {
+  const cached = CRASH_NOTE_CACHE.get(dm);
+  if (cached) return cached;
+  const names = dm.sampleNames ?? [];
+  const resolved =
+    names.find((n) => n === 'crash') ??
+    names.find((n) => n === 'crash-1') ??
+    names.find((n) => n === 'crash-2') ??
+    names.find((n) => n === 'cymbal') ??
+    names.find((n) => n === 'cymball') ??
+    names.find((n) => n.startsWith('cymb')) ??
+    names.find((n) => n === 'clap') ??
+    'snare';
+  CRASH_NOTE_CACHE.set(dm, resolved);
+  return resolved;
+}
+
 export interface DrumVoice {
   /**
    * 드럼 스텝 트리거.
    *
-   * step: 'kick' | 'snare' | 'hat' — DrumMachine의 sample group name.
+   * step: 'kick' | 'snare' | 'hat' | 'tom' | 'crash' — DrumMachine sample group name.
+   *   'hat'/'tom'/'crash'는 kit별로 실제 sample 이름이 달라 동적 lookup 후 트리거.
    * drumMachine: smplr DrumMachine 인스턴스.
    * velocity: 0~1 패턴 범위 — 내부에서 0~127로 변환.
    * velocityScale: 카드 프로파일 배율(0~1), default 1. velocity와 곱해 clamp 후 변환.
    */
   trigger(
-    step: 'kick' | 'snare' | 'hat',
+    step: 'kick' | 'snare' | 'hat' | 'tom' | 'crash',
     drumMachine: DrumMachine,
     time: number,
     velocity?: number,
@@ -101,8 +164,15 @@ export function createDrumVoice(destination?: AudioNode): DrumVoice {
       const stepScale = step === 'hat' ? HAT_VELOCITY_SCALE : 1;
       // velocity × velocityScale × stepScale → [0,1] clamp → smplr 요구 0~127 범위
       const scaled = Math.max(0, Math.min(1, velocity * velocityScale * stepScale));
-      // 'hat'은 kit별 sample 이름이 다르므로 동적 lookup. 'kick'/'snare'는 그대로.
-      const noteName = step === 'hat' ? resolveHatNote(drumMachine) : step;
+      // 'kick'/'snare'는 sample 이름과 step 이름이 동일 → 그대로.
+      // 'hat'/'tom'/'crash'는 kit별 sample 이름이 달라 동적 lookup.
+      let noteName: string;
+      switch (step) {
+        case 'hat':   noteName = resolveHatNote(drumMachine); break;
+        case 'tom':   noteName = resolveTomNote(drumMachine); break;
+        case 'crash': noteName = resolveCrashNote(drumMachine); break;
+        default:      noteName = step; // 'kick' | 'snare'
+      }
       const stop = drumMachine.start({
         note: noteName,
         time,

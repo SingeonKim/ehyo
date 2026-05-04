@@ -185,20 +185,78 @@ export const FOLK_RHYTHM: CategoryRhythm = {
         { time: '0:3:2', direction: 'up' },
       ],
     },
+
+    // ── travis_pick variant — fingerstyle (Dust in the Wind 패밀리) ────
+    // 드럼 비움(jazz comp_only 선례), bass alternating thumb 1·3박.
+    // 슬래시 코드(I/VII, vim/V, I/III)를 포함한 진행에서 engine의
+    // chordBassMidi가 bassSemitones를 받아 descending bass(C→B→A→G→F→E→D→C)
+    // 자연 발현 — 이 슬롯은 단순히 1·3박을 예약하고 음 결정은 engine에 위임.
+    travis_main: {
+      drums: {
+        // fingerstyle = no drums
+        kick: [],
+        snare: [],
+        hat: [],
+      },
+      bass: {
+        // Travis 엄지 alternating: 1박 root + 3박 root (or slash bass)
+        steps: [
+          { time: '0:0:0', velocity: 0.85 },
+          { time: '0:2:0', velocity: 0.85 },
+        ],
+      },
+      // finger arpeggio 8분 6 steps — 1·3박 빈 자리(bass thumb)을 제외한 off-beat.
+      // 패턴: 1박-and / 2박 / 2박-and / 3박-and / 4박 / 4박-and
+      guitar: [
+        { time: '0:0:2', direction: 'down', velocity: 0.45 },
+        { time: '0:1:0', direction: 'up', velocity: 0.5 },
+        { time: '0:1:2', direction: 'down', velocity: 0.45 },
+        { time: '0:2:2', direction: 'down', velocity: 0.45 },
+        { time: '0:3:0', direction: 'up', velocity: 0.5 },
+        { time: '0:3:2', direction: 'down', velocity: 0.45 },
+      ],
+    },
+
+    // 마지막 마디 — 반복 재생 시 연속성을 위해 1박 sustain + 3박 thumb 유지.
+    // travis_main의 1·3박 alternating thumb 패턴을 dynamic을 줄여 약하게 이어감 →
+    // bar 8 → bar 1로 매끈하게 loop.
+    travis_resolve: {
+      drums: {
+        kick: [],
+        snare: [],
+        hat: [],
+      },
+      bass: {
+        // 1박 root + 3박 thumb (alternating 유지, 두 번째는 약하게)
+        steps: [
+          { time: '0:0:0', velocity: 0.9 },
+          { time: '0:2:0', velocity: 0.65 },
+        ],
+      },
+      // 1박 final pluck + 3박-and 부드러운 pickup으로 다음 사이클 진입 예고
+      guitar: [
+        { time: '0:0:0', direction: 'down', velocity: 0.65 },
+        { time: '0:3:2', direction: 'up', velocity: 0.35 },
+      ],
+    },
   },
 
   /**
-   * variant 'folk_strum'/'ballad_pick' 지정 시 해당 슬롯 직접 라우팅.
+   * variant 'folk_strum'/'ballad_pick'/'travis_pick' 지정 시 해당 슬롯 직접 라우팅.
    * 미지정 시 기존 짝/홀수 토글 + 마지막 마디 pickup 동작 유지.
    */
   selectSlot: (tpl, idx, variant) => {
+    // local은 항상 1회만 선언 — 모든 분기에서 재사용
+    const local = idx % tpl.bars;
+    if (variant === 'travis_pick') {
+      // 마지막 마디 → travis_resolve (하강 베이스 라인 종점), 나머지 → travis_main
+      return local === tpl.bars - 1 ? 'travis_resolve' : 'travis_main';
+    }
     if (variant === 'folk_strum') return 'folk_strum';
     if (variant === 'ballad_pick') {
-      const local = idx % tpl.bars;
       // 짝수 마디 → ballad_pick_a (표준), 홀수 → ballad_pick_b (4박-and pickup)
       return local % 2 === 0 ? 'ballad_pick_a' : 'ballad_pick_b';
     }
-    const local = idx % tpl.bars;
     if (local === tpl.bars - 1) return 'pickup';
     return local % 2 === 0 ? 'picking' : 'strum_8th';
   },

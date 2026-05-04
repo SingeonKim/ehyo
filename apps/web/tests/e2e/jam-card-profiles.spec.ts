@@ -94,3 +94,47 @@ test.describe('Sprint 9 — Jam Card Profiles', () => {
     expect(errors, errors.join('\n')).toEqual([]);
   });
 });
+
+// Sprint 11 — 신규 7 카드 중 카테고리당 1장 (rock 대표는 power-ballad).
+// E2E는 회귀 가드 — 카드 click → 재생 4초 → console error 0 + 정지 깨끗.
+// 각 카드의 음악적 정확성은 단위/패턴 테스트가 책임.
+const SPRINT11_REPRESENTATIVES = [
+  'autumn-leaves',         // jazz
+  'epic-minor-cinematic',  // minor
+  'cissy-strut-funk',      // funk
+  'bossa-major-ipanema',   // bossa
+  'travis-pick-folk',      // folk (슬래시 코드 베이스 + 드럼 비움 첫 사례)
+  'power-ballad-rock',     // rock 대표 (clean override + tom/crash)
+] as const;
+
+test.describe('Sprint 11 — 신규 카드 회귀 (카테고리당 1장)', () => {
+  const goto = (page: import('@playwright/test').Page, url: string) =>
+    page.goto(url, { waitUntil: 'domcontentloaded' });
+
+  for (const slug of SPRINT11_REPRESENTATIVES) {
+    test(`${slug} — 4초 재생 후 console error 0`, async ({ page }) => {
+      const errors: string[] = [];
+      page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+      page.on('console', (msg) => {
+        if (msg.type() === 'error') errors.push(`console.error: ${msg.text()}`);
+      });
+
+      await goto(page, '/jam');
+      const card = page.locator(`[data-testid="progression-card-${slug}"]`);
+      await card.waitFor({ timeout: 15000 });
+      await expect(card).toBeVisible();
+
+      const playBtn = card.getByRole('button', { name: 'Play' });
+      await playBtn.click();
+
+      // 4초 — 가장 느린 카드(epic 70bpm = 3.4s/마디)에서도 한 마디 이상 진행 보장
+      await page.waitForTimeout(4000);
+
+      const stopBtn = card.getByRole('button', { name: 'Stop' });
+      await stopBtn.click();
+      await page.waitForTimeout(300);
+
+      expect(errors, errors.join('\n')).toEqual([]);
+    });
+  }
+});

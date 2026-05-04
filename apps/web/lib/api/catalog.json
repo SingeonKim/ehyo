@@ -279,6 +279,85 @@
     ]
   },
   {
+    "slug": "autumn-leaves",
+    "name": "Autumn Leaves (16-bar form)",
+    "category": "jazz",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 90,
+    "recommended_scales": [
+      "dorian",
+      "harmonic_minor",
+      "natural_minor"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "iim7"
+      },
+      {
+        "bar": 2,
+        "chord": "V7"
+      },
+      {
+        "bar": 3,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 4,
+        "chord": "IVmaj7"
+      },
+      {
+        "bar": 5,
+        "chord": "viim7b5"
+      },
+      {
+        "bar": 6,
+        "chord": "III7"
+      },
+      {
+        "bar": 7,
+        "chord": "vim7"
+      },
+      {
+        "bar": 8,
+        "chord": "vim7"
+      },
+      {
+        "bar": 9,
+        "chord": "iim7"
+      },
+      {
+        "bar": 10,
+        "chord": "V7"
+      },
+      {
+        "bar": 11,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 12,
+        "chord": "IVmaj7"
+      },
+      {
+        "bar": 13,
+        "chord": "viim7b5"
+      },
+      {
+        "bar": 14,
+        "chord": "III7"
+      },
+      {
+        "bar": 15,
+        "chord": "vim7"
+      },
+      {
+        "bar": 16,
+        "chord": "vim7"
+      }
+    ]
+  },
+  {
     "slug": "minor-i-VI-III-VII",
     "name": "Minor i–VI–III–VII",
     "category": "minor",
@@ -305,6 +384,85 @@
       {
         "bar": 4,
         "chord": "VII"
+      }
+    ]
+  },
+  {
+    "slug": "epic-minor-cinematic",
+    "name": "Epic Minor (Cinematic 16-bar)",
+    "category": "minor",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 70,
+    "recommended_scales": [
+      "natural_minor",
+      "harmonic_minor",
+      "minor_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i"
+      },
+      {
+        "bar": 2,
+        "chord": "VI"
+      },
+      {
+        "bar": 3,
+        "chord": "III"
+      },
+      {
+        "bar": 4,
+        "chord": "VII"
+      },
+      {
+        "bar": 5,
+        "chord": "iv"
+      },
+      {
+        "bar": 6,
+        "chord": "VI"
+      },
+      {
+        "bar": 7,
+        "chord": "VII"
+      },
+      {
+        "bar": 8,
+        "chord": "i"
+      },
+      {
+        "bar": 9,
+        "chord": "i"
+      },
+      {
+        "bar": 10,
+        "chord": "VI"
+      },
+      {
+        "bar": 11,
+        "chord": "III"
+      },
+      {
+        "bar": 12,
+        "chord": "VII"
+      },
+      {
+        "bar": 13,
+        "chord": "iv"
+      },
+      {
+        "bar": 14,
+        "chord": "V"
+      },
+      {
+        "bar": 15,
+        "chord": "V"
+      },
+      {
+        "bar": 16,
+        "chord": "i"
       }
     ]
   },
@@ -706,6 +864,85 @@
     ]
   },
   {
+    "slug": "cissy-strut-funk",
+    "name": "Cissy Strut Funk (16-bar form)",
+    "category": "funk",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 96,
+    "recommended_scales": [
+      "dorian",
+      "minor_pentatonic",
+      "minor_blues"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "i7"
+      },
+      {
+        "bar": 2,
+        "chord": "i7"
+      },
+      {
+        "bar": 3,
+        "chord": "i7"
+      },
+      {
+        "bar": 4,
+        "chord": "i7"
+      },
+      {
+        "bar": 5,
+        "chord": "iv7"
+      },
+      {
+        "bar": 6,
+        "chord": "iv7"
+      },
+      {
+        "bar": 7,
+        "chord": "i7"
+      },
+      {
+        "bar": 8,
+        "chord": "i7"
+      },
+      {
+        "bar": 9,
+        "chord": "i7"
+      },
+      {
+        "bar": 10,
+        "chord": "i7"
+      },
+      {
+        "bar": 11,
+        "chord": "i7"
+      },
+      {
+        "bar": 12,
+        "chord": "i7"
+      },
+      {
+        "bar": 13,
+        "chord": "bIII7"
+      },
+      {
+        "bar": 14,
+        "chord": "iv7"
+      },
+      {
+        "bar": 15,
+        "chord": "V7"
+      },
+      {
+        "bar": 16,
+        "chord": "i7"
+      }
+    ]
+  },
+  {
     "slug": "bossa-i-iv-ii-v",
     "name": "Bossa I–IV–ii–V",
     "category": "bossa",
@@ -732,6 +969,53 @@
       {
         "bar": 4,
         "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "bossa-major-ipanema",
+    "name": "Bossa Nova (Major Chromatic 8-bar)",
+    "category": "bossa",
+    "bars": 8,
+    "time_signature": "4/4",
+    "default_bpm": 132,
+    "recommended_scales": [
+      "major",
+      "lydian",
+      "major_pentatonic"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 2,
+        "chord": "II7"
+      },
+      {
+        "bar": 3,
+        "chord": "iim7"
+      },
+      {
+        "bar": 4,
+        "chord": "bII7"
+      },
+      {
+        "bar": 5,
+        "chord": "Imaj7"
+      },
+      {
+        "bar": 6,
+        "chord": "II7"
+      },
+      {
+        "bar": 7,
+        "chord": "iim7"
+      },
+      {
+        "bar": 8,
+        "chord": "bII7"
       }
     ]
   },
@@ -809,6 +1093,53 @@
       {
         "bar": 8,
         "chord": "V"
+      }
+    ]
+  },
+  {
+    "slug": "travis-pick-folk",
+    "name": "Travis Picking (Fingerstyle 8-bar)",
+    "category": "folk",
+    "bars": 8,
+    "time_signature": "4/4",
+    "default_bpm": 100,
+    "recommended_scales": [
+      "major",
+      "major_pentatonic",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "I/VII"
+      },
+      {
+        "bar": 3,
+        "chord": "vim"
+      },
+      {
+        "bar": 4,
+        "chord": "vim/V"
+      },
+      {
+        "bar": 5,
+        "chord": "IV"
+      },
+      {
+        "bar": 6,
+        "chord": "I/III"
+      },
+      {
+        "bar": 7,
+        "chord": "iim7"
+      },
+      {
+        "bar": 8,
+        "chord": "I"
       }
     ]
   },
@@ -903,6 +1234,132 @@
       {
         "bar": 12,
         "chord": "V7"
+      }
+    ]
+  },
+  {
+    "slug": "power-ballad-rock",
+    "name": "Power Ballad (16-bar)",
+    "category": "rock",
+    "bars": 16,
+    "time_signature": "4/4",
+    "default_bpm": 75,
+    "recommended_scales": [
+      "major",
+      "minor_pentatonic",
+      "natural_minor"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "vim"
+      },
+      {
+        "bar": 2,
+        "chord": "IV"
+      },
+      {
+        "bar": 3,
+        "chord": "I"
+      },
+      {
+        "bar": 4,
+        "chord": "V"
+      },
+      {
+        "bar": 5,
+        "chord": "vim"
+      },
+      {
+        "bar": 6,
+        "chord": "IV"
+      },
+      {
+        "bar": 7,
+        "chord": "I"
+      },
+      {
+        "bar": 8,
+        "chord": "V"
+      },
+      {
+        "bar": 9,
+        "chord": "IV"
+      },
+      {
+        "bar": 10,
+        "chord": "I"
+      },
+      {
+        "bar": 11,
+        "chord": "V"
+      },
+      {
+        "bar": 12,
+        "chord": "vim"
+      },
+      {
+        "bar": 13,
+        "chord": "bVII"
+      },
+      {
+        "bar": 14,
+        "chord": "V"
+      },
+      {
+        "bar": 15,
+        "chord": "I"
+      },
+      {
+        "bar": 16,
+        "chord": "I"
+      }
+    ]
+  },
+  {
+    "slug": "punk-garage-rock",
+    "name": "Punk / Garage (8-bar)",
+    "category": "rock",
+    "bars": 8,
+    "time_signature": "4/4",
+    "default_bpm": 170,
+    "recommended_scales": [
+      "major_pentatonic",
+      "minor_pentatonic",
+      "mixolydian"
+    ],
+    "progression": [
+      {
+        "bar": 1,
+        "chord": "I"
+      },
+      {
+        "bar": 2,
+        "chord": "IV"
+      },
+      {
+        "bar": 3,
+        "chord": "V"
+      },
+      {
+        "bar": 4,
+        "chord": "V"
+      },
+      {
+        "bar": 5,
+        "chord": "I"
+      },
+      {
+        "bar": 6,
+        "chord": "IV"
+      },
+      {
+        "bar": 7,
+        "chord": "V"
+      },
+      {
+        "bar": 8,
+        "chord": "I"
       }
     ]
   },

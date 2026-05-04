@@ -23,6 +23,10 @@ export type DrumPattern = {
   kick: BeatStep[];
   snare: BeatStep[];
   hat: BeatStep[];
+  /** Optional — 카드 climax/fill에서 사용. kit 부재 시 snare 폴백. */
+  tom?: BeatStep[];
+  /** Optional — 카드 climax 끝 액센트. kit 부재 시 clap → snare 폴백. */
+  crash?: BeatStep[];
 };
 
 export type BassPattern = {
@@ -31,7 +35,11 @@ export type BassPattern = {
 };
 
 // keys 필드 제거 — Sprint 2-4부터 guitar로 대체.
-export type StrumStep = BeatStep & { direction: 'down' | 'up' };
+export type StrumStep = BeatStep & {
+  direction: 'down' | 'up';
+  /** Optional — voicing 옵션. 'power' = root + perfect 5th만. 미지정 = 'full'. */
+  voicingMode?: 'full' | 'power';
+};
 export type StrumPattern = StrumStep[];
 
 export type TrackPattern = {
