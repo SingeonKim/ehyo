@@ -89,8 +89,12 @@
  * data-theme="light"가 <html>에 박히면 동일 변수명을 새 값으로 덮어씀.
  * 컴포넌트는 같은 토큰 클래스(bg-bg-base 등)를 그대로 쓰므로 자동 반영.
  * 캐릭터: "악보지/편집지" — 크림지 배경 + 짙은 갈색 잉크 + 어두운 황동 accent.
+ * 파생 alias 토큰(scale-important, chord-overlay-*, fretboard-ghost)은 var() 체인으로
+ * 자동 반영되므로 여기서 재정의 불필요.
  * ────────────────────────────────────── */
 html[data-theme="light"] {
+  color-scheme: light;
+
   /* Background — 크림지 톤 */
   --color-bg-base:     #F4ECD8;
   --color-bg-elevated: #ECE2C6;
@@ -128,6 +132,9 @@ html[data-theme="light"] {
 html {
   /* 수치 tabular 정렬 기본값 — BPM·도수 표기에서 숫자 흔들림 방지 */
   font-feature-settings: "tnum" 1, "cv02" 1, "cv11" 1;
+  /* 기본 scheme. data-theme="light"가 박히면 라이트 블록이 light로 덮어쓴다.
+     CSS만으로 처리해 ThemeSync 마운트 전 native UI(스크롤바·form control) 순간 노출 회피. */
+  color-scheme: dark;
 }
 
 body {
@@ -137,7 +144,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* 테마 토글 시 색이 부드럽게 페이드. SVG·LED 등은 자체 transition으로 즉시 반영. */
+  /* 테마 토글 시 색이 부드럽게 페이드. SVG inline 속성과 컴포넌트의 자체 transition은
+     이 200ms 범위 밖이라 각자 duration으로 동작. */
   transition: background-color 200ms ease, color 200ms ease;
 }
 
