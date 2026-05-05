@@ -61,7 +61,7 @@ pnpm screenshots             # docs/introduction/auto/ 에 결정론적으로 14
 
 ### 한 줄 요약
 
-기타 연습자용 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙** 웹앱. **모노레포 구성**: `apps/web`(Next.js 15) + `apps/api`(FastAPI · PostgreSQL · MinIO). 백엔드는 *코드 진행 카탈로그* 데이터 소스 역할 — 사용자 인증/프리셋 공유는 아직 미구현. 배킹 트랙은 클라이언트 측 [smplr](https://github.com/danigb/smplr) 라이브러리(Soundfont/DrumMachine/Reverb)로 합성. Sprint 11까지 머지: 카탈로그 29장 — Sprint 10까지 22장(folk/rock 신규 진입, modal 4bar 통일) + Sprint 11 신규 7장(jazz/minor/funk/bossa 1→2장, folk 2→3, rock 2→4 — Autumn Leaves form / Epic Cinematic / Cissy Strut form / major chromatic Ipanema / Travis fingerstyle / Power Ballad / Punk garage). 슬래시 코드 파서(`chordBassMidi`로 descending bass) + guitar `voicingMode='power'` + drums tom/crash dynamic lookup 도입.
+기타 연습자용 **메트로놈 + 지판 스케일 가이드 + 배킹 트랙** 웹앱. **모노레포 구성**: `apps/web`(Next.js 15) + `apps/api`(FastAPI · PostgreSQL · MinIO). 백엔드는 *코드 진행 카탈로그* 데이터 소스 역할 — 사용자 인증/프리셋 공유는 아직 미구현. 배킹 트랙은 클라이언트 측 [smplr](https://github.com/danigb/smplr) 라이브러리(Soundfont/DrumMachine/Reverb)로 합성. Sprint 11까지 머지: 카탈로그 29장 — Sprint 10까지 22장(folk/rock 신규 진입, modal 4bar 통일) + Sprint 11 신규 7장(jazz/minor/funk/bossa 1→2장, folk 2→3, rock 2→4 — Autumn Leaves form / Epic Cinematic / Cissy Strut form / major chromatic Ipanema / Travis fingerstyle / Power Ballad / Punk garage). 슬래시 코드 파서(`chordBassMidi`로 descending bass) + guitar `voicingMode='power'` + drums tom/crash dynamic lookup 도입. **v1.1.0(2026-05-05)**: 라이트 테마 토글 도입 — 헤더 sun/moon 버튼, `html[data-theme="light"]` selector로 토큰 재정의(악보지 cream + dark brass), `next/script beforeInteractive` FOUC 가드, AA 명도 보정.
 
 **브랜드 vs 내부 식별자**: 사용자 노출 앱 이름은 **"에휴.. (Ehyo..)"** — 메인 타이틀, 브라우저 탭 title, 헤더 홈 링크 모두 이 표기. *내부 식별자*(npm 워크스페이스 `@my-music-app/web`, 디렉토리 `apps/web`, 패키지 imports)는 그대로 유지 — 빌드/임포트 경로 안정성 우선. 새로 사용자 노출 카피를 추가할 때 "My Music App" 표기 금지.
 
@@ -76,6 +76,8 @@ pnpm screenshots             # docs/introduction/auto/ 에 결정론적으로 14
 - **지판은 3단계 노트 마커**: Root(semitones=0) / Important(`IMPORTANT_DEGREES`에 포함된 도수) / Regular(나머지 스케일 음). 크기 비율 고정 0.32 / 0.26 / 0.19 (fretWidth 기준). 색은 CSS 변수 토큰만, hex 하드코딩 금지.
 
 - **디자인 토큰은 `app/globals.css`의 Tailwind v4 `@theme`**: 컴포넌트에서 `bg-bg-base`, `text-accent-brass` 같은 토큰 클래스만 사용. 폰트는 Pretendard Variable(CDN, Phase 1에서 `next/font/local`로 이관 예정) + JetBrains Mono. Inter/Roboto/system-ui 등 금지 폰트는 `aesthetic-reviewer`가 거른다.
+
+- **테마 시스템 = 토큰 재정의 + dataset.theme (v1.1.0)**: 다크가 `@theme` 기본값. 라이트는 `html[data-theme="light"]` selector가 동일 변수명을 cream(`#F4ECD8`) + dark brass(`#7A5F22`) 팔레트로 덮어씀(악보지 캐릭터). 컴포넌트는 같은 토큰 클래스(`bg-bg-base` 등)를 그대로 사용해 코드 수정 0줄. `ThemeSync`(`components/ui/ThemeSync.tsx`)가 `useEffect`로 `documentElement.dataset.theme`를 store `ui.theme`와 동기화. `color-scheme`은 CSS만으로 처리(`html { color-scheme: dark }` + `html[data-theme="light"] { color-scheme: light }`)해 native UI도 자동 동기화. FOUC 방지: RootLayout의 `next/script` `beforeInteractive`로 hydration 이전에 localStorage `state.ui.theme`를 읽어 `data-theme` 박음. 사용자 선택은 store `ui.theme` 필드(이미 v12에 존재하던 dead state)에 영속화 — 첫 방문 항상 다크, `prefers-color-scheme` 무시. 라이트 토큰은 모두 cream 배경 대비 AA(4.5:1) 보장 — `aesthetic-reviewer`가 검증. 라이트 모드 한정 chord-overlay keyframe(`chord-overlay-pulse-light`, 0.95→0.78)으로 cream 위 opacity 빠짐 보정.
 
 - **Server vs Client 경계**: 브라우저 API(AudioContext, localStorage, window) 접근 컴포넌트는 `'use client'` 필수. 페이지는 기본 Server Component로 두고 인터랙티브 서브트리만 Client로 분리(`FretboardClient` 패턴). `useHasHydrated()` 훅(`lib/store/hooks.ts`)으로 첫 렌더의 DOM mismatch 방지.
 
@@ -104,6 +106,7 @@ pnpm screenshots             # docs/introduction/auto/ 에 결정론적으로 14
 - `components/fretboard/` — SVG 지판 렌더러 + 컨트롤. 각 컨트롤은 Zustand 스토어를 직접 구독하는 자체 컨테이너 패턴 (prop drilling 없음). `FretboardSurface`(SVG)와 `FretboardControls`(설정 UI)가 분리돼 jam 페이지에서는 Surface만 sticky.
 - `components/metronome/` — 메트로놈 UI(MetronomeDock, BpmInput 등).
 - `components/jam/` — Practice 통합 뷰 컴포넌트(폴더 이름은 `jam` 유지 — 사용자 노출 라벨만 Practice로 변경). 코드 진행 카탈로그(`ProgressionCatalog`), 키·BPM·볼륨 슬라이더, Roman/Absolute 표기 토글, 재생 버튼.
+- `components/ui/` — 도메인 비특정 공통 UI. 현재 `ThemeSync`(사이드이펙트 전용 — `ui.theme` → `dataset.theme` 동기화)와 `ThemeToggle`(헤더 sun/moon 아이콘 버튼, `useHasHydrated` SSR 가드 포함). 신규 공통 컴포넌트는 도메인 폴더(`metronome/`, `fretboard/`, `jam/`)와 분리해 여기에.
 - `lib/audio/` — AudioContext 싱글턴 + Chris Wilson lookahead 스케줄러(25ms / 100ms, iOS 150ms). `lib/audio/backing/`은 smplr 통합:
   - `engine.ts` — BarScheduler·voice·masterGain·Master FX 체인을 묶는 본체. 단일 재생 원칙(다른 카드 ▶ 누르면 자동 teardown). 카드 시작 시 `resolveCardProfile(slug, category)` → variant + tone + bundle 한 번에 lookup, voice 트리거 매번 `parseBeatStep(step.time, bpm, 4, { unit, swing })`로 시간 계산. **`ensureVoices`를 `loadBundle` 전에 호출해 `fxChain.input` 확보 → `loadBundle(ctx, bundle, fxChain.input)`**.
   - `smplr-bridge.ts` — `Soundfont`/`DrumMachine`/`Reverb` 인스턴스 캐시 + `loadBundle(ctx, bundle, destination?)`. 같은 instrument는 단일 인스턴스 공유. instance 생성 시 `destination`을 받아 `.output`을 fxChain.input에 묶는다 (volume slider 정상화 핵심).
@@ -145,7 +148,7 @@ pnpm screenshots             # docs/introduction/auto/ 에 결정론적으로 14
 
 ### Phase 로드맵
 
-현재 Phase 4 진행 중(Sprint 9까지 머지). 상세는 `docs/planning.md` §12.
+현재 Phase 4 진행 중(v1.1.0까지 머지). 상세는 `docs/planning.md` §12.
 
 - Phase 0: 셋업 ✅
 - Phase 1: 메트로놈 MVP ✅
@@ -161,6 +164,7 @@ pnpm screenshots             # docs/introduction/auto/ 에 결정론적으로 14
   - Sprint 10 후속: 모든 카드 절대 볼륨 통일(velocityScale/voiceGain override 제거, 정체성은 reverbWet+instrument+패턴) + master volume slider 정상화(smplr instance destination을 fxChain.input으로 라우팅, masterGain final stage).
   - Sprint 11: 카탈로그 22→29 (jazz/minor/funk/bossa 1→2장, folk 2→3, rock 2→4) + 슬래시 코드 파서 도입(`I/VII` → bassDegree·bassSemitones, `chordBassMidi` 신설로 베이스 voice가 chord root 대신 슬래시 베이스 사용 — Travis picking의 `C→B→A→G→F→E→D→C` descending bass 구현) + guitar `voicingMode='power'` 옵션(root + perfect 5th만, punk-garage용) + drums tom/crash dynamic lookup(`resolveTomNote`/`resolveCrashNote`, kit별 sample 이름 차이 흡수, **Roland CR-8000의 `cymball` double-L 오타 명시 처리**, 부재 시 snare 폴백). swing perVariant 첫 사용(jazz `autumn_leaves` 0.62 vs default 0.66). 신규 카드 idiom: Autumn Leaves 16bar form / Epic Cinematic minor 16bar half-time / Cissy Strut 16bar form(bar 16 stop-time) / major chromatic Ipanema 8bar / Travis pick 8bar fingerstyle(드럼 비움) / Power Ballad 16bar(clean override + tom climax) / Punk 8bar 170bpm(power chord + crash). 7장 모두 절대 볼륨 통일 정책 준수(velocityScale/voiceGain override 0).
   - 브랜딩/UI 정리: 사용자 노출 앱명을 "에휴.. (Ehyo..)"로 통일(랜딩 hero, layout metadata, practice 헤더 홈 링크). 랜딩 서브타이틀을 `RandomTaunt` 랜덤 자극 멘트 페이드 사이클로 교체. 메트로놈 히어로 레이아웃 단순화 — `Pendulum` 제거, BeatLED `size='lg'` 변형 추가, 그리드를 `[BPM 1fr | LED auto | Play auto]`로 재구성. Tap Tempo NaN 버그 수정(MouseEvent → tap action 직결).
+  - **v1.1.0 (2026-05-05)**: 라이트 테마 토글 도입. `html[data-theme="light"]` 토큰 재정의(20개, 악보지 cream + dark brass 캐릭터), `ThemeSync` + `ThemeToggle` 컴포넌트 신설(`components/ui/`), `next/script beforeInteractive` FOUC 가드, `color-scheme` CSS 처리, 200ms body transition, 라이트 모드 전용 chord-overlay keyframe(0.95→0.78), AA 4.5:1 명도 보정 11 토큰. Store 마이그레이션 없음(v12 유지) — 기존 dead state였던 `ui.theme` 필드를 `setTheme`/`toggleTheme` 액션으로 깨움. 첫 방문 항상 다크, `prefers-color-scheme` 무시.
 - Phase 5+: 사용자 인증/프리셋 공유 도입 시점에 user 테이블 + JWT 추가 검토. Sprint 12 후보: random comping fills(Art Blakey 스타일 snare/kick 불규칙 fills), piano voice(jazz comping), 트리플렛 ride cymbal sample, jazz brush 복원(`Sampler` + 외부 CC0 샘플), voice별 EQ, humanize, chord-overlay에 슬래시 베이스 시각 표시, ALL_22_SLUGS 등 historical SLUG 배열 정리.
 
 ---
