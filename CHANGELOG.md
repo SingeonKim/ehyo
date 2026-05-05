@@ -9,6 +9,18 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-05
+
+### Added
+- **라이트 테마 토글** — 헤더 우측 sun/moon 아이콘 버튼으로 라이트/다크 1클릭 전환. 랜딩 + 모든 practice 라우트(`/metronome`, `/fretboard`, `/jam`)에서 노출. 사용자 선택은 `ui.theme`에 영속화.
+  - 첫 방문은 항상 다크가 기본 — 시스템 환경설정(`prefers-color-scheme`)을 추적하지 않음.
+  - 라이트 팔레트 캐릭터 — "악보지/편집지" 톤. cream `#F4ECD8` 배경 + 짙은 갈색 잉크 + 어두운 황동 accent. brass/copper/signal-red 같은 핵심 hue 카테고리는 다크와 동일하게 유지하고 명도만 조정.
+  - 모든 라이트 토큰은 cream 배경 대비 AA(4.5:1) 이상 — `aesthetic-reviewer` 게이트 통과.
+  - FOUC 방지 — `next/script` `beforeInteractive` 전략으로 hydration 이전에 `data-theme`을 박는다. 라이트 사용자도 새로고침 시 첫 페인트부터 라이트.
+  - `color-scheme` 동기화 — `html { color-scheme: dark }` + `html[data-theme="light"] { color-scheme: light }` 으로 native 스크롤바·form 컨트롤이 항상 테마와 일치.
+  - 라이트 모드 chord-overlay — cream 배경 위 opacity 빠짐 보정용 `chord-overlay-pulse-light` keyframe(0.95→0.78).
+  - 토글 시 200ms body transition.
+
 ### Changed
 - Practice 카테고리 라벨 색상을 8개 모두 distinct하게 매핑 — funk(copper) / bossa(rose) / folk(teal) / rock(signal). `--color-highlight-rose` · `--color-highlight-teal` 토큰 신규.
 
@@ -46,5 +58,6 @@
 - 사용자 인증/프리셋 공유 미지원 — Phase 5+에서 도입 예정
 - Playwright 로컬은 Docker 경유 권장 — WSL에서 시스템 chromium 라이브러리(`libnspr4` 등) 누락 시 실패
 
-[Unreleased]: https://github.com/SingeonKim/ehyo/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/SingeonKim/ehyo/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/SingeonKim/ehyo/releases/tag/v1.1.0
 [1.0.0]: https://github.com/SingeonKim/ehyo/releases/tag/v1.0.0

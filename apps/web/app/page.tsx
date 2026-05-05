@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { RandomTaunt } from '@/components/home/random-taunt';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 /*
  * 랜딩 페이지 — Server Component.
@@ -16,7 +17,10 @@ export default function HomePage() {
         <p className="font-mono text-xs uppercase tracking-[0.2em] text-ink-muted">
           ehyo · 에휴
         </p>
-        <p className="font-mono text-xs tabular-nums text-ink-muted">v1.0.0</p>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <p className="font-mono text-xs tabular-nums text-ink-muted">v1.1.0</p>
+        </div>
       </header>
 
       <section className="py-24">

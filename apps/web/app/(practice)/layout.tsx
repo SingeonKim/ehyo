@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { AudioMobileGuard } from '@/components/audio/AudioMobileGuard';
 import { MetronomeDock } from '@/components/metronome/MetronomeDock';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 /*
  * 연습 라우트 공통 레이아웃 — Server Component.
@@ -49,6 +50,7 @@ export default function PracticeLayout({ children }: { children: React.ReactNode
               </Link>
             </li>
           </ul>
+          <ThemeToggle />
           <MetronomeDock />
         </nav>
       </header>

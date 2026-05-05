@@ -76,6 +76,10 @@ export interface FretboardState {
 
 // ─── UI ────────────────────────────────────────────────────
 export interface UiState {
+  /**
+   * 앱 컬러 테마. persist에 포함 — 새로고침 후 유지.
+   * ThemeSync 컴포넌트가 구독해 documentElement.dataset.theme에 반영.
+   */
   theme: 'dark' | 'light';
   /**
    * 배킹 카탈로그의 코드 표기 모드.
@@ -192,7 +196,11 @@ export interface AppState {
     barIndex: number | null,
   ) => void;
 
-  // UI 액션
+  // UI 액션 (테마 토글 + 코드 표기)
+  /** ui.theme를 직접 지정. ThemeSync가 구독해 documentElement.dataset.theme를 갱신. */
+  setTheme: (theme: 'dark' | 'light') => void;
+  /** ui.theme를 dark ↔ light로 토글. */
+  toggleTheme: () => void;
   /** 카탈로그 코드 표기 모드 전환. 'roman' ↔ 'absolute'. */
   setChordDisplayMode: (mode: ChordDisplayMode) => void;
 }
@@ -617,6 +625,16 @@ export const useAppStore = create<AppState>()(
             }
           }
           // 재생 중이면 backingCurrentChord와 category는 엔진 책임 — 건드리지 않음
+        }),
+
+      setTheme: (theme) =>
+        set((s) => {
+          s.ui.theme = theme;
+        }),
+
+      toggleTheme: () =>
+        set((s) => {
+          s.ui.theme = s.ui.theme === 'dark' ? 'light' : 'dark';
         }),
 
       setChordDisplayMode: (mode) =>

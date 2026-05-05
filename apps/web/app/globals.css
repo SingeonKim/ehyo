@@ -84,10 +84,70 @@
   --color-fretboard-ghost: var(--color-ink-muted);
 }
 
+/* ──────────────────────────────────────
+ * 라이트 모드 토큰 재정의
+ * data-theme="light"가 <html>에 박히면 동일 변수명을 새 값으로 덮어씀.
+ * 컴포넌트는 같은 토큰 클래스(bg-bg-base 등)를 그대로 쓰므로 자동 반영.
+ * 캐릭터: "악보지/편집지" — 크림지 배경 + 짙은 갈색 잉크 + 어두운 황동 accent.
+ * 파생 alias 토큰(scale-important, chord-overlay-*, fretboard-ghost)은 var() 체인으로
+ * 자동 반영되므로 여기서 재정의 불필요.
+ * ────────────────────────────────────── */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  /* Background — 크림지 톤 */
+  --color-bg-base:     #F4ECD8;
+  --color-bg-elevated: #ECE2C6;
+  --color-bg-raised:   #E2D6B4;
+
+  /* Ink — 잉크 같은 짙은 갈색(순흑 회피로 종이 인쇄 느낌) */
+  --color-ink-primary:   #2A1E14;  /* 13.78:1 — PASS */
+  --color-ink-secondary: #5C4A36;  /* 7.17:1  — PASS */
+  --color-ink-muted:     #7A6549;  /* 4.71:1  — AA PASS (원본 #8A7659은 3.70:1 FAIL) */
+
+  /* Accents — hue 유지, 명도 보정으로 크림 위 AA 확보
+     brass: 원본 #8B6F2E → 4.04:1 소형 텍스트 FAIL. #7A5F22로 5.11:1 달성.
+     copper: #8E4F1D → 5.43:1 PASS (변경 불필요).
+     signal: #C03B36 → 4.55:1 PASS (변경 불필요). */
+  --color-accent-brass:  #7A5F22;
+  --color-accent-copper: #8E4F1D;
+  --color-accent-signal: #C03B36;
+
+  /* Fretboard tier — root/tone/chord 동일 hue, 명도 보정
+     scale-tone은 brass와 동일 토큰을 공유하므로 함께 보정. */
+  --color-scale-root:  #C03B36;  /* 4.55:1 — PASS */
+  --color-scale-tone:  #7A5F22;  /* 5.11:1 — PASS (원본 #8B6F2E 4.04:1 FAIL) */
+  --color-scale-chord: #1E6AA4;  /* 4.88:1 — PASS (원본 #2C7BB8 3.85:1 FAIL) */
+
+  /* Highlight 5색 — Important degrees 칩 + 카탈로그 카테고리 레이블(text-xs 소형 텍스트)
+     모든 값이 크림 배경 #F4ECD8 대비 ≥4.5:1 달성.
+     칩 내부(bg-highlight/15 블렌드 위) 대비는 AA-large(3:1) 기준 충족.
+     orange: #B5742A → 3.25 FAIL → #965A18 4.73:1 PASS
+     green:  #5E8F46 → 3.25 FAIL → #3F7229 4.89:1 PASS
+     blue:   #2C7BB8 → 3.85 FAIL → #1E6AA4 4.88:1 PASS
+     rose:   #9E5A5E → 4.37 FAIL → #8E4A4E 5.51:1 PASS
+     teal:   #4F8079 → 3.80 FAIL → #366B64 5.18:1 PASS */
+  --color-highlight-orange: #965A18;
+  --color-highlight-green:  #3F7229;
+  --color-highlight-blue:   #1E6AA4;
+  --color-highlight-rose:   #8E4A4E;
+  --color-highlight-teal:   #366B64;
+
+  /* State — ok/warn이 소형 텍스트 레이블에 쓰일 경우를 대비해 AA 확보
+     ok:  #5E8F46 → 3.25 FAIL → #3F7229 4.89:1 PASS (hl-green과 동일 hue)
+     warn: #B5742A → 3.25 FAIL → #965A18 4.73:1 PASS (hl-orange와 동일 hue)
+     err:  #C03B36 → 4.55:1 PASS (변경 불필요) */
+  --color-state-ok:   #3F7229;
+  --color-state-warn: #965A18;
+  --color-state-err:  #C03B36;
+}
+
 /* ── Base resets ───────────────────────────────── */
 html {
   /* 수치 tabular 정렬 기본값 — BPM·도수 표기에서 숫자 흔들림 방지 */
   font-feature-settings: "tnum" 1, "cv02" 1, "cv11" 1;
+  /* 기본 scheme. data-theme="light"가 박히면 라이트 블록이 light로 덮어쓴다.
+     CSS만으로 처리해 ThemeSync 마운트 전 native UI(스크롤바·form control) 순간 노출 회피. */
   color-scheme: dark;
 }
 
@@ -98,6 +158,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* 테마 토글 시 색이 부드럽게 페이드. SVG inline 속성과 컴포넌트의 자체 transition은
+     이 200ms 범위 밖이라 각자 duration으로 동작. */
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* 포커스 링 — outline 제거 금지, 명확한 대체 */
@@ -119,6 +182,17 @@ body {
   0%   { opacity: 0; }
   20%  { opacity: 0.85; }
   100% { opacity: 0.6; }
+}
+
+/* 라이트 모드에선 cream 배경 위 0.6 opacity가 빠져 보여 0.78까지 상향. */
+@keyframes chord-overlay-pulse-light {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.95; }
+  100% { opacity: 0.78; }
+}
+
+html[data-theme="light"] .chord-overlay {
+  animation-name: chord-overlay-pulse-light;
 }
 
 .chord-overlay {
