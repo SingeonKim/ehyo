@@ -19,7 +19,7 @@ export default function HomePage() {
         </p>
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <p className="font-mono text-xs tabular-nums text-ink-muted">v1.0.0</p>
+          <p className="font-mono text-xs tabular-nums text-ink-muted">v1.1.0</p>
         </div>
       </header>
 
