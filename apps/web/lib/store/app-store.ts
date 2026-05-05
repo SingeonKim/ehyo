@@ -192,7 +192,11 @@ export interface AppState {
     barIndex: number | null,
   ) => void;
 
-  // UI 액션
+  // UI 액션 (테마 토글 + 코드 표기)
+  /** ui.theme를 직접 지정. ThemeSync가 구독해 documentElement.dataset.theme를 갱신. */
+  setTheme: (next: 'dark' | 'light') => void;
+  /** ui.theme를 dark ↔ light로 토글. */
+  toggleTheme: () => void;
   /** 카탈로그 코드 표기 모드 전환. 'roman' ↔ 'absolute'. */
   setChordDisplayMode: (mode: ChordDisplayMode) => void;
 }
@@ -617,6 +621,19 @@ export const useAppStore = create<AppState>()(
             }
           }
           // 재생 중이면 backingCurrentChord와 category는 엔진 책임 — 건드리지 않음
+        }),
+
+      setTheme: (next) =>
+        set((s) => {
+          // ThemeSync가 ui.theme를 구독해 documentElement.dataset.theme를 갱신.
+          // CSS [data-theme="light"] 셀렉터가 라이트 팔레트를 활성화한다.
+          s.ui.theme = next;
+        }),
+
+      toggleTheme: () =>
+        set((s) => {
+          // 단순 dark ↔ light 토글. ThemeToggle 버튼에서 호출.
+          s.ui.theme = s.ui.theme === 'dark' ? 'light' : 'dark';
         }),
 
       setChordDisplayMode: (mode) =>
