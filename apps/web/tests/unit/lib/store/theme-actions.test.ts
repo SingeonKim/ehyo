@@ -8,9 +8,11 @@ import { useAppStore } from '@/lib/store/app-store';
 
 describe('UI theme actions', () => {
   beforeEach(() => {
-    // 각 테스트마다 store를 초기 상태로 리셋
+    // 각 테스트마다 store를 초기 상태로 리셋.
+    // ui 슬라이스 전체를 리셋하는 이유 — store는 module-level 싱글턴이라
+    // 다른 테스트가 chordDisplayMode 등을 바꿔둔 잔재가 남을 수 있다.
     useAppStore.setState((s) => {
-      s.ui.theme = 'dark';
+      s.ui = { theme: 'dark', chordDisplayMode: 'roman' };
     });
   });
 
