@@ -13,15 +13,18 @@ import { expect, test } from '@playwright/test';
 const LIGHT_BG_HEX = '#F4ECD8';
 const DARK_BG_HEX = '#0E0B08';
 
-// rgb() 문자열을 hex로 변환해 비교
+// rgb() 문자열을 hex로 변환해 비교.
+// destructure 대신 slice + map을 쓰는 이유:
+//   noUncheckedIndexedAccess가 켜져 있어 destructure 결과가 number | undefined로
+//   추론된다. slice는 element type을 보존하므로 string으로 그대로 사용 가능.
 function rgbToHex(rgb: string): string {
   const match = rgb.match(/\d+/g);
   if (!match) return rgb;
-  const [r, g, b] = match.map((x) => parseInt(x, 10));
   return (
     '#' +
-    [r, g, b]
-      .map((c) => c.toString(16).padStart(2, '0').toUpperCase())
+    match
+      .slice(0, 3)
+      .map((s) => parseInt(s, 10).toString(16).padStart(2, '0').toUpperCase())
       .join('')
   );
 }
@@ -34,14 +37,15 @@ async function waitForBgHex(page: import('@playwright/test').Page, hex: string) 
       const rgb = getComputedStyle(document.body).backgroundColor;
       const m = rgb.match(/\d+/g);
       if (!m) return false;
-      const [r, g, b] = m.map((x: string) => parseInt(x, 10));
-      return (
+      const computed =
         '#' +
-        [r, g, b]
-          .map((c: number) => c.toString(16).padStart(2, '0').toUpperCase())
-          .join('') ===
-        expectedHex
-      );
+        m
+          .slice(0, 3)
+          .map((s: string) =>
+            parseInt(s, 10).toString(16).padStart(2, '0').toUpperCase(),
+          )
+          .join('');
+      return computed === expectedHex;
     },
     hex,
     { timeout: 3000 },
