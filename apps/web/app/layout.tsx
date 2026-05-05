@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
+import Script from 'next/script';
 
 import { Footer } from '@/components/site/Footer';
+import { ThemeSync } from '@/components/ui/ThemeSync';
 
 import './globals.css';
 
@@ -32,6 +34,18 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
   weight: ['400', '500', '700'],
 });
+
+/*
+ * FOUC 방지 — hydration 이전에 localStorage의 라이트 선택을 읽어
+ * documentElement에 data-theme를 박는다.
+ *
+ * SYNC WITH: app-store persist key('my-music-app:v1') + ui.theme 위치.
+ * 키나 위치를 바꿀 때 이 스크립트도 같이 갱신.
+ *
+ * color-scheme은 globals.css의 html / html[data-theme="light"] selector가
+ * 자동 처리하므로 여기서 별도 설정하지 않는다.
+ */
+const THEME_FOUC_SCRIPT = `(function(){try{var raw=localStorage.getItem('my-music-app:v1');if(!raw)return;var t=JSON.parse(raw).state.ui.theme;if(t==='light'){document.documentElement.dataset.theme='light';}}catch(e){}})()`;
 
 // metadataBase는 절대 URL 생성에 사용. 배포 환경의 공개 URL을 환경변수로 받고,
 // 미설정이면 로컬 개발용 폴백.
@@ -72,6 +86,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className={`${pretendard.variable} ${jetbrainsMono.variable}`}>
       <body className="flex min-h-screen flex-col bg-bg-base text-ink-primary">
+        <Script id="theme-fouc" strategy="beforeInteractive">
+          {THEME_FOUC_SCRIPT}
+        </Script>
+        <ThemeSync />
         <div className="flex-1">{children}</div>
         <Footer />
       </body>
