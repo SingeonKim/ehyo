@@ -1,6 +1,7 @@
 /**
  * ThemeToggle 컴포넌트 — 렌더 / 클릭 / 아이콘 분기 테스트.
- * useHasHydrated의 비동기 동작은 act + rerender로 처리.
+ * useHasHydrated의 비동기 동작은 findByRole 비동기 쿼리로 대기
+ * (Testing Library가 내부적으로 act로 감싼다).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
@@ -11,8 +12,10 @@ import { useAppStore } from '@/lib/store/app-store';
 
 describe('ThemeToggle', () => {
   beforeEach(() => {
+    // ui 슬라이스 전체를 리셋 — chordDisplayMode가 다른 테스트에서 변경된 잔재가
+    // 남는 worker 격리 의존성을 차단.
     useAppStore.setState((s) => {
-      s.ui.theme = 'dark';
+      s.ui = { theme: 'dark', chordDisplayMode: 'roman' };
     });
   });
 
@@ -29,7 +32,7 @@ describe('ThemeToggle', () => {
 
   it('라이트 상태에서는 "다크 모드로 전환" aria-label', async () => {
     useAppStore.setState((s) => {
-      s.ui.theme = 'light';
+      s.ui = { theme: 'light', chordDisplayMode: 'roman' };
     });
     render(<ThemeToggle />);
     const button = await screen.findByRole('button', { name: '다크 모드로 전환' });
