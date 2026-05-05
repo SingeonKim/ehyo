@@ -84,11 +84,50 @@
   --color-fretboard-ghost: var(--color-ink-muted);
 }
 
+/* ──────────────────────────────────────
+ * 라이트 모드 토큰 재정의
+ * data-theme="light"가 <html>에 박히면 동일 변수명을 새 값으로 덮어씀.
+ * 컴포넌트는 같은 토큰 클래스(bg-bg-base 등)를 그대로 쓰므로 자동 반영.
+ * 캐릭터: "악보지/편집지" — 크림지 배경 + 짙은 갈색 잉크 + 어두운 황동 accent.
+ * ────────────────────────────────────── */
+html[data-theme="light"] {
+  /* Background — 크림지 톤 */
+  --color-bg-base:     #F4ECD8;
+  --color-bg-elevated: #ECE2C6;
+  --color-bg-raised:   #E2D6B4;
+
+  /* Ink — 잉크 같은 짙은 갈색(순흑 회피로 종이 인쇄 느낌) */
+  --color-ink-primary:   #2A1E14;
+  --color-ink-secondary: #5C4A36;
+  --color-ink-muted:     #8A7659;
+
+  /* Accents — hue 유지, 명도만 어둡게(크림 위 가독성 확보) */
+  --color-accent-brass:  #8B6F2E;
+  --color-accent-copper: #8E4F1D;
+  --color-accent-signal: #C03B36;
+
+  /* Fretboard tier — root/tone/chord 동일 hue, 명도 보정 */
+  --color-scale-root:  #C03B36;
+  --color-scale-tone:  #8B6F2E;
+  --color-scale-chord: #2C7BB8;
+
+  /* Highlight 5색 — Important degrees 칩 */
+  --color-highlight-orange: #B5742A;
+  --color-highlight-green:  #5E8F46;
+  --color-highlight-blue:   #2C7BB8;
+  --color-highlight-rose:   #9E5A5E;
+  --color-highlight-teal:   #4F8079;
+
+  /* State */
+  --color-state-ok:   #5E8F46;
+  --color-state-warn: #B5742A;
+  --color-state-err:  #C03B36;
+}
+
 /* ── Base resets ───────────────────────────────── */
 html {
   /* 수치 tabular 정렬 기본값 — BPM·도수 표기에서 숫자 흔들림 방지 */
   font-feature-settings: "tnum" 1, "cv02" 1, "cv11" 1;
-  color-scheme: dark;
 }
 
 body {
@@ -98,6 +137,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* 테마 토글 시 색이 부드럽게 페이드. SVG·LED 등은 자체 transition으로 즉시 반영. */
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* 포커스 링 — outline 제거 금지, 명확한 대체 */
@@ -119,6 +160,17 @@ body {
   0%   { opacity: 0; }
   20%  { opacity: 0.85; }
   100% { opacity: 0.6; }
+}
+
+/* 라이트 모드에선 cream 배경 위 0.6 opacity가 빠져 보여 0.78까지 상향. */
+@keyframes chord-overlay-pulse-light {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.95; }
+  100% { opacity: 0.78; }
+}
+
+html[data-theme="light"] .chord-overlay {
+  animation-name: chord-overlay-pulse-light;
 }
 
 .chord-overlay {
